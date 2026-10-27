@@ -1,94 +1,70 @@
 {
-  "version": 1,
+  "version": 2,
   "generatedOn": "2026-10-27",
   "samples": {
     "lucknow-wedding": {
-      "en": {
-        "ideas": {
-          "theme": {
-            "name": "Awadhi Marigold Elegance",
-            "palette": ["Marigold Yellow", "Rust Orange", "Deep Green", "Gold"],
-            "why": "This theme honours traditional Awadhi hospitality while keeping decor simple, cheerful, and budget-friendly for a large family gathering."
-          },
-          "decor": [
-            {
-              "title": "Marigold and Mango Leaf Garlands",
-              "detail": "Drape fresh marigold flowers and mango leaves along the venue entrance and stage to create a vibrant, traditional look without heavy costs."
-            },
-            {
-              "title": "Brass Diya Lighting Accent",
-              "detail": "Set up brass lamps and flower-filled urlis along step-free pathways to safely illuminate the venue for evening festivities."
-            },
-            {
-              "title": "Fabric Canopy Stage Background",
-              "detail": "Use flowing orange and yellow dupattas draped over a basic frame to form an elegant backdrop for photos and ceremonies."
-            }
-          ],
-          "menu": [
-            {
-              "title": "Paneer Pasanda",
-              "detail": "Rich, tender cottage cheese slices stuffed with nuts and cooked in a mild, aromatic gravy that pleases all generations."
-            },
-            {
-              "title": "Awadhi Veg Biryani",
-              "detail": "Fragrant basmati rice layered with seasonal vegetables and mild spices, cooked dum-style for an authentic regional taste."
-            },
-            {
-              "title": "Galouti Kebab-Style Tikki",
-              "detail": "Melt-in-your-mouth spiced yam and chana dal patties, served with mint chutney as a delicious vegetarian appetizer."
-            },
-            {
-              "title": "Zafrani Kheer",
-              "detail": "A classic slow-cooked rice pudding infused with saffron and cardamom, offering a comforting traditional dessert."
-            }
-          ],
-          "activities": [
-            {
-              "title": "Sangeet and Antakshari Fusion",
-              "detail": "A lively yet relaxing musical game combining classic hits and family performances, ensuring grandparents can participate comfortably."
-            },
-            {
-              "title": "Interactive Mehndi Station",
-              "detail": "A shaded seating corner with skilled artists applying quick, traditional henna designs for guests of all ages."
-            },
-            {
-              "title": "Family Blessing Tree",
-              "detail": "A setup where guests write heart-felt wishes on cards and hang them on a decorative wooden branch display."
-            }
-          ],
-          "touch": {
-            "title": "Elder Comfort Lounge",
-            "detail": "A dedicated lounge area near the main stage equipped with cushioned seating, warm shawls, and easy accessibility for comfortable viewing."
-          },
-          "invitation": "Warm greetings! We joyfully invite you to celebrate the traditional wedding festivities of [names]. Join us for an evening of blessings, music, and delicious food at [venue] on [date] starting at 7:00 PM. Your presence and blessings will make our special day complete."
+      "ideas": {
+        "theme": {
+          "name": "Awadhi Marigold Elegance",
+          "palette": ["Marigold Yellow", "Rust Orange", "Deep Green", "Gold"],
+          "why": "This theme honours traditional Awadhi hospitality while keeping decor simple, cheerful, and budget-friendly for a large family gathering."
         },
-        "drafts": {},
-        "answers": {}
+        "decor": [
+          {
+            "title": "Marigold and Mango Leaf Garlands",
+            "detail": "Drape fresh marigold flowers and mango leaves along the venue entrance and stage to create a vibrant, traditional look without heavy costs."
+          },
+          {
+            "title": "Brass Diya Lighting Accent",
+            "detail": "Set up brass lamps and flower-filled urlis along step-free pathways to safely illuminate the venue for evening festivities."
+          },
+          {
+            "title": "Fabric Canopy Stage Background",
+            "detail": "Use flowing orange and yellow dupattas draped over a basic frame to form an elegant backdrop for photos and ceremonies."
+          }
+        ],
+        "menu": [
+          {
+            "title": "Paneer Pasanda",
+            "detail": "Rich, tender cottage cheese slices stuffed with nuts and cooked in a mild, aromatic gravy that pleases all generations."
+          },
+          {
+            "title": "Awadhi Veg Biryani",
+            "detail": "Fragrant basmati rice layered with seasonal vegetables and mild spices, cooked dum-style for an authentic regional taste."
+          },
+          {
+            "title": "Galouti Kebab-Style Tikki",
+            "detail": "Melt-in-your-mouth spiced yam and chana dal patties, served with mint chutney as a delicious vegetarian appetizer."
+          },
+          {
+            "title": "Zafrani Kheer",
+            "detail": "A classic slow-cooked rice pudding infused with saffron and cardamom, offering a comforting traditional dessert."
+          }
+        ],
+        "activities": [
+          {
+            "title": "Sangeet and Antakshari Fusion",
+            "detail": "A lively yet relaxing musical game combining classic hits and family performances, ensuring grandparents can participate comfortably."
+          },
+          {
+            "title": "Interactive Mehndi Station",
+            "detail": "A shaded seating corner with skilled artists applying quick, traditional henna designs for guests of all ages."
+          },
+          {
+            "title": "Family Blessing Tree",
+            "detail": "A setup where guests write heart-felt wishes on cards and hang them on a decorative wooden branch display."
+          }
+        ],
+        "touch": {
+          "title": "Elder Comfort Lounge",
+          "detail": "A dedicated lounge area near the main stage equipped with cushioned seating, warm shawls, and easy accessibility for comfortable viewing."
+        },
+        "invitation": "Warm greetings! We joyfully invite you to celebrate the traditional wedding festivities of [names]. Join us for an evening of blessings, music, and delicious food at [venue] on [date] starting at 7:00 PM. Your presence and blessings will make our special day complete."
       },
-      "hi": {
-        "drafts": {},
-        "answers": {}
-      }
+      "drafts": {},
+      "answers": {}
     },
-    "kids-birthday": {
-      "en": {
-        "drafts": {},
-        "answers": {}
-      },
-      "hi": {
-        "drafts": {},
-        "answers": {}
-      }
-    },
-    "diwali-mela": {
-      "en": {
-        "drafts": {},
-        "answers": {}
-      },
-      "hi": {
-        "drafts": {},
-        "answers": {}
-      }
-    }
+    "kids-birthday": { "drafts": {}, "answers": {} },
+    "diwali-mela": { "drafts": {}, "answers": {} }
   }
 }

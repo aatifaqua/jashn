@@ -99,16 +99,6 @@ describe('POST /api/assist', () => {
     expect(body).toMatchObject({ source: 'gemini', reply: text, patch: { date: '2027-03-13' } });
   });
 
-  it('answers a wordless proposal in Hindi when the plan is in Hindi', async () => {
-    const fake = fakeGenerate([call({ invited: 200 })]);
-    const { app } = testApp({ generate: fake.generate });
-    const input = { ...sample(), language: 'hi' };
-    const res = await post(app, '/api/assist', { input, message: 'मेहमान 200 करें' });
-    const body = (await res.json()) as Record<string, unknown>;
-    expect(body).toMatchObject({ source: 'gemini', patch: { invited: 200 } });
-    expect(String(body.reply)).toMatch(/^मैंने यह बदलाव सुझाया है/);
-  });
-
   it('falls back when the reply is empty', async () => {
     const { body } = await assist([{ text: '  ' }]);
     expect(body.source).toBe('fallback');

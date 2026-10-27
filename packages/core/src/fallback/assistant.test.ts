@@ -38,7 +38,6 @@ describe('parseChanges: guests', () => {
     ['headcount: 260', 260],
     ['add 10% more guests', 330],
     ['reduce guests from 300 to 250', 250],
-    ['200 मेहमान', 200],
   ])('%s → %i', (message, invited) => {
     expect(changes(message).invited).toBe(invited);
   });
@@ -58,22 +57,12 @@ describe('parseChanges: budget', () => {
     ['budget 950000', 950_000],
     ['reduce budget from 25 lakh to 20 lakh', 2_000_000],
     ['budget 5 lakh 50 thousand', 550_000],
-    ['बजट 5 लाख 50 हजार', 550_000],
-    ['बजट 8 लाख', 800_000],
-    ['बजट ८ लाख', 800_000],
-    ['बजट 1 करोड़', 10_000_000],
-    ['बजट 90 हज़ार', 90_000],
-    ['बजट 90 हजार', 90_000],
   ])('%s → %i', (message, budget) => {
     expect(changes(message).budget).toBe(budget);
   });
 
   it('keeps both figures when a comma separates the budget from a noun-first headcount', () => {
     expect(changes('budget 10 lakh, guests 200')).toEqual({ budget: 1_000_000, invited: 200 });
-  });
-
-  it('reads a precomposed nukta like the decomposed one', () => {
-    expect(changes('बजट 2 करोड़')).toEqual({ budget: 20_000_000 });
   });
 
   it('reads the money, not the headcount, when both share a clause', () => {

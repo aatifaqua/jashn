@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { CONSTRAINTS, INPUT_LIMITS, LANGUAGES, type Profile } from '@jashn/core';
+  import { CONSTRAINTS, INPUT_LIMITS, type Profile } from '@jashn/core';
   import { blankForm, describedBy, type FieldErrors, type FormState } from '../lib/form.ts';
-  import { CONSTRAINT_LABELS, LANGUAGE_LABELS } from '../lib/labels.ts';
+  import { CONSTRAINT_LABELS } from '../lib/labels.ts';
   import FieldError from './FieldError.svelte';
 
   /** Step 3 of the form: budget, priorities, needs and the free-text note. */
@@ -90,14 +90,5 @@
       numbers and addresses.
     </p>
     <FieldError field="note" message={errors.note} />
-  </div>
-
-  <div class="field">
-    <label for="f-language">Language for ideas and drafts</label>
-    <select id="f-language" name="language" bind:value={form.language}>
-      {#each LANGUAGES as language (language)}
-        <option value={language} lang={language}>{LANGUAGE_LABELS[language]}</option>
-      {/each}
-    </select>
   </div>
 </fieldset>

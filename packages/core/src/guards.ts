@@ -3,7 +3,7 @@
  * validation; any issue makes the server serve the deterministic fallback instead. Word tables
  * and regexes are compiled once at module scope so a check is a few linear scans.
  */
-import { asciiDigits, inventedDates, planDays } from './date-mentions.ts';
+import { inventedDates, planDays } from './date-mentions.ts';
 import { ASSIST_LIMITS } from './fields.ts';
 import type { Constraint, Ideas, Plan, PlanPatch } from './types.ts';
 
@@ -19,29 +19,26 @@ export const GUARD_LIMITS = Object.freeze({
   draft: 1800,
 });
 
-/** Meat and fish, in English, Hindi transliteration and Devanagari. */
+/** Meat and fish, including the Indian dish words English menus use (murgh, gosht, keema). */
 const MEAT =
   'meat meatball chicken mutton lamb goat beef pork ham bacon sausage salami pepperoni steak ' +
   'veal venison turkey duck fish prawn shrimp crab lobster squid calamari oyster mussel clam ' +
   'anchovy tuna salmon seafood gelatin gelatine keema kheema murg murgh gosht machli machhli ' +
   'macchi jhinga jheenga nalli nihari haleem paya kaleji boti tangdi bheja rogan ' +
-  'pomfret surmai rohu hilsa ilish bangda bombil kingfish shellfish catfish crabmeat ' +
-  'मुर्ग मुर्गा मुर्गी चिकन मटन गोश्त मछली झींगा कीमा';
-const EGG = 'egg omelette omelet meringue anda ande अंडा अंडे ऑमलेट';
+  'pomfret surmai rohu hilsa ilish bangda bombil kingfish shellfish catfish crabmeat';
+const EGG = 'egg omelette omelet meringue anda ande';
 /** Roots, bulbs and fungi a Jain menu leaves out, plus honey. */
 const ROOTS =
   'onion garlic potato carrot radish beetroot beet turnip ginger yam shallot leek mushroom ' +
   'honey pyaz pyaaz piyaz lehsun lahsun aloo aalu gajar mooli adrak shakarkandi arbi chukandar ' +
-  'jimikand suran batata kanda alu aaloo lasun lassan pyaj ' +
-  'प्याज लहसुन आलू गाजर मूली अदरक शकरकंद अरबी चुकंदर';
+  'jimikand suran batata kanda alu aaloo lasun lassan pyaj';
 const PORK = 'pork ham bacon lard pepperoni salami prosciutto gelatin gelatine';
 const ALCOHOL =
   'alcohol alcoholic wine beer whisky whiskey vodka rum gin tequila champagne prosecco cocktail ' +
-  'sangria liquor brandy scotch martini margarita mojito daaru daru sharab sharaab toddy feni ' +
-  'शराब दारू बीयर वाइन व्हिस्की';
+  'sangria liquor brandy scotch martini margarita mojito daaru daru sharab sharaab toddy feni';
 
 /**
- * Whole words only (Unicode letters and marks count as word characters, so Devanagari works),
+ * Whole words only (any Unicode letter or mark counts as part of a word, so "café" is one word),
  * with an optional English plural. "Non-alcoholic", "virgin mojito", "non-alcoholic
  * cocktails", "alcohol-free cocktails", "zero-proof cocktails", "egg-free" and "eggless" are not
  * conflicts; only a hyphen joins "free" or "less", so "fish, less oil" is still caught.
@@ -69,20 +66,16 @@ const LINK =
 
 /** A rupee figure: a currency mark before it, or a unit or the word rupees after it. */
 const AMOUNT =
-  /(₹|\brs\.?|\binr|रु\.?)?\s*(\d[\d,]*(?:\.\d+)?)\s*(lakhs?|lacs?|lks?|l|crores?|cr|k|thousand|लाख|करोड़|हज़ार|हजार)?(?![\p{L}\p{M}])\s*(rupees|रुपये|रुपए)?/giu;
+  /(₹|\brs\.?|\binr)?\s*(\d[\d,]*(?:\.\d+)?)\s*(lakhs?|lacs?|lks?|l|crores?|cr|k|thousand)?(?![\p{L}\p{M}])\s*(rupees)?/giu;
 const UNITS = Object.freeze({
   lakh: 1e5,
   lac: 1e5,
   l: 1e5,
   lk: 1e5,
-  लाख: 1e5,
   crore: 1e7,
   cr: 1e7,
-  करोड़: 1e7,
   k: 1e3,
   thousand: 1e3,
-  हज़ार: 1e3,
-  हजार: 1e3,
 });
 
 /** A word in generated text that conflicts with a declared dietary constraint. */
@@ -169,15 +162,13 @@ function matches(value: number, tolerance: number, allowed: ReadonlySet<number>)
 }
 
 /**
- * Rupee figures in the text that are not in `allowed`; Devanagari digits count as digits.
+ * Rupee figures in the text that are not in `allowed`.
  * "₹8,00,000" must match exactly (to the rupee); a rounded figure such as "8.2 lakh" matches
  * any allowed amount it rounds from.
  */
 export function inventedAmounts(text: string, allowed: ReadonlySet<number>): readonly number[] {
   const invented: number[] = [];
-  // NFC splits a precomposed nukta letter (U+0958–U+095F) the way the unit words spell it.
-  const plain = asciiDigits(text.normalize('NFC'));
-  for (const [, mark, digits, unitWord, rupees] of plain.matchAll(AMOUNT)) {
+  for (const [, mark, digits, unitWord, rupees] of text.matchAll(AMOUNT)) {
     // The digits group is never empty in a match; the check narrows its type.
     if (digits === undefined || (mark ?? unitWord ?? rupees) === undefined) continue;
     const unit = unitOf(unitWord);

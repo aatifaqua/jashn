@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import type { EventInput, Language, Plan, PlanPatch, Profile, VendorStatus } from '@jashn/core';
+  import type { EventInput, Plan, PlanPatch, Profile, VendorStatus } from '@jashn/core';
   import Assistant from '../components/Assistant.svelte';
   import BudgetChart from '../components/BudgetChart.svelte';
   import ConfirmButton from '../components/ConfirmButton.svelte';
@@ -179,9 +179,6 @@
               saved={entry.ideas}
               onideas={(ideas: SavedIdeas, forInput: EventInput) => {
                 store.setIdeas(ideas, forInput);
-              }}
-              onlanguage={(language: Language) => {
-                store.setLanguage(language);
               }}
             />
           {/if}

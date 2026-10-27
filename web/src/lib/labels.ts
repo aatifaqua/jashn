@@ -7,14 +7,12 @@ import {
   type CityTier,
   type Constraint,
   type EventType,
-  type Language,
   type Phase,
   type Setting,
   type TaskStatus,
   type Verdict,
   type VendorStatus,
   type EventInput,
-  type Source,
 } from '@jashn/core';
 import type { IconName } from './icons.ts';
 
@@ -49,12 +47,6 @@ export const CONSTRAINT_LABELS: Readonly<Record<Constraint, string>> = {
   'step-free': 'Step-free access',
   'eco-friendly': 'Eco-friendly',
   'budget-strict': 'Strict budget',
-};
-
-/** Language choices; each is written in its own script so speakers recognise it. */
-export const LANGUAGE_LABELS: Readonly<Record<Language, string>> = {
-  en: 'English',
-  hi: 'हिन्दी',
 };
 
 /** Timeline phase headings. */
@@ -107,12 +99,4 @@ export function eventTitle(input: Pick<EventInput, 'type' | 'style' | 'city'>): 
   const what = occasion(input);
   const name = what.charAt(0).toUpperCase() + what.slice(1);
   return input.city === '' ? name : `${name} in ${input.city}`;
-}
-
-/**
- * The `lang` of generated text: Hindi only when Gemini wrote it for a Hindi request. Offline
- * fallbacks are always English, so marking them `hi` would make screen readers mispronounce them.
- */
-export function textLang(source: Source, language: Language): Language {
-  return source === 'gemini' ? language : 'en';
 }

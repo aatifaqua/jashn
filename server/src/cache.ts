@@ -33,7 +33,7 @@ export interface KeyParts {
  * keys short and uniform, and the user's note never sits in memory as a readable map key.
  */
 export function cacheKey(parts: KeyParts): string {
-  // canonicalKey covers every input field, the output language included.
+  // canonicalKey covers every input field.
   const material = [
     parts.endpoint,
     canonicalKey(parts.input),

@@ -2,7 +2,7 @@
  * Field metadata for EventInput: labels, limits, error messages and the structural reader that
  * turns untrusted JSON (a request body, localStorage, a share link) into a typed input.
  */
-import { CITY_TIERS, CONSTRAINTS, EVENT_TYPES, LANGUAGES, SETTINGS } from './ids.ts';
+import { CITY_TIERS, CONSTRAINTS, EVENT_TYPES, SETTINGS } from './ids.ts';
 import type { ErrorCode, EventInput, FieldError, InputField } from './types.ts';
 
 /** Bounds from design section 5, exported so the form can mirror them as HTML attributes. */
@@ -45,7 +45,6 @@ export const FIELD_LABELS: Readonly<Record<InputField, string>> = {
   priorities: 'Priorities',
   constraints: 'Needs',
   note: 'Note',
-  language: 'Language',
 };
 
 /** Every input field in form order; errors are reported in this order. */
@@ -146,7 +145,6 @@ export function readShape(raw: unknown): Shape {
       [],
     ),
     note: take('note', text, ''),
-    language: take('language', (v) => isOneOf(LANGUAGES, v), 'en'),
   };
   return { input, errors };
 }

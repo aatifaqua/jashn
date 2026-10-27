@@ -70,12 +70,20 @@ describe('readPlans', () => {
   it('keeps a plan but drops ideas that are malformed or break its needs', () => {
     const input = sampleInput();
     const ideas = ideasOffline(input);
-    const valid = { ideas, source: 'gemini', language: 'en' };
+    const valid = { ideas, source: 'gemini' };
     const meaty = {
       ...valid,
       ideas: { ...ideas, menu: [{ title: 'Chicken tikka', detail: 'Grilled.' }] },
     };
     expect(readPlan({ ...savedPlan(), ideas: valid }, TODAY)?.ideas).toEqual(valid);
+    // Plans saved by an older version carry a `language` key; they still load, without it.
+    const older = {
+      ...savedPlan(),
+      input: { ...input, language: 'hi' },
+      ideas: { ...valid, language: 'hi' },
+    };
+    expect(readPlan(older, TODAY)?.ideas).toEqual(valid);
+    expect(readPlan(older, TODAY)?.input).not.toHaveProperty('language');
     expect(readPlan({ ...savedPlan(), ideas: meaty }, TODAY)?.ideas).toBeNull();
     expect(
       readPlan({ ...savedPlan(), ideas: { ...valid, source: 'other' } }, TODAY)?.ideas,

@@ -9,7 +9,7 @@ import {
 } from '@jashn/core';
 import type { Handler } from 'hono';
 import type { GeminiClient } from '../ai/gemini.ts';
-import { draftContent, draftSystem } from '../ai/prompts.ts';
+import { DRAFT_SYSTEM, draftContent } from '../ai/prompts.ts';
 import { DRAFT_RESPONSE_SCHEMA, draftRequestSchema, draftTextSchema } from '../ai/schemas.ts';
 import { cacheKey, type ResponseCache } from '../cache.ts';
 import type { AppEnv } from '../env.ts';
@@ -23,7 +23,14 @@ export interface DraftDeps {
   readonly cache: ResponseCache<Sourced<Draft>>;
 }
 
-/** Asks Gemini for the enquiry text, then checks length, links and amounts. */
+/** Checks a generated enquiry's shape, length, links, amounts and dates; throws on failure. */
+export function checkDraft(raw: unknown, plan: Plan, vendor: VendorItem): Draft {
+  const { text } = draftTextSchema.parse(raw);
+  assertClean(guardDraft(text, plan));
+  return { vendorId: vendor.id, text };
+}
+
+/** Asks Gemini for the enquiry text, then checks it with checkDraft. */
 export async function liveDraft(
   gemini: GeminiClient,
   plan: Plan,
@@ -31,13 +38,11 @@ export async function liveDraft(
 ): Promise<Draft> {
   const generation = await gemini.generate({
     endpoint: 'draft',
-    systemInstruction: draftSystem(plan.input.language),
+    systemInstruction: DRAFT_SYSTEM,
     contents: draftContent(plan, vendor),
     responseJsonSchema: DRAFT_RESPONSE_SCHEMA,
   });
-  const { text } = draftTextSchema.parse(JSON.parse(generation.text));
-  assertClean(guardDraft(text, plan));
-  return { vendorId: vendor.id, text };
+  return checkDraft(JSON.parse(generation.text), plan, vendor);
 }
 
 /** Handler for POST /api/draft; a vendor the plan does not include is a 400. */

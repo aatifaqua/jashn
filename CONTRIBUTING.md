@@ -43,9 +43,10 @@ the build and the first-screen size budget. CI runs the same command.
 ## Regenerating the demo content
 
 The GitHub Pages build serves whatever Gemini output has been pre-generated for the three
-samples (currently ideas for the Lucknow wedding in English only; everything else comes from
-the offline content). With a key in `server/.env`, run `npm run pregenerate -w server`; it
-resumes, so repeat it after a quota stop. It writes the file through Prettier, so the format
+samples (currently ideas for the Lucknow wedding only; everything else comes from the offline
+content). With a key in `server/.env`, run `npm run pregenerate -w server`; it makes one
+Gemini call per sample, skips samples that are already complete and still valid, and resumes,
+so repeat it after a quota stop. It writes the file through Prettier, so the format
 check passes. Review the diff of `web/src/lib/demo-genai.json` for tone and dietary
 correctness before committing it.
 

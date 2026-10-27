@@ -70,16 +70,6 @@ describe('Assistant', () => {
     });
   });
 
-  it('keeps each reply in the language it was written in, and user text unlabelled', async () => {
-    const genai = fakeGenAi(() => ({ reply: 'Reply.', source: 'gemini' }));
-    const view = setup(genai);
-    await ask('Hello');
-    await screen.findByText('Reply.');
-    await view.rerender({ plan: planFor({ ...plan.input, language: 'hi' }) });
-    expect(screen.getByText('Reply.')).toHaveAttribute('lang', 'en');
-    expect(screen.getByText('Hello', { selector: 'p' })).not.toHaveAttribute('lang');
-  });
-
   it('ignores blank messages and never previews an invalid patch', async () => {
     const genai = fakeGenAi(() => ({ reply: 'Sure.', patch: { invited: -1 } }));
     setup(genai);

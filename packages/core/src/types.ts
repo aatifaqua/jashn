@@ -7,7 +7,6 @@ import type {
   CITY_TIERS,
   CONSTRAINTS,
   EVENT_TYPES,
-  LANGUAGES,
   PATCH_FIELDS,
   PHASES,
   SETTINGS,
@@ -25,8 +24,6 @@ export type CityTier = (typeof CITY_TIERS)[number];
 export type Setting = (typeof SETTINGS)[number];
 /** One of the eight declared needs. */
 export type Constraint = (typeof CONSTRAINTS)[number];
-/** Language for generated text. */
-export type Language = (typeof LANGUAGES)[number];
 /** A wedding function such as mehndi or sangeet. */
 export type FunctionId = (typeof WEDDING_FUNCTIONS)[number];
 /** Any style id of any event type. */
@@ -71,7 +68,6 @@ export interface EventInput {
   readonly constraints: readonly Constraint[];
   /** Free text, at most 300 characters; treated as data, never as instructions. */
   readonly note: string;
-  readonly language: Language;
 }
 
 /** A field of EventInput. */

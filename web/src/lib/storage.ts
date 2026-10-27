@@ -9,11 +9,10 @@ import {
   validateInput,
   type EventInput,
   type Ideas,
-  type Language,
   type Source,
   type VendorStatus,
 } from '@jashn/core';
-import { isId, isLanguage, isRecord, isSource, isVendorStatus, readIdeas } from './validate.ts';
+import { isId, isRecord, isSource, isVendorStatus, readIdeas } from './validate.ts';
 
 /** Versioned, so a future format change can ignore or migrate older data instead of misreading it. */
 export const STORAGE_KEY = 'jashn.plans.v1';
@@ -25,11 +24,10 @@ const MAX_CHECKS = 400;
 /** Long enough to coalesce a burst of clicks, short enough that closing the tab rarely loses one. */
 const WRITE_DELAY_MS = 400;
 
-/** Generated ideas saved with the plan, labelled with their source and language. */
+/** Generated ideas saved with the plan, labelled with their source. */
 export interface SavedIdeas {
   readonly ideas: Ideas;
   readonly source: Source;
-  readonly language: Language;
 }
 
 /** One saved plan: the validated input plus the user's own progress on it. */
@@ -67,9 +65,10 @@ function readVendors(value: unknown): Record<string, VendorStatus> | null {
 }
 
 function readSavedIdeas(value: unknown, input: EventInput): SavedIdeas | null {
-  if (!isRecord(value) || !isSource(value.source) || !isLanguage(value.language)) return null;
+  // Only known fields are read, so keys older versions stored (such as `language`) drop away.
+  if (!isRecord(value) || !isSource(value.source)) return null;
   const ideas = readIdeas(value.ideas, input.constraints);
-  return ideas === null ? null : { ideas, source: value.source, language: value.language };
+  return ideas === null ? null : { ideas, source: value.source };
 }
 
 /**

@@ -10,7 +10,6 @@ import type {
   EventType,
   FieldError,
   InputField,
-  Language,
   Profile,
   Setting,
   StyleDef,
@@ -32,7 +31,6 @@ export interface FormState {
   priorities: string[];
   constraints: Constraint[];
   note: string;
-  language: Language;
 }
 
 /** Digit grouping, spaces and the rupee sign people type around amounts. */
@@ -55,7 +53,6 @@ export function blankForm(): FormState {
     priorities: [],
     constraints: [],
     note: '',
-    language: 'en',
   };
 }
 

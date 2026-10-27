@@ -2,7 +2,6 @@
  * Offline assistant (design section 7, /api/assist fallback): a deterministic intent parser
  * that either proposes a validated PlanPatch or answers a question from the plan's own data.
  */
-import { asciiDigits } from '../date-mentions.ts';
 import { ASSIST_LIMITS } from '../fields.ts';
 import { applyPatch, validatePatch } from '../input.ts';
 import { planSummary, type PlanSummary } from '../summary.ts';
@@ -110,12 +109,9 @@ function describe(before: EventInput, after: EventInput): string[] {
   return out;
 }
 
-/**
- * The message as the parsers read it: capped, lower-cased, NFC (so a precomposed nukta matches
- * the word lists) and with Devanagari digits as ASCII digits.
- */
+/** The message as the parsers read it: capped and lower-cased. */
 function readable(message: string): string {
-  return asciiDigits(message.slice(0, MESSAGE_MAX).normalize('NFC').toLowerCase());
+  return message.slice(0, MESSAGE_MAX).toLowerCase();
 }
 
 function answer(text: string, plan: Plan): string {

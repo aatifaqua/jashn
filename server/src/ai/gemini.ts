@@ -18,13 +18,13 @@ import {
 } from '@google/genai';
 import type { CallBudget } from '../middleware/quota.ts';
 
-/** The three generative endpoints. */
-export type Endpoint = 'ideas' | 'assist' | 'draft';
+/** The three generative endpoints, plus the demo batch that does all three at once. */
+export type Endpoint = 'ideas' | 'assist' | 'draft' | 'batch';
 
 /**
  * Creative ideas get a high temperature, the assistant a low one (it must stay faithful to the
  * plan), drafts sit between. Output caps bound cost and latency per endpoint, with headroom for
- * the low thinking budget and for Devanagari, which takes more tokens per character.
+ * the low thinking budget. The offline demo batch holds ideas, every draft and every answer.
  */
 export const ENDPOINT_SETTINGS: Readonly<
   Record<Endpoint, { readonly temperature: number; readonly maxOutputTokens: number }>
@@ -32,6 +32,7 @@ export const ENDPOINT_SETTINGS: Readonly<
   ideas: { temperature: 0.8, maxOutputTokens: 6144 },
   assist: { temperature: 0.3, maxOutputTokens: 2048 },
   draft: { temperature: 0.5, maxOutputTokens: 3072 },
+  batch: { temperature: 0.6, maxOutputTokens: 24_576 },
 });
 
 /** Stated explicitly so the policy does not depend on the API's defaults. */

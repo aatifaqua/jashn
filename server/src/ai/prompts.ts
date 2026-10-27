@@ -1,7 +1,7 @@
 /**
- * System instructions and user content for the three endpoints. Facts go to Gemini as compact
- * JSON built from the validated input and the plan summary; the user's free-text note is the
- * only unstructured input, and it travels fenced and declared as data.
+ * System instructions and user content for the three endpoints and the demo batch. Facts go
+ * to Gemini as compact JSON built from the validated input and the plan summary; the user's
+ * free-text note is the only unstructured input, and it travels fenced and declared as data.
  */
 import type { Content } from '@google/genai';
 import {
@@ -12,7 +12,6 @@ import {
   seasonOf,
   toIso,
   type EventInput,
-  type Language,
   type Plan,
   type VendorItem,
 } from '@jashn/core';
@@ -52,11 +51,7 @@ const DRAFT_RULES = [
   'Keep it under 1,200 characters.',
 ].join('\n');
 
-function languageRule(language: Language): string {
-  return language === 'hi'
-    ? 'Write all text in Hindi, in Devanagari script.'
-    : 'Write all text in English (Indian usage).';
-}
+const LANGUAGE_RULE = 'Write all text in English (Indian usage).';
 
 /**
  * Fences the note as data. The fence markers are removed from inside the note so it cannot
@@ -68,22 +63,20 @@ export function fenceNote(note: string): string {
 }
 
 /** System instruction for /api/ideas. */
-export function ideasSystem(language: Language): string {
-  return [BASE_RULES, IDEAS_RULES, languageRule(language)].join('\n\n');
-}
+export const IDEAS_SYSTEM = [BASE_RULES, IDEAS_RULES, LANGUAGE_RULE].join('\n\n');
 
 /** Built once: constructing an Intl formatter costs far more than calling one. */
 const MONTH_NAME = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' });
 
 /**
- * User content for /api/ideas: event facts without any amount or exact date, then the fenced
- * note. The month and season carry what the date means for ideas; withholding the date itself
- * matches the guard that rejects any date in ideas (JSON.stringify drops undefined fields).
+ * Event facts for ideas, without any amount or exact date. The month and season carry what the
+ * date means for ideas; withholding the date itself matches the guard that rejects any date in
+ * ideas (JSON.stringify drops undefined fields).
  */
-export function ideasContent(plan: Plan): string {
+function ideasFacts(plan: Plan): object {
   const { event, expected, money } = planSummary(plan);
   const eventDay = plan.today + plan.daysToGo;
-  const facts = {
+  return {
     occasion: occasion(event),
     ...event,
     budget: undefined,
@@ -94,7 +87,11 @@ export function ideasContent(plan: Plan): string {
     expectedGuests: expected,
     budgetVerdict: money.verdict,
   };
-  return `Facts: ${JSON.stringify(facts)}\n${fenceNote(plan.input.note)}`;
+}
+
+/** User content for /api/ideas: the ideas facts, then the fenced note. */
+export function ideasContent(plan: Plan): string {
+  return `Facts: ${JSON.stringify(ideasFacts(plan))}\n${fenceNote(plan.input.note)}`;
 }
 
 /**
@@ -106,7 +103,7 @@ export function assistSystem(plan: Plan): string {
   return [
     BASE_RULES,
     ASSIST_RULES,
-    languageRule(plan.input.language),
+    LANGUAGE_RULE,
     `Facts (the plan, computed by the planning engine): ${facts}`,
   ].join('\n\n');
 }
@@ -132,17 +129,15 @@ export function assistContents(
 }
 
 /** System instruction for /api/draft. */
-export function draftSystem(language: Language): string {
-  return [BASE_RULES, DRAFT_RULES, languageRule(language)].join('\n\n');
-}
+export const DRAFT_SYSTEM = [BASE_RULES, DRAFT_RULES, LANGUAGE_RULE].join('\n\n');
 
 /**
- * User content for /api/draft. The note is left out on purpose: the draft goes to a third
+ * Facts for one vendor enquiry. The note is left out on purpose: the draft goes to a third
  * party, and the note may hold details the user meant only for planning.
  */
-export function draftContent(plan: Plan, vendor: VendorItem): string {
+function draftFacts(plan: Plan, vendor: VendorItem): object {
   const input: EventInput = plan.input;
-  const facts = {
+  return {
     occasion: occasion(input),
     date: input.date,
     startTime: input.startTime,
@@ -156,5 +151,39 @@ export function draftContent(plan: Plan, vendor: VendorItem): string {
     confirmBy: vendor.bookBy > plan.today ? toIso(vendor.bookBy) : 'as soon as possible',
     questions: vendor.questions,
   };
-  return `Facts: ${JSON.stringify(facts)}`;
+}
+
+/** User content for /api/draft. */
+export function draftContent(plan: Plan, vendor: VendorItem): string {
+  return `Facts: ${JSON.stringify(draftFacts(plan, vendor))}`;
+}
+
+/**
+ * System instruction for the demo batch (scripts/pregenerate.ts): the rules of all three
+ * endpoints in one request, each under its own heading, and the plan summary the answers must
+ * stick to. Answers carry a proposed change in `patch` instead of calling update_event.
+ */
+export function batchSystem(plan: Plan): string {
+  return [
+    BASE_RULES,
+    LANGUAGE_RULE,
+    'Return one JSON object with three parts: ideas, drafts and answers. Each part follows its own rules below.',
+    `Ideas, from the ideas facts and the note:\n${IDEAS_RULES}`,
+    `Drafts, one per listed vendor, with its vendorId:\n${DRAFT_RULES}\nNever repeat anything from the note in a draft.`,
+    `Answers, one per listed message, with the message copied exactly:\n${ASSIST_RULES}\nHere you cannot call update_event: put the fields that change in "patch" instead, and leave "patch" out when the message asks for no change.`,
+    `Facts (the plan, computed by the planning engine): ${JSON.stringify(planSummary(plan))}`,
+  ].join('\n\n');
+}
+
+/** User content for the demo batch: the ideas facts and fenced note, the vendors, the messages. */
+export function batchContent(plan: Plan, messages: readonly string[]): string {
+  const vendors = plan.vendors.map((vendor) => ({
+    vendorId: vendor.id,
+    ...draftFacts(plan, vendor),
+  }));
+  return [
+    `Ideas facts: ${JSON.stringify(ideasFacts(plan))}\n${fenceNote(plan.input.note)}`,
+    `Vendors: ${JSON.stringify(vendors)}`,
+    `Messages: ${JSON.stringify(messages)}`,
+  ].join('\n\n');
 }

@@ -84,16 +84,14 @@ describe('VendorCard', () => {
     expect(status()).not.toHaveTextContent(`Hello ${caterer.label}`);
   });
 
-  it('drafts an enquiry, labels its source and language, and offers to copy it', async () => {
+  it('drafts an enquiry, labels its source, and offers to copy it', async () => {
     const genai = fakeGenAi();
-    const hindi = planFor({ ...sampleInput(), language: 'hi' });
-    const vendor = hindi.vendors.find((item) => item.id === 'caterer') ?? caterer;
     const { container } = render(VendorCard, {
-      props: { vendor, plan: hindi, status: 'quoted', genai, onstatus: vi.fn() },
+      props: { vendor: caterer, plan, status: 'quoted', genai, onstatus: vi.fn() },
     });
     await fireEvent.click(screen.getByRole('button', { name: 'Draft enquiry' }));
     await waitFor(() => {
-      expect(screen.getByText(`Hello ${vendor.label}`)).toHaveAttribute('lang', 'hi');
+      expect(screen.getByText(`Hello ${caterer.label}`)).toBeInTheDocument();
     });
     expect(genai.calls).toEqual(['draft:caterer']);
     expect(screen.getByText('Written by Gemini')).toBeInTheDocument();

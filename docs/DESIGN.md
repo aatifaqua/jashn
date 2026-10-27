@@ -1,6 +1,6 @@
 # Jashn — Design
 
-Jashn (Urdu/Hindi for "celebration") is a planning assistant for weddings, birthdays and
+Jashn ("celebration") is a planning assistant for weddings, birthdays and
 community events. The user describes the event once; Jashn returns a budget split with a
 feasibility verdict, a dated timeline worked backwards from the event day, a vendor checklist
 with book-by dates and deposits, a day-of run sheet, and personalised ideas. A conversational
@@ -157,7 +157,6 @@ interface EventInput {
   priorities: readonly string[]; // ≤ 2 budget category ids
   constraints: readonly Constraint[];
   note: string; // ≤ 300 chars, free text
-  language: 'en' | 'hi'; // for generated text
 }
 
 interface Reason {
@@ -270,7 +269,6 @@ loops, and removes daylight-saving and time-zone bugs.
 | priorities  | checkboxes           | ≤ 2, from the type's categories                                                                                                                            |
 | constraints | checkboxes           | any of the eight                                                                                                                                           |
 | note        | textarea             | ≤ 300 chars; hint asks not to include personal details                                                                                                     |
-| language    | select               | English / हिन्दी, for generated text                                                                                                                       |
 
 `normaliseInput` trims, collapses whitespace, strips control and zero-width characters,
 de-duplicates arrays and clamps nothing silently: `validateInput` returns typed field errors
@@ -470,10 +468,11 @@ call budget; past it, requests get the fallback with `source: "fallback"` instea
   computed in the browser. The GitHub Pages deployment is demo mode; the live Gemini path
   runs with the server. Sample dates move with today, so every demo entry passes the same
   guards as live output against today's plan; a draft or answer whose dates have drifted falls
-  back. The file holds whatever the last `pregenerate` run produced: the script aims for ideas
-  in both languages, a draft per vendor and answers to the suggested prompts for all three
-  samples, but a run cut short by a quota leaves gaps (today it holds ideas for the Lucknow
-  wedding in English only), and the offline content fills them, labelled as such.
+  back. The file holds whatever the last `pregenerate` run produced: one Gemini request per
+  sample returns its ideas, a draft per vendor and answers to the suggested prompts, each item
+  checked like live output and left out if it fails. A run cut short by a quota leaves gaps
+  (today it holds ideas for the Lucknow wedding only), and the offline content fills them,
+  labelled as such.
   `VITE_API_BASE=/` calls the API on the page's own origin (server-hosted build).
 
 ---
@@ -540,7 +539,7 @@ generated content, and the user's browser data.
 
 - Skip link, landmarks (`header`, `main`, `footer`; the plan tabs are an ARIA tablist, not
   site navigation), one `h1` per view, logical
-  heading order, `lang` set and switched to `hi` on Hindi generated text.
+  heading order, `lang` set on the document.
 - Form: `fieldset` + `legend` per step, visible labels, `aria-describedby` hints, inline
   errors plus a focusable error summary, no placeholder-only labels.
 - Tabs: ARIA tablist with roving tabindex and arrow keys; focus moves to the panel heading.
@@ -552,7 +551,7 @@ generated content, and the user's browser data.
   documented on every colour token in light and dark themes; `forced-colors` support.
 - Chart is SVG with `role="img"` + label and a full `<table>` equivalent with `<caption>`.
 - `prefers-reduced-motion` respected; visible `:focus-visible` outlines; targets ≥ 24 px.
-- Inclusive: Hindi output for ideas and drafts; Indian date and currency formatting via
+- Inclusive: Indian date and currency formatting via
   `Intl`; step-free and dietary needs are first-class inputs that change the plan.
 - Print stylesheet produces a readable black-on-white plan.
 

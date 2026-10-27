@@ -1,4 +1,4 @@
-import { LANGUAGES, SAMPLE_IDS, ideasOffline, type Language, type SampleId } from '@jashn/core';
+import { SAMPLE_IDS, ideasOffline, type SampleId } from '@jashn/core';
 import { describe, expect, it } from 'vitest';
 import demoFile from './demo-genai.json';
 import { TODAY, planFor, sampleInput } from '../test-fixtures.ts';
@@ -8,27 +8,23 @@ const wedding = sampleInput('lucknow-wedding');
 const ideas = ideasOffline(wedding);
 
 const data = {
-  version: 1,
+  version: 2,
   samples: {
     'lucknow-wedding': {
-      en: {
-        ideas,
-        drafts: { venue: 'Hello, we need a hall.' },
-        answers: {
-          'What is late?': { reply: 'Book the venue first.' },
-          'Cut guests by 20': { reply: 'Fewer guests.', patch: { invited: 330 } },
-          'Bad patch': { reply: 'Sure.', patch: { invited: -5 } },
-        },
+      ideas,
+      drafts: { venue: 'Hello, we need a hall.' },
+      answers: {
+        'What is late?': { reply: 'Book the venue first.' },
+        'Cut guests by 20': { reply: 'Fewer guests.', patch: { invited: 330 } },
+        'Bad patch': { reply: 'Sure.', patch: { invited: -5 } },
       },
-      hi: { ideas: { ...ideas, theme: { ...ideas.theme, name: 'गेंदा और गुलाब' } } },
     },
   },
 };
 
 describe('matchSample', () => {
-  it('matches a sample in either language and nothing else', () => {
+  it('matches a sample and nothing else', () => {
     expect(matchSample(wedding, TODAY)).toBe('lucknow-wedding');
-    expect(matchSample({ ...wedding, language: 'hi' }, TODAY)).toBe('lucknow-wedding');
     expect(matchSample(sampleInput('diwali-mela'), TODAY)).toBe('diwali-mela');
     expect(matchSample({ ...wedding, invited: 351 }, TODAY)).toBeNull();
   });
@@ -38,9 +34,8 @@ describe('createDemo', () => {
   const demo = createDemo(data);
   const plan = planFor(wedding);
 
-  it('serves ideas per language for a matching sample', () => {
+  it('serves ideas for a matching sample', () => {
     expect(demo.ideas(wedding, TODAY)).toEqual(ideas);
-    expect(demo.ideas({ ...wedding, language: 'hi' }, TODAY)?.theme.name).toBe('गेंदा और गुलाब');
     expect(demo.ideas({ ...wedding, city: 'Agra' }, TODAY)).toBeNull();
   });
 
@@ -60,26 +55,21 @@ describe('createDemo', () => {
   });
 
   it('ignores data of another version or shape', () => {
-    expect(createDemo({ ...data, version: 2 }).ideas(wedding, TODAY)).toBeNull();
+    expect(createDemo({ ...data, version: 1 }).ideas(wedding, TODAY)).toBeNull();
     expect(createDemo(null).answer(plan, 'What is late?')).toBeNull();
   });
 
   it('ships only ideas that pass the shape and dietary guards', () => {
-    expect(demoFile.version).toBe(1);
+    expect(demoFile.version).toBe(2);
     const shipped = demoFile as unknown as {
-      samples: Partial<Record<SampleId, Partial<Record<Language, { ideas?: unknown }>>>>;
+      samples: Partial<Record<SampleId, { ideas?: unknown }>>;
     };
     const demo = createDemo(demoFile);
     let served = 0;
     for (const id of SAMPLE_IDS) {
-      for (const language of LANGUAGES) {
-        if (shipped.samples[id]?.[language]?.ideas === undefined) continue;
-        expect(
-          demo.ideas({ ...sampleInput(id), language }, TODAY),
-          `${id} ${language}`,
-        ).not.toBeNull();
-        served += 1;
-      }
+      if (shipped.samples[id]?.ideas === undefined) continue;
+      expect(demo.ideas(sampleInput(id), TODAY), id).not.toBeNull();
+      served += 1;
     }
     // The file may be partial (the docs say so), but never empty.
     expect(served).toBeGreaterThan(0);

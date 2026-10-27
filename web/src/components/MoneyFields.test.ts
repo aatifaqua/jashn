@@ -6,7 +6,7 @@ import { blankForm } from '../lib/form.ts';
 import MoneyFields from './MoneyFields.svelte';
 
 describe('MoneyFields', () => {
-  it('offers budget, priorities, needs, note and language', async () => {
+  it('offers budget, priorities, needs and note', async () => {
     const { container } = render(MoneyFields, {
       props: { form: blankForm(), profile: getProfile('wedding'), errors: {} },
     });
@@ -14,7 +14,6 @@ describe('MoneyFields', () => {
     expect(screen.getByRole('checkbox', { name: 'Catering' })).toBeEnabled();
     expect(screen.getByRole('checkbox', { name: 'Jain food' })).toBeInTheDocument();
     expect(screen.getByLabelText(/Anything else/)).toHaveAttribute('maxlength', '300');
-    expect(screen.getByRole('option', { name: 'हिन्दी' })).toHaveAttribute('lang', 'hi');
     expect(await axe(container)).toHaveNoViolations();
   });
 

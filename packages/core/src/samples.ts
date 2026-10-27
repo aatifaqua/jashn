@@ -45,7 +45,6 @@ const SAMPLES: Readonly<Record<SampleId, SampleDef>> = deepFreeze({
       priorities: ['catering', 'photography'],
       constraints: ['step-free', 'vegetarian'],
       note: 'Grandparents travel from Kanpur; keep the evenings short for them.',
-      language: 'en',
     },
   },
   'kids-birthday': {
@@ -65,7 +64,6 @@ const SAMPLES: Readonly<Record<SampleId, SampleDef>> = deepFreeze({
       priorities: ['entertainment'],
       constraints: ['kid-friendly', 'vegetarian'],
       note: 'Turning seven and loves space and rockets.',
-      language: 'en',
     },
   },
   'diwali-mela': {
@@ -85,7 +83,6 @@ const SAMPLES: Readonly<Record<SampleId, SampleDef>> = deepFreeze({
       priorities: ['safety'],
       constraints: ['alcohol-free', 'eco-friendly', 'step-free'],
       note: 'Residents association mela with food stalls and a rangoli contest.',
-      language: 'en',
     },
   },
 });

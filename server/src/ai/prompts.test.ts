@@ -5,10 +5,10 @@ import {
   assistContents,
   assistSystem,
   draftContent,
-  draftSystem,
+  DRAFT_SYSTEM,
   fenceNote,
   ideasContent,
-  ideasSystem,
+  IDEAS_SYSTEM,
 } from './prompts.ts';
 
 const plan = buildPlan(sample(), TODAY, getProfile('wedding'));
@@ -28,11 +28,11 @@ describe('fenceNote', () => {
 
 describe('ideas prompt', () => {
   it('states the rules and the language', () => {
-    expect(ideasSystem('en')).toContain('Never invent prices');
-    expect(ideasSystem('en')).toContain('jain also excludes onion');
-    expect(ideasSystem('hi')).toContain('Devanagari');
-    expect(ideasSystem('en')).toContain('[date]');
-    expect(ideasSystem('en')).toContain('Never name an excluded ingredient');
+    expect(IDEAS_SYSTEM).toContain('Never invent prices');
+    expect(IDEAS_SYSTEM).toContain('jain also excludes onion');
+    expect(IDEAS_SYSTEM).toContain('English (Indian usage)');
+    expect(IDEAS_SYSTEM).toContain('[date]');
+    expect(IDEAS_SYSTEM).toContain('Never name an excluded ingredient');
   });
 
   it('sends facts without the budget amount, and the fenced note', () => {
@@ -72,7 +72,7 @@ describe('draft prompt', () => {
     expect(content).toContain(JSON.stringify(vendor.questions));
     expect(content).not.toContain('Kanpur');
     expect(content).not.toContain('1600000');
-    expect(draftSystem('en')).toContain('Do not mention the budget');
+    expect(DRAFT_SYSTEM).toContain('Do not mention the budget');
   });
 });
 

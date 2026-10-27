@@ -7,13 +7,13 @@ import { fakeGenAi, planFor, sampleInput } from '../test-fixtures.ts';
 import IdeasPanel from './IdeasPanel.svelte';
 
 describe('IdeasPanel', () => {
-  const plan = planFor({ ...sampleInput(), language: 'hi' });
+  const plan = planFor(sampleInput());
 
-  it('generates ideas and hands them up with their source and language', async () => {
+  it('generates ideas and hands them up with their source', async () => {
     const onideas = vi.fn();
     const genai = fakeGenAi();
     const { container } = render(IdeasPanel, {
-      props: { plan, saved: null, genai, onideas, onlanguage: vi.fn() },
+      props: { plan, saved: null, genai, onideas },
     });
     expect(screen.getByText(/Ideas for a theme/)).toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Generate ideas' }));
@@ -22,7 +22,6 @@ describe('IdeasPanel', () => {
     });
     const saved = onideas.mock.calls[0]?.[0] as SavedIdeas;
     expect(saved.source).toBe('gemini');
-    expect(saved.language).toBe('hi');
     expect(saved.ideas).toEqual(ideasOffline(plan.input));
     expect(onideas.mock.calls[0]?.[1]).toBe(plan.input);
     expect(await axe(container)).toHaveNoViolations();
@@ -39,7 +38,7 @@ describe('IdeasPanel', () => {
     );
     const onideas = vi.fn();
     const { rerender } = render(IdeasPanel, {
-      props: { plan, saved: null, genai: { ...base, ideas }, onideas, onlanguage: vi.fn() },
+      props: { plan, saved: null, genai: { ...base, ideas }, onideas },
     });
     const button = screen.getByRole('button', { name: 'Generate ideas' });
     button.focus();
@@ -60,34 +59,15 @@ describe('IdeasPanel', () => {
     expect(screen.getByRole('heading', { name: 'Decor' }).closest('[aria-live]')).toBeNull();
   });
 
-  it('shows saved ideas with lang="hi" on Gemini Hindi text only', async () => {
+  it('shows saved ideas with their source', async () => {
     const ideas = ideasOffline(plan.input);
-    const saved: SavedIdeas = { ideas, source: 'gemini', language: 'hi' };
-    const { container, rerender } = render(IdeasPanel, {
-      props: { plan, saved, genai: fakeGenAi(), onideas: vi.fn(), onlanguage: vi.fn() },
+    const saved: SavedIdeas = { ideas, source: 'gemini' };
+    const { container } = render(IdeasPanel, {
+      props: { plan, saved, genai: fakeGenAi(), onideas: vi.fn() },
     });
     expect(screen.getByRole('button', { name: 'Regenerate ideas' })).toBeInTheDocument();
-    expect(screen.getByText(ideas.invitation)).toHaveAttribute('lang', 'hi');
-    expect(screen.getByRole('heading', { name: 'Decor' })).not.toHaveAttribute('lang');
+    expect(screen.getByText(ideas.invitation)).toBeInTheDocument();
     expect(screen.getByText('Written by Gemini')).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
-    await rerender({ saved: { ...saved, source: 'fallback' } });
-    expect(screen.getByText(ideas.invitation)).toHaveAttribute('lang', 'en');
-  });
-
-  it('switches the language for the next generation', async () => {
-    const onlanguage = vi.fn();
-    render(IdeasPanel, {
-      props: { plan, saved: null, genai: fakeGenAi(), onideas: vi.fn(), onlanguage },
-    });
-    const select = screen.getByLabelText('Language');
-    expect(select).toHaveValue('hi');
-    await fireEvent.change(select, { target: { value: 'en' } });
-    expect(onlanguage).toHaveBeenCalledWith('en');
-    const option = document.createElement('option');
-    option.value = 'fr';
-    select.append(option);
-    await fireEvent.change(select, { target: { value: 'fr' } });
-    expect(onlanguage).toHaveBeenCalledTimes(1);
   });
 });

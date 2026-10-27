@@ -24,8 +24,6 @@ const DIET_TABLE: readonly [string, Constraint, boolean][] = [
   ['Gosht korma', 'vegetarian', true],
   ['Machli fry', 'vegetarian', true],
   ['Anda bhurji', 'vegetarian', true],
-  ['चिकन टिक्का', 'vegetarian', true],
-  ['अंडा करी', 'vegetarian', true],
   ['Paneer tikka', 'vegetarian', false],
   ['Eggless cake', 'vegetarian', false],
   ['Egg-free mousse', 'vegetarian', false],
@@ -41,7 +39,6 @@ const DIET_TABLE: readonly [string, Constraint, boolean][] = [
   ['Aloo tikki chaat', 'jain', true],
   ['Gajar halwa', 'jain', true],
   ['Pyaaz kachori', 'jain', true],
-  ['आलू पराठा', 'jain', true],
   ['Ginger lemonade', 'jain', true],
   ['Mushroom tikka', 'jain', true],
   ['Gatte ki sabzi', 'jain', false],
@@ -55,7 +52,6 @@ const DIET_TABLE: readonly [string, Constraint, boolean][] = [
   ['Whisky tasting', 'alcohol-free', true],
   ['Signature cocktails', 'alcohol-free', true],
   ['Daaru party', 'alcohol-free', true],
-  ['शराब', 'alcohol-free', true],
   ['Non-alcoholic punch', 'alcohol-free', false],
   ['Virgin mojitos', 'alcohol-free', false],
   ['Non-alcoholic cocktails at the bar', 'alcohol-free', false],
@@ -149,20 +145,16 @@ describe('inventedAmounts', () => {
     expect(inventedAmounts('Rs. 1500 deposit, INR 1,500, 1500 rupees', allowed)).toEqual([]);
     expect(inventedAmounts('2.5 crore? no: 0.25 crore', allowed)).toEqual([25_000_000]);
     expect(inventedAmounts('1.5k', allowed)).toEqual([]);
-    expect(inventedAmounts('25 लाख', allowed)).toEqual([]);
     expect(inventedAmounts('₹25L, or 8.2 lakh', allowed)).toEqual([]);
   });
 
-  it('reads lakh shorthand and a precomposed nukta', () => {
+  it('reads lakh shorthand', () => {
     const venue = new Set([800_000]);
     expect(inventedAmounts('₹8L for the venue', venue)).toEqual([]);
     expect(inventedAmounts('Rs 9L', venue)).toEqual([900_000]);
     expect(inventedAmounts('₹9.5L', venue)).toEqual([950_000]);
     expect(inventedAmounts('₹2 lks', venue)).toEqual([200_000]);
     expect(inventedAmounts('8 litres of milk', venue)).toEqual([]);
-    // U+095C (ड़) and U+095B (ज़) are the precomposed nukta letters.
-    expect(inventedAmounts('5 करोड़ रुपये', venue)).toEqual([50_000_000]);
-    expect(inventedAmounts('50 हज़ार रुपये', venue)).toEqual([50_000]);
   });
 
   it('flags figures absent from the plan', () => {
@@ -262,12 +254,6 @@ describe('date guard', () => {
     expect(guardDraft('Event on 27 February 2027.', plan).map((issue) => issue.code)).toEqual([
       'date',
     ]);
-  });
-
-  it('reads Devanagari digits in amounts', () => {
-    const plan = samplePlan();
-    expect(guardReply('कैटरर को ₹२,२५,००० जमा करें', plan)).toEqual([]);
-    expect(guardReply('कैटरर को ₹७७,७७७ दें', plan).map((issue) => issue.code)).toEqual(['amount']);
   });
 
   it('rejects any date in ideas, which leave the date as a placeholder', () => {

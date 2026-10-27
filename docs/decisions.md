@@ -63,15 +63,16 @@ the edges.
 
 **Context.** The Pages demo should show real Gemini output without exposing a key, but sample
 dates move with today.
-**Decision.** `npm run pregenerate -w server` drives the real routes for the three samples in
-both languages and writes `demo-genai.json`. The web app serves an entry only when the input
+**Decision.** `npm run pregenerate -w server` makes one Gemini request per sample for its
+ideas, drafts and answers, checks every item with the live routes' own schemas and guards, and
+writes `demo-genai.json`. The web app serves an entry only when the input
 matches a sample exactly and the entry passes the same guards as live output against today's
 plan.
 **Consequences.** Ideas hold no dates, but a rerun keeps them only while the sample's season is
 unchanged and they still pass the schema and diet guard; drafts and answers whose dates have
 drifted fall back to the offline versions until the file is regenerated. A run cut short by a
 quota leaves gaps that the offline content fills: the shipped file currently holds ideas for
-the Lucknow wedding in English only.
+the Lucknow wedding only.
 
 ## 8. Stateless server, browser-only persistence
 

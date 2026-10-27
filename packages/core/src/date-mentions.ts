@@ -7,20 +7,20 @@ import { functionDays } from './context.ts';
 import { daysInMonth, fromCivil, fromIso, toCivil } from './days.ts';
 import type { Plan, PlanPatch } from './types.ts';
 
-/** Month names (English full and short forms, Hindi in Devanagari), 1-based by position. */
+/** Month names, full and short, 1-based by position. */
 const MONTH_WORDS: readonly (readonly string[])[] = Object.freeze([
-  ['january', 'jan', 'जनवरी'],
-  ['february', 'feb', 'फ़रवरी', 'फरवरी'],
-  ['march', 'mar', 'मार्च'],
-  ['april', 'apr', 'अप्रैल'],
-  ['may', 'मई'],
-  ['june', 'jun', 'जून'],
-  ['july', 'jul', 'जुलाई'],
-  ['august', 'aug', 'अगस्त'],
-  ['september', 'sept', 'sep', 'सितंबर', 'सितम्बर'],
-  ['october', 'oct', 'अक्टूबर', 'अक्तूबर'],
-  ['november', 'nov', 'नवंबर', 'नवम्बर'],
-  ['december', 'dec', 'दिसंबर', 'दिसम्बर'],
+  ['january', 'jan'],
+  ['february', 'feb'],
+  ['march', 'mar'],
+  ['april', 'apr'],
+  ['may'],
+  ['june', 'jun'],
+  ['july', 'jul'],
+  ['august', 'aug'],
+  ['september', 'sept', 'sep'],
+  ['october', 'oct'],
+  ['november', 'nov'],
+  ['december', 'dec'],
 ]);
 
 const MONTH_OF: ReadonlyMap<string, number> = new Map(
@@ -33,18 +33,6 @@ const ORDINAL = String.raw`(?:st|nd|rd|th)?`;
 const YEAR = String.raw`(?:,?\s+(20\d{2})(?!\d))?`;
 /** No letter or combining mark may follow, so "mar" never matches inside "marigold". */
 const EDGE = String.raw`(?![\p{L}\p{M}])`;
-
-/** The ten Devanagari digits, which Hindi text may use instead of 0-9. */
-const DEVANAGARI_DIGIT = /[०-९]/g;
-const DEVANAGARI_ZERO = 0x966;
-
-/**
- * Text with Devanagari digits turned into ASCII ones, so "६ नवंबर" and "₹१,६०,०००" are read
- * like "6 नवंबर" and "₹1,60,000" by the date and amount checks (`\d` is ASCII-only).
- */
-export function asciiDigits(text: string): string {
-  return text.replace(DEVANAGARI_DIGIT, (digit) => String(digit.charCodeAt(0) - DEVANAGARI_ZERO));
-}
 
 /** A date as written: the year is undefined when the text left it out. */
 interface Mention {
@@ -77,7 +65,7 @@ interface Form {
 }
 
 /**
- * The written forms: "6 March 2027" or "6th of Mar", "March 6, 2027", "6 मार्च", ISO
+ * The written forms: "6 March 2027" or "6th of Mar", "March 6, 2027", ISO
  * "2027-03-06", and the Indian numeric "06/03/2027" (day first, with /, - or .). Patterns are
  * compiled once at module scope.
  */
@@ -152,9 +140,8 @@ export function inventedDates(text: string, allowed: ReadonlySet<number>): reado
     }),
   );
   const invented: string[] = [];
-  const plain = asciiDigits(text);
   for (const { pattern, read } of FORMS) {
-    for (const match of plain.matchAll(pattern)) {
+    for (const match of text.matchAll(pattern)) {
       const date = read(match);
       if (date !== null && !isKnown(date, allowed, loose)) invented.push(match[0]);
     }

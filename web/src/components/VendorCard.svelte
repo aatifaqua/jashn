@@ -10,7 +10,7 @@
   } from '@jashn/core';
   import type { GenAi } from '../lib/genai.ts';
   import { isoDay, rupees, shortDay } from '../lib/format.ts';
-  import { VENDOR_STATUS_LABELS, textLang } from '../lib/labels.ts';
+  import { VENDOR_STATUS_LABELS } from '../lib/labels.ts';
   import { isVendorStatus } from '../lib/validate.ts';
   import CopyButton from './CopyButton.svelte';
   import Icon from './Icon.svelte';
@@ -123,7 +123,7 @@
     {@const text = draft.text}
     <div class="draft">
       <SourceBadge source={draft.source} />
-      <p class="draft-text" lang={textLang(draft.source, plan.input.language)}>{text}</p>
+      <p class="draft-text">{text}</p>
       <CopyButton text={() => text} label="Copy message" done="Message copied." />
     </div>
   {/if}

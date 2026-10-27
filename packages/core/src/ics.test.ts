@@ -46,7 +46,7 @@ describe('foldLine', () => {
   it('counts octets, not characters', () => {
     const lines = foldLine('é'.repeat(50)).split('\r\n');
     expect(ENCODER.encode(lines[0]).length).toBe(74);
-    expect(foldLine('ह'.repeat(30)).split('\r\n')[0]).toHaveLength(25);
+    expect(foldLine('€'.repeat(30)).split('\r\n')[0]).toHaveLength(25);
   });
 });
 

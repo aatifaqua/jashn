@@ -138,14 +138,12 @@ describe('demo mode', () => {
   it('serves demo entries as Gemini output and falls back otherwise', async () => {
     const ideas = ideasOffline(plan.input);
     const demo = createDemo({
-      version: 1,
+      version: 2,
       samples: {
         'kids-birthday': {
-          en: {
-            ideas,
-            drafts: { [venue.id]: 'Demo draft' },
-            answers: { 'What is late?': { reply: 'Demo answer.' } },
-          },
+          ideas,
+          drafts: { [venue.id]: 'Demo draft' },
+          answers: { 'What is late?': { reply: 'Demo answer.' } },
         },
       },
     });

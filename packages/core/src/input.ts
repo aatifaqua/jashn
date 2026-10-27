@@ -17,16 +17,15 @@ import type {
 
 /**
  * Control and invisible format characters (zero-width spaces, bidi overrides, BOM). The
- * zero-width joiner and non-joiner (U+200D, U+200C) are kept: Devanagari half-forms and emoji
- * sequences such as a family emoji need them.
+ * zero-width joiner (U+200D) is kept: emoji sequences such as a family emoji need it.
  */
-const INVISIBLE = /(?![‌‍])[\p{Cc}\p{Cf}]/gu;
+const INVISIBLE = /(?!‍)[\p{Cc}\p{Cf}]/gu;
 const WHITESPACE = /\s+/gu;
 
 /** Fields whose rules depend on the event type, so they are skipped when the type is bad. */
 const TYPE_DEPENDENT: readonly InputField[] = ['style', 'functions', 'priorities'];
 
-/** NFC as well, so the same text typed composed or decomposed compares and caches as equal. */
+/** NFC as well, so "café" typed composed or decomposed compares and caches as equal. */
 function cleanText(value: string): string {
   return value
     .normalize('NFC')

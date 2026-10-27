@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eventTitle, textLang } from './labels.ts';
+import { eventTitle } from './labels.ts';
 
 describe('labels', () => {
   it('titles an event with its city when it has one', () => {
@@ -9,11 +9,5 @@ describe('labels', () => {
     expect(eventTitle({ type: 'birthday', style: 'kids', city: '' })).toBe(
       "Children's birthday party",
     );
-  });
-
-  it('marks only Gemini text with the requested language', () => {
-    expect(textLang('gemini', 'hi')).toBe('hi');
-    expect(textLang('fallback', 'hi')).toBe('en');
-    expect(textLang('gemini', 'en')).toBe('en');
   });
 });

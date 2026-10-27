@@ -82,7 +82,7 @@ describe('PlanView', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it('records progress, vendor status, ideas and language in the store', async () => {
+  it('records progress, vendor status and ideas in the store', async () => {
     const { store } = await setup();
     await fireEvent.click(tab('Timeline'));
     const open = store.plan?.tasks.find((task) => task.status !== 'done');
@@ -101,8 +101,6 @@ describe('PlanView', () => {
     await waitFor(() => {
       expect(store.current?.ideas?.source).toBe('gemini');
     });
-    await fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'hi' } });
-    expect(store.current?.input.language).toBe('hi');
   });
 
   it('keeps ticked tasks off the overview list and hides their late badge', async () => {

@@ -12,7 +12,6 @@ import {
   guardReply,
   validatePatch,
   type AssistReply,
-  type Language,
   type Plan,
   type PlanDiff,
 } from '@jashn/core';
@@ -32,20 +31,10 @@ export interface AssistDeps {
 }
 
 /**
- * The Hindi reply for a change the model proposed without words. The preview beside it lists
- * every changed figure, so one fixed sentence keeps the reply in the user's language without
- * translating engine output.
- */
-const PROPOSAL_HI =
-  'मैंने यह बदलाव सुझाया है। नीचे पहले और बाद का अंतर देखें, और ठीक लगे तो इसे लागू करें।';
-
-/**
  * A reply for a proposed change when the model sent only the function call. It is built from
- * the plan diff, so every figure in it was computed by the engine, and it follows the
- * language chosen for generated text.
+ * the plan diff, so every figure in it was computed by the engine.
  */
-export function describeDiff(diff: PlanDiff, language: Language = 'en'): string {
-  if (language === 'hi') return PROPOSAL_HI;
+export function describeDiff(diff: PlanDiff): string {
   const parts: string[] = [];
   const { expected, verdict, budget, newlyLate } = diff;
   if (expected.before !== expected.after) {
@@ -74,7 +63,7 @@ export function proposal(call: FunctionCall, text: string, plan: Plan): AssistRe
   if (!result.ok) throw new GuardRejectedError('patch rejected by validation');
   const after = buildPlan(result.value, plan.today, getProfile(result.value.type));
   const usable = text !== '' && guardReply(text, plan, result.patch).length === 0;
-  const reply = usable ? text : describeDiff(diffPlans(plan, after), plan.input.language);
+  const reply = usable ? text : describeDiff(diffPlans(plan, after));
   return { reply, patch: result.patch };
 }
 
@@ -90,8 +79,15 @@ export async function liveAssist(
     contents: assistContents(plan.input.note, body.history, body.message),
     tools: [...ASSIST_TOOLS],
   });
-  const text = generation.text.trim();
-  const [call] = generation.functionCalls;
+  return checkReply(generation.text, generation.functionCalls[0], plan);
+}
+
+/**
+ * Checks a generated turn: a function call goes through proposal(); a plain reply must be
+ * non-empty and pass the reply guards. Throws when the turn cannot be served.
+ */
+export function checkReply(raw: string, call: FunctionCall | undefined, plan: Plan): AssistReply {
+  const text = raw.trim();
   if (call !== undefined) return proposal(call, text, plan);
   if (text === '') throw new GuardRejectedError('empty reply');
   assertClean(guardReply(text, plan));

@@ -2,7 +2,7 @@
 import { guardIdeas, ideasOffline, type Ideas, type Plan, type Sourced } from '@jashn/core';
 import type { Handler } from 'hono';
 import type { GeminiClient } from '../ai/gemini.ts';
-import { ideasContent, ideasSystem } from '../ai/prompts.ts';
+import { IDEAS_SYSTEM, ideasContent } from '../ai/prompts.ts';
 import { IDEAS_RESPONSE_SCHEMA, ideasRequestSchema, ideasSchema } from '../ai/schemas.ts';
 import { cacheKey, type ResponseCache } from '../cache.ts';
 import type { AppEnv } from '../env.ts';
@@ -15,17 +15,22 @@ export interface IdeasDeps {
   readonly cache: ResponseCache<Sourced<Ideas>>;
 }
 
-/** Asks Gemini for schema-constrained ideas, then re-validates them with zod and the guards. */
+/** Re-validates generated ideas with zod and the guards; throws when they fail either. */
+export function checkIdeas(raw: unknown, plan: Plan): Ideas {
+  const ideas = ideasSchema.parse(raw);
+  assertClean(guardIdeas(ideas, plan.input.constraints));
+  return ideas;
+}
+
+/** Asks Gemini for schema-constrained ideas, then checks them with checkIdeas. */
 export async function liveIdeas(gemini: GeminiClient, plan: Plan): Promise<Ideas> {
   const generation = await gemini.generate({
     endpoint: 'ideas',
-    systemInstruction: ideasSystem(plan.input.language),
+    systemInstruction: IDEAS_SYSTEM,
     contents: ideasContent(plan),
     responseJsonSchema: IDEAS_RESPONSE_SCHEMA,
   });
-  const ideas = ideasSchema.parse(JSON.parse(generation.text));
-  assertClean(guardIdeas(ideas, plan.input.constraints));
-  return ideas;
+  return checkIdeas(JSON.parse(generation.text), plan);
 }
 
 /** Handler for POST /api/ideas. */

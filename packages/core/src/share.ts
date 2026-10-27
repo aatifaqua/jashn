@@ -4,7 +4,7 @@
  * stored as indexes, encoded as base64url. Decoding treats the fragment as untrusted input and
  * runs it through the same validation as the form.
  */
-import { CITY_TIERS, CONSTRAINTS, EVENT_TYPES, LANGUAGES, SETTINGS } from './ids.ts';
+import { CITY_TIERS, CONSTRAINTS, EVENT_TYPES, SETTINGS } from './ids.ts';
 import { normaliseInput, validateInput } from './input.ts';
 import type { EventInput } from './types.ts';
 
@@ -49,7 +49,6 @@ export function encodeShare(input: EventInput): string {
     clean.priorities,
     clean.constraints.map((id) => CONSTRAINTS.indexOf(id)),
     clean.note,
-    LANGUAGES.indexOf(clean.language),
   ];
   return toBase64Url(JSON.stringify(compact));
 }
@@ -65,7 +64,7 @@ function pick(list: readonly string[], index: unknown): string | undefined {
 
 function expand(data: readonly unknown[]): Record<string, unknown> {
   const [, type, style, functions, date, startTime, city, tier, setting, booked] = data;
-  const [invited, budget, priorities, constraints, note, language] = data.slice(10);
+  const [invited, budget, priorities, constraints, note] = data.slice(10);
   return {
     type: pick(EVENT_TYPES, type),
     style,
@@ -81,7 +80,6 @@ function expand(data: readonly unknown[]): Record<string, unknown> {
     priorities,
     constraints: isList(constraints) ? constraints.map((id) => pick(CONSTRAINTS, id)) : undefined,
     note,
-    language: pick(LANGUAGES, language),
   };
 }
 

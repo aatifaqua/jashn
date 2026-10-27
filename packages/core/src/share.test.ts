@@ -14,7 +14,10 @@ function encodeRaw(value: unknown): string {
 
 describe('encodeShare / decodeShare', () => {
   it('round-trips the sample input, with or without the leading #', () => {
-    const input = sampleInput({ note: 'Mehndi on the terrace — दादी का घर', venueBooked: true });
+    const input = sampleInput({
+      note: "Mehndi on the terrace, Dadi's café \u{1F389}",
+      venueBooked: true,
+    });
     const code = encodeShare(input);
     expect(code).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(decodeShare(code, TODAY)).toEqual(normaliseInput(input));
@@ -34,6 +37,17 @@ describe('encodeShare / decodeShare', () => {
         },
       ),
     );
+  });
+
+  it('still opens an older link that carries an extra trailing entry', () => {
+    const input = sampleInput();
+    const code = encodeShare(input);
+    const fields = JSON.parse(
+      new TextDecoder().decode(
+        Uint8Array.from(atob(code.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)),
+      ),
+    ) as unknown[];
+    expect(decodeShare(encodeRaw([...fields, 0]), TODAY)).toEqual(normaliseInput(input));
   });
 
   it('gives equal links for equal events', () => {

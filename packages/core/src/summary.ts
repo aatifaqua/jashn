@@ -58,7 +58,7 @@ export interface PlanSummary {
 /** An allow-list rather than a copy, so a field added to EventInput never leaks in unseen. */
 function eventFacts(input: EventInput, weekday: string): PlanSummary['event'] {
   const { type, style, functions, date, startTime, city, tier, setting } = input;
-  const { venueBooked, invited, budget, priorities, constraints, language } = input;
+  const { venueBooked, invited, budget, priorities, constraints } = input;
   return {
     type,
     style,
@@ -74,7 +74,6 @@ function eventFacts(input: EventInput, weekday: string): PlanSummary['event'] {
     budget,
     priorities,
     constraints,
-    language,
   };
 }
 

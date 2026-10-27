@@ -4,7 +4,6 @@
  * typed value or null; nothing is trusted because of where it came from.
  */
 import {
-  LANGUAGES,
   VENDOR_STATUSES,
   guardDraft,
   guardIdeas,
@@ -15,7 +14,6 @@ import {
   type Draft,
   type IdeaItem,
   type Ideas,
-  type Language,
   type Plan,
   type Source,
   type VendorStatus,
@@ -37,11 +35,6 @@ export function isId(value: unknown): value is string {
 /** Where generated content came from. */
 export function isSource(value: unknown): value is Source {
   return value === 'gemini' || value === 'fallback';
-}
-
-/** One of the generated-text languages. */
-export function isLanguage(value: unknown): value is Language {
-  return (LANGUAGES as readonly unknown[]).includes(value);
 }
 
 /** One of the vendor progress states. */

@@ -7,7 +7,6 @@ import {
   CITY_TIERS,
   CONSTRAINTS,
   EVENT_TYPES,
-  LANGUAGES,
   SETTINGS,
   STYLE_IDS,
   WEDDING_FUNCTIONS,
@@ -34,7 +33,6 @@ export function sampleInput(overrides: Partial<EventInput> = {}): EventInput {
     priorities: ['catering'],
     constraints: [],
     note: '',
-    language: 'en',
     ...overrides,
   };
 }
@@ -50,7 +48,7 @@ const clock = fc
   .tuple(fc.integer({ min: 0, max: 23 }), fc.integer({ min: 0, max: 59 }))
   .map(([h, m]) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
 
-const city = fc.constantFrom('', 'Lucknow', 'Navi Mumbai', "Dal'more", 'नई दिल्ली', 'Bengaluru');
+const city = fc.constantFrom('', 'Lucknow', 'Navi Mumbai', "Dal'more", 'Bandra Café', 'Bengaluru');
 
 /** Fields of a valid input that do not depend on the event type or on today. */
 const common = fc.record({
@@ -63,7 +61,6 @@ const common = fc.record({
   budget: fc.integer({ min: INPUT_LIMITS.budget.min, max: INPUT_LIMITS.budget.max }),
   constraints: fc.subarray([...CONSTRAINTS]),
   note: fc.string({ maxLength: 40 }),
-  language: fc.constantFrom(...LANGUAGES),
 });
 
 /** Type-dependent fields of a valid input: style, functions and priorities. */

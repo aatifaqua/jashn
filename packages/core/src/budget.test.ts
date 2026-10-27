@@ -216,7 +216,6 @@ const validInput: fc.Arbitrary<EventInput> = fc.constantFrom(...EVENT_TYPES).cha
     priorities: fc.subarray([...CATEGORY_IDS[type]], { maxLength: 2 }),
     constraints: fc.subarray([...CONSTRAINTS]),
     note: fc.constant(''),
-    language: fc.constant('en' as const),
   }),
 );
 

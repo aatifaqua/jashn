@@ -24,9 +24,6 @@ export const CONSTRAINTS = [
   'budget-strict',
 ] as const;
 
-/** Languages for generated text (ideas, drafts, assistant replies). */
-export const LANGUAGES = ['en', 'hi'] as const;
-
 /** Wedding functions in the order they usually happen; the ceremony is always included. */
 export const WEDDING_FUNCTIONS = ['haldi', 'mehndi', 'sangeet', 'ceremony', 'reception'] as const;
 

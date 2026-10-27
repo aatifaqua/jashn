@@ -4,7 +4,6 @@ import { planFor, sampleInput } from '../test-fixtures.ts';
 import {
   isId,
   isIdeas,
-  isLanguage,
   isRecord,
   isSource,
   isVendorStatus,
@@ -26,8 +25,6 @@ describe('primitive guards', () => {
     expect(isId(7)).toBe(false);
     expect(isSource('gemini')).toBe(true);
     expect(isSource('model')).toBe(false);
-    expect(isLanguage('hi')).toBe(true);
-    expect(isLanguage('fr')).toBe(false);
     expect(isVendorStatus('quoted')).toBe(true);
     expect(isVendorStatus('cancelled')).toBe(false);
   });

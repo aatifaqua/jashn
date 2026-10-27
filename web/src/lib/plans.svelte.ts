@@ -12,7 +12,6 @@ import {
   loadProfile,
   type EventInput,
   type EventType,
-  type Language,
   type Plan,
   type PlanPatch,
   type Profile,
@@ -252,11 +251,6 @@ export class PlanStore {
       const keep = ideas !== null && guardIdeas(ideas.ideas, input.constraints).length === 0;
       return { ...entry, input, ideas: keep ? ideas : null };
     });
-  }
-
-  /** Switches the language of generated text for the open plan. */
-  setLanguage(language: Language): void {
-    this.#updateCurrent((entry) => ({ ...entry, input: { ...entry.input, language } }));
   }
 
   /** Ticks or unticks a task. */

@@ -9,7 +9,6 @@ import {
   CONSTRAINTS,
   EVENT_TYPES,
   GUARD_LIMITS,
-  LANGUAGES,
   SETTINGS,
   VENDOR_IDS,
   type Draft,
@@ -40,7 +39,6 @@ export const eventInputSchema = z
     priorities: z.array(text(40)).max(10),
     constraints: z.array(z.enum(CONSTRAINTS)).max(CONSTRAINTS.length),
     note: text(1000),
-    language: z.enum(LANGUAGES),
   })
   .strict();
 

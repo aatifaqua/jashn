@@ -27,7 +27,7 @@ const NAMED_DAY =
 const WEEKDAY = /\b(?:a\s+)?weekday\b/;
 
 const GUESTS =
-  /(\d[\d,]*)\s*(?:more\s+|fewer\s+|less\s+|extra\s+)?(?:(?:guests?|people|persons?|pax|invitees?|mehmaan)\b|मेहमान)/;
+  /(\d[\d,]*)\s*(?:more\s+|fewer\s+|less\s+|extra\s+)?(?:guests?|people|persons?|pax|invitees?)\b/;
 /** The noun first: "guests 200", "headcount: 250". */
 const GUESTS_AFTER = /\b(?:guests?|headcount|invitees?)\s*:?\s*(\d[\d,]*)/;
 /** A guest target after the noun: "guests to 400", "guests from 300 to 250". */
@@ -39,25 +39,16 @@ const GUESTS_PERCENT =
 /** Guest phrases are removed before reading a budget figure, so "200 guests" is not money. */
 const GUEST_PHRASES = new RegExp(GUESTS.source, 'g');
 
-const BUDGET_CLAUSE =
-  /\bbudget\b|बजट|₹|\brs\.?\s*\d|\binr\b|\d\s*(?:(?:lakhs?|lacs?|crores?|cr)\b|लाख|करोड़)/;
+const BUDGET_CLAUSE = /\bbudget\b|₹|\brs\.?\s*\d|\binr\b|\d\s*(?:lakhs?|lacs?|crores?|cr)\b/;
 const PERCENT = /(\d+(?:\.\d+)?)\s*(?:%|percent\b|per\s*cent\b)/;
-/** A figure and its unit; Devanagari units need no \b, which only sees ASCII word characters. */
-const MONEY =
-  /(\d[\d,]*(?:\.\d+)?)\s*(?:(lakhs?|lacs?|crores?|cr|k|thousand)\b|(लाख|करोड़|हज़ार|हजार))?/;
+/** A figure and its unit. */
+const MONEY = /(\d[\d,]*(?:\.\d+)?)\s*(?:(lakhs?|lacs?|crores?|cr|k|thousand)\b)?/;
 /** A smaller part right after a figure: the "50 thousand" in "5 lakh 50 thousand". */
-const MONEY_TAIL = /^\s*(\d[\d,]*)\s*(?:(k|thousand)\b|(हज़ार|हजार))/;
+const MONEY_TAIL = /^\s*(\d[\d,]*)\s*(k|thousand)\b/;
 /** Dates and clock times are removed before reading a budget figure, so "19:00" is not money. */
 const NOT_MONEY = /\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)\b|\b\d{1,2}:\d{2}\b/g;
 /** Keyed by the first letter of the unit MONEY captured: lakh/lac, crore/cr, k, thousand. */
 const UNITS = Object.freeze({ l: 1e5, c: 1e7, k: 1e3, t: 1e3 });
-/** Devanagari units, keyed by the whole word in NFC (the nukta as a separate mark). */
-const HINDI_UNITS: Readonly<Record<string, number>> = Object.freeze({
-  लाख: 1e5,
-  करोड़: 1e7,
-  हज़ार: 1e3,
-  हजार: 1e3,
-});
 
 const START =
   /\b(?:start|starts|starting|begin|begins)(?:\s+time)?\s+(?:at\s+|from\s+|to\s+)?(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\b/;
@@ -161,7 +152,7 @@ export const parseGuests: ClauseParser = (clause, _plan, base) => {
 /** The multiplier of a unit word MONEY captured; 1 when there is none. */
 function unitOf(word: string | undefined): number {
   if (word === undefined) return 1;
-  return HINDI_UNITS[word] ?? UNITS[word.charAt(0) as keyof typeof UNITS];
+  return UNITS[word.charAt(0) as keyof typeof UNITS];
 }
 
 /**
@@ -172,9 +163,9 @@ function amountIn(text: string): number | null {
   const money = MONEY.exec(text);
   if (money === null) return null;
   // MONEY starts with the figure, so parseFloat reads it and stops at the unit.
-  const lead = Number.parseFloat(money[0].replace(/,/g, '')) * unitOf(money[2] ?? money[3]);
+  const lead = Number.parseFloat(money[0].replace(/,/g, '')) * unitOf(money[2]);
   const tail = MONEY_TAIL.exec(text.slice(money.index + money[0].length));
-  const rest = tail === null ? 0 : figure(String(tail[1])) * unitOf(tail[2] ?? tail[3]);
+  const rest = tail === null ? 0 : figure(String(tail[1])) * unitOf(tail[2]);
   return Math.round(lead + rest);
 }
 

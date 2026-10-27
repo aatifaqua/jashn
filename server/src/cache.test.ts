@@ -73,10 +73,10 @@ describe('cacheKey', () => {
     expect(cacheKey({ ...base, input: { ...input, city: ` ${input.city} ` } })).toBe(key);
   });
 
-  it('changes with endpoint, language, day and vendor', () => {
+  it('changes with endpoint, input, day and vendor', () => {
     const key = cacheKey(base);
     expect(cacheKey({ ...base, endpoint: 'draft' })).not.toBe(key);
-    expect(cacheKey({ ...base, input: { ...input, language: 'hi' } })).not.toBe(key);
+    expect(cacheKey({ ...base, input: { ...input, invited: input.invited + 1 } })).not.toBe(key);
     expect(cacheKey({ ...base, today: TODAY + 1 })).not.toBe(key);
     expect(cacheKey({ ...base, vendorId: 'venue' })).not.toBe(key);
   });

@@ -6,14 +6,12 @@
     diffPlans,
     validatePatch,
     type AssistTurn,
-    type Language,
     type Plan,
     type PlanPatch,
     type Profile,
     type Source,
   } from '@jashn/core';
   import { MESSAGE_MAX, type GenAi } from '../lib/genai.ts';
-  import { textLang } from '../lib/labels.ts';
   import { diffRows, patchRows, type PreviewRow } from '../lib/preview.ts';
   import Icon from './Icon.svelte';
   import SourceBadge from './SourceBadge.svelte';
@@ -34,8 +32,6 @@
   interface Entry extends AssistTurn {
     readonly id: number;
     readonly source?: Source;
-    /** The language generated text was asked for when this reply was made. */
-    readonly language?: Language;
   }
   interface Proposal {
     /** The plan the preview was computed against; a proposal for an older plan is not shown. */
@@ -78,10 +74,9 @@
     message = '';
     proposal = null;
     busy = true;
-    const { language } = plan.input;
     const answer = await genai.assist(plan, clean, history);
     busy = false;
-    say({ role: 'assistant', text: answer.reply, source: answer.source, language });
+    say({ role: 'assistant', text: answer.reply, source: answer.source });
     if (answer.patch !== undefined) proposal = propose(answer.patch);
     // A preview needs a decision, so focus moves to it and it is announced by its heading.
     if (proposal !== null) {
@@ -114,16 +109,7 @@
     {#each log as entry (entry.id)}
       <li class="chat-{entry.role}">
         <span class="chat-who">{entry.role === 'user' ? 'You' : 'Jashn'}</span>
-        <!-- User text inherits the page language; a reply keeps the language it was made in. -->
-        <p
-          lang={entry.role === 'user'
-            ? undefined
-            : entry.source === undefined
-              ? 'en'
-              : textLang(entry.source, entry.language ?? 'en')}
-        >
-          {entry.text}
-        </p>
+        <p>{entry.text}</p>
         {#if entry.source !== undefined}<SourceBadge source={entry.source} />{/if}
       </li>
     {/each}

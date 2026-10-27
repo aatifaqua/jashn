@@ -108,11 +108,4 @@ describe('POST /api/ideas', () => {
     expect(((await first.json()) as { source: string }).source).toBe('fallback');
     expect(((await second.json()) as { source: string }).source).toBe('gemini');
   });
-
-  it('asks for Hindi when the input language is Hindi', async () => {
-    const fake = fakeGenerate([ok]);
-    const { app } = testApp({ generate: fake.generate });
-    await post(app, '/api/ideas', { input: { ...sample(), language: 'hi' } });
-    expect(JSON.stringify(fake.calls[0]?.config?.systemInstruction)).toContain('Devanagari');
-  });
 });

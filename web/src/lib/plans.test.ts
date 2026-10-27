@@ -50,7 +50,6 @@ describe('PlanStore', () => {
     const fresh = {
       ideas: ideasOffline(sampleInput()),
       source: 'fallback',
-      language: 'en',
     } as const;
     store.setIdeas(fresh, store.plan?.input ?? sampleInput());
     expect(await store.edit({ ...sampleInput(), invited: 200 })).toBe(true);
@@ -72,7 +71,6 @@ describe('PlanStore', () => {
     const fresh = {
       ideas: ideasOffline(sampleInput()),
       source: 'fallback',
-      language: 'en',
     } as const;
     store.setIdeas(fresh, sampleInput());
     expect(store.current?.ideas).toBeNull();
@@ -88,17 +86,12 @@ describe('PlanStore', () => {
       ...meaty,
       menu: [{ title: 'Mutton korma', detail: 'Rich and slow-cooked.' }],
     };
-    store.setIdeas(
-      { ideas: withMeat, source: 'gemini', language: 'en' },
-      store.plan?.input ?? sampleInput(),
-    );
+    store.setIdeas({ ideas: withMeat, source: 'gemini' }, store.plan?.input ?? sampleInput());
     store.applyChange({ invited: 300 });
     expect(store.current?.input.invited).toBe(300);
     expect(store.current?.ideas).not.toBeNull();
     store.applyChange({ constraints: ['vegetarian'] });
     expect(store.current?.ideas).toBeNull();
-    store.setLanguage('hi');
-    expect(store.plan?.input.language).toBe('hi');
   });
 
   it('keeps at most ten plans, newest first', async () => {
