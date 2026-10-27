@@ -79,7 +79,7 @@ jashn/
 │       ├── timeline.ts       back-scheduling, compression, phases
 │       ├── vendors.ts        vendor checklist, questions, payment schedule
 │       ├── runsheet.ts       day-of schedule (per day for multi-function weddings)
-│       ├── plan.ts           buildPlan(input, today) -> Plan; diffPlans(a, b)
+│       ├── plan.ts           buildPlan(input, today, profile) -> Plan; diffPlans(a, b)
 │       ├── fallback/         deterministic stand-ins for every generative feature
 │       │   ├── ideas.ts      idea catalogue filtered by type, style, constraints
 │       │   ├── draft.ts      vendor enquiry template
@@ -281,7 +281,7 @@ editorial planning estimates for India, labelled as such in the UI, never presen
 
 ### 6.1 Context (`context.ts`)
 
-`deriveContext(input, today)` computes once: `daysToGo`, weekday/weekend, season
+`deriveContext(input, today, profile)` computes once: `daysToGo`, weekday/weekend, season
 (peak wedding season Nov–Feb, monsoon Jun–Sep, summer Apr–Jun), multi-day span (wedding
 functions), and boolean flags (`outdoor`, `largeCrowd` ≥ 200 expected, `publicGathering`
 community ≥ 500 or outdoor, `shortNotice` below the type's minimum lead time).
@@ -380,9 +380,12 @@ hours before, volunteer briefing, opening, programme, close and clean-up. Rules 
 
 ### 6.8 Plan assembly and diff (`plan.ts`)
 
-`buildPlan(input, today)` derives context once and runs the stages in a fixed order, each a
+`buildPlan(input, today, profile)` derives context once and runs the stages in a fixed order, each a
 single pass over its catalogue. `diffPlans(before, after)` returns the user-facing changes
 (headcount, verdict, per-line amounts, newly late tasks) used by the assistant preview.
+The profile is passed in so the browser loads only the chosen type's tables; plans are
+memoised on the canonical input key. `planSummary(plan)` is the compact view the assistant
+reasons over, both in Gemini prompts and in the offline fallback.
 
 ---
 

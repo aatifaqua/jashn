@@ -1,0 +1,94 @@
+/**
+ * Plain-language formatting for everything the core words for people: rule reasons, trims,
+ * fallback replies, drafts, ideas and the calendar export (Indian conventions).
+ */
+import type { EventInput, StyleId } from './types.ts';
+
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Formatters are built once at module scope because constructing an Intl formatter is far
+ * slower than calling one. Dates format in UTC, where a day number maps exactly to midnight,
+ * so the text never shifts with the viewer's time zone.
+ */
+const COUNT = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+const DATE = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const WEEKDAY = new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'UTC' });
+const LONG_DATE = new Intl.DateTimeFormat('en-IN', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const SHORT_DATE = new Intl.DateTimeFormat('en-IN', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
+const VOWEL_START = /^[aeiou]/i;
+
+/** How each style reads in a sentence; the Record type keeps it complete as styles change. */
+const OCCASIONS: Readonly<Record<StyleId, string>> = Object.freeze({
+  traditional: 'traditional wedding',
+  intimate: 'intimate wedding',
+  destination: 'destination wedding',
+  kids: "children's birthday party",
+  milestone: 'milestone birthday',
+  adult: 'birthday party',
+  festival: 'community festival',
+  fundraiser: 'community fundraiser',
+  meetup: 'community meetup',
+  'clean-up': 'community clean-up drive',
+});
+
+/** A whole number with Indian grouping: 250000 → "2,50,000"; fractions are rounded. */
+export function formatCount(value: number): string {
+  return COUNT.format(value);
+}
+
+/** Rupees with Indian grouping and the ₹ sign, no paise: 250000 → "₹2,50,000". */
+export function formatRupees(value: number): string {
+  return `₹${COUNT.format(value)}`;
+}
+
+/** A day number as "20 Feb 2027". */
+export function formatDay(day: number): string {
+  return DATE.format(day * MS_PER_DAY);
+}
+
+/** Weekday name of a day number, e.g. "Saturday". */
+export function weekdayName(day: number): string {
+  return WEEKDAY.format(day * MS_PER_DAY);
+}
+
+/** A day number as a long date, e.g. "Saturday, 20 February 2027", for letters and invitations. */
+export function formatLongDay(day: number): string {
+  return LONG_DATE.format(day * MS_PER_DAY);
+}
+
+/** An ISO date (already validated) as a long date, e.g. "Saturday, 20 February 2027". */
+export function formatIsoDate(iso: string): string {
+  return LONG_DATE.format(new Date(`${iso}T00:00:00Z`));
+}
+
+/** An ISO date (already validated) as a short date, e.g. "20 Feb", for short lists. */
+export function formatShortIso(iso: string): string {
+  return SHORT_DATE.format(new Date(`${iso}T00:00:00Z`));
+}
+
+/** A phrase with its indefinite article: "an intimate wedding", "a milestone birthday". */
+export function withArticle(phrase: string): string {
+  return VOWEL_START.test(phrase) ? `an ${phrase}` : `a ${phrase}`;
+}
+
+/** The event described in a few words, e.g. "traditional wedding". */
+export function occasion(input: Pick<EventInput, 'type' | 'style'>): string {
+  const named = (OCCASIONS as Readonly<Record<string, string | undefined>>)[input.style];
+  return named ?? (input.type === 'community' ? 'community event' : input.type);
+}

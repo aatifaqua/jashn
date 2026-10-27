@@ -168,6 +168,8 @@ export interface VendorItem {
   readonly label: string;
   readonly category: string;
   readonly bookBy: number;
+  /** The input says this vendor is already booked (today the venue only); its deposit is paid. */
+  readonly booked: boolean;
   /** Deposit as a fraction of the vendor's budget line, 0..1. */
   readonly depositShare: number;
   readonly questions: readonly string[];

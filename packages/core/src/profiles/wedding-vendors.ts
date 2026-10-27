@@ -1,0 +1,154 @@
+/**
+ * Wedding vendor catalogue (design 6.6). Each vendor's `appliesWhen` mirrors its booking
+ * task's, so a vendor never appears without the task that dates it. Deposit shares follow the
+ * design: venue, photographer and decorator 30 %, caterer 25 %, others 20 %.
+ */
+import type { VendorTemplate } from '../types.ts';
+
+/** Every wedding vendor; the vendor list keeps those whose `appliesWhen` matches the input. */
+export const WEDDING_VENDORS: readonly VendorTemplate[] = [
+  {
+    id: 'venue',
+    label: 'Venue (banquet hall, lawn or hotel)',
+    category: 'venue',
+    taskId: 'book-venue',
+    depositShare: 0.3,
+    questions: [
+      'Which dates are free, and is the rate lower on weekdays?',
+      'Is outside catering allowed, or is there an in-house per-plate rate?',
+      'How many guests does it seat, and how much parking is there?',
+      'Is there power backup, and what is the music cut-off time?',
+      'What does the booking include: rooms, cleaning, security and taxes?',
+    ],
+  },
+  {
+    id: 'caterer',
+    label: 'Caterer',
+    category: 'catering',
+    taskId: 'book-caterer',
+    depositShare: 0.25,
+    questions: [
+      'Can we do a tasting before booking?',
+      'What is the per-plate rate for each menu, including GST?',
+      'How many service staff come per hundred guests?',
+      'What is the minimum guaranteed count, and the last day to change it?',
+      'Do you bring counters, crockery and live stations?',
+    ],
+  },
+  {
+    id: 'photographer',
+    label: 'Photographer and videographer',
+    category: 'photography',
+    taskId: 'book-photographer',
+    depositShare: 0.3,
+    questions: [
+      'Which functions and how many hours does the package cover?',
+      'How many edited photos do we get, and when is the album delivered?',
+      'Is a second shooter or drone included?',
+      'Do we receive the raw files and a highlight film?',
+    ],
+  },
+  {
+    id: 'decorator',
+    label: 'Decorator (mandap, stage and flowers)',
+    category: 'decor',
+    taskId: 'book-decorator',
+    depositShare: 0.3,
+    questions: [
+      'Can you share photos of set-ups you have done at this venue?',
+      'Is the quote for fresh or artificial flowers?',
+      'How long do set-up and take-down take?',
+      'Is lighting included, or quoted separately?',
+    ],
+  },
+  {
+    id: 'makeup-artist',
+    label: 'Bridal makeup artist',
+    category: 'attire',
+    taskId: 'book-makeup',
+    depositShare: 0.2,
+    questions: [
+      'Is a trial included in the package?',
+      'Which products do you use, and are they suitable for sensitive skin?',
+      'How many family members can you cover, and at what rate?',
+      'Do you travel to the venue, and is travel charged?',
+    ],
+  },
+  {
+    id: 'mehndi-artist',
+    label: 'Mehndi artist',
+    category: 'attire',
+    taskId: 'book-mehndi',
+    depositShare: 0.2,
+    appliesWhen: { functions: ['mehndi'] },
+    questions: [
+      'How many artists will come, and how many guests can they cover per hour?',
+      'Is the henna natural and free of chemical dyes?',
+      'What is the rate for the bridal design?',
+    ],
+  },
+  {
+    id: 'dj',
+    label: 'DJ or band',
+    category: 'entertainment',
+    taskId: 'book-dj',
+    depositShare: 0.2,
+    appliesWhen: { functions: ['sangeet', 'reception'] },
+    questions: [
+      'Do you bring sound and lights sized for the venue?',
+      'Will you play a list we send, and can you arrange a dhol?',
+      'What is the overtime rate past the music cut-off?',
+    ],
+  },
+  {
+    id: 'bartender',
+    label: 'Bar service',
+    category: 'bar',
+    taskId: 'book-bartender',
+    depositShare: 0.2,
+    appliesWhen: { noConstraint: ['alcohol-free'] },
+    questions: [
+      'Do you arrange the one-day liquor licence?',
+      'Is the bar priced per head or per bottle?',
+      'Do you also run a mocktail counter for guests who do not drink?',
+    ],
+  },
+  {
+    id: 'officiant',
+    label: 'Officiant (pandit, qazi, granthi or priest)',
+    category: 'gifts',
+    taskId: 'book-officiant',
+    depositShare: 0.2,
+    questions: [
+      'Which dates and times suit the families?',
+      'What items should we arrange for the rituals?',
+      'How long will the ceremony take?',
+    ],
+  },
+  {
+    id: 'printer',
+    label: 'Invitation printer',
+    category: 'invitations',
+    taskId: 'order-invites',
+    depositShare: 0.2,
+    appliesWhen: { noConstraint: ['eco-friendly'] },
+    questions: [
+      'Can you send a printed proof before the full run?',
+      'How long does the full order take?',
+      'Can you print on recycled or seed paper?',
+    ],
+  },
+  {
+    id: 'tent-sound',
+    label: 'Tent, lighting and sound',
+    category: 'decor',
+    taskId: 'book-tent',
+    depositShare: 0.2,
+    appliesWhen: { settings: ['outdoor', 'mixed'] },
+    questions: [
+      'Is the tent waterproof and made of fire-retardant fabric?',
+      'Do you supply a generator, and is fuel included?',
+      'When do you set up and take everything down?',
+    ],
+  },
+];
