@@ -13,8 +13,8 @@ import {
 } from '@jashn/core';
 import type { Context } from 'hono';
 import type { z } from 'zod';
-import type { GeminiClient } from '../ai/gemini.ts';
-import type { AppEnv } from '../env.ts';
+import { statusOf, type GeminiClient } from '../ai/gemini.ts';
+import type { AppEnv, Failure } from '../env.ts';
 import { invalidRequest, problem, type FieldIssue } from '../middleware/errors.ts';
 
 /** Sent with every generated answer; the UI shows it next to generated content. */
@@ -83,23 +83,44 @@ export function assertClean(issues: readonly unknown[]): void {
 }
 
 /**
+ * Why the Gemini path failed, for the log: the error's class name and the HTTP status of the
+ * underlying API error, if any. A revoked key (403) or a wrong model id (404) then shows up in
+ * the logs instead of as a silent, permanent fallback; a bug (a TypeError) shows its own name.
+ */
+export function failureOf(error: unknown): Failure {
+  const name = error instanceof Error ? error.name : typeof error;
+  const status = statusOf(error instanceof Error ? error.cause : undefined);
+  return status === undefined ? { name } : { name, status };
+}
+
+/**
  * Runs the Gemini path and labels the result; with no client, or on any failure (timeout,
  * chain exhausted, budget spent, schema-invalid JSON, guard rejection), it labels and returns
- * the fallback. The user always gets an answer, and the label says which kind.
+ * the fallback. The user always gets an answer, the label says which kind, and the reason for
+ * a fallback goes to the request's log line.
  */
 export async function sourced<T extends object>(
+  c: Context<AppEnv>,
   gemini: GeminiClient | null,
   live: (client: GeminiClient) => Promise<T>,
   fallback: () => T,
 ): Promise<Sourced<T>> {
-  if (gemini !== null) {
+  if (gemini !== null && takeShare(c)) {
     try {
       return { ...(await live(gemini)), source: 'gemini' };
-    } catch {
-      // Fall through to the fallback; the source label tells the user and the logs.
+    } catch (error) {
+      c.set('failure', failureOf(error));
     }
   }
   return { ...fallback(), source: 'fallback' };
+}
+
+/** True while the client has Gemini share left this hour (always, without the middleware). */
+function takeShare(c: Context<AppEnv>): boolean {
+  const take = c.var.takeShare;
+  if (take === undefined || take()) return true;
+  c.set('failure', { name: 'ClientShareSpent' });
+  return false;
 }
 
 /** Sends a generated answer with its source and the estimates disclaimer. */

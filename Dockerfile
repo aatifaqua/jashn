@@ -26,7 +26,10 @@ COPY package.json package-lock.json ./
 COPY packages/core/package.json packages/core/
 COPY server/package.json server/
 COPY web/package.json web/
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+# Every workspace manifest is copied so the lockfile matches, but only the server's production
+# dependencies are installed (the core is linked); the web app's packages never reach this image.
+RUN npm ci --omit=dev --ignore-scripts --workspace=server --include-workspace-root=false \
+    && npm cache clean --force
 COPY packages/core/src packages/core/src
 COPY server/src server/src
 COPY --from=build /app/web/dist web/dist

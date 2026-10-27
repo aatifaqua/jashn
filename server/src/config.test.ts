@@ -1,6 +1,6 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_PORT, loadConfig, loadLocalEnv } from './config.ts';
 
@@ -14,11 +14,14 @@ describe('loadConfig', () => {
       models: ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash'],
       rateLimit: { max: 20, windowMs: 60_000 },
       hourlyBudget: 600,
+      clientHourlyBudget: 30,
       staticDir: undefined,
     });
   });
 
   it('reads every variable', () => {
+    const site = mkdtempSync(join(tmpdir(), 'jashn-site-'));
+    writeFileSync(join(site, 'index.html'), '<!doctype html>');
     const config = loadConfig({
       GEMINI_API_KEY: ' key ',
       PORT: '9000',
@@ -28,7 +31,8 @@ describe('loadConfig', () => {
       RATE_LIMIT_MAX: '5',
       RATE_LIMIT_WINDOW_MS: '2000',
       GEMINI_HOURLY_BUDGET: '0',
-      STATIC_DIR: '../web/dist',
+      GEMINI_CLIENT_HOURLY: '7',
+      STATIC_DIR: site,
     });
     expect(config).toEqual({
       geminiApiKey: 'key',
@@ -38,8 +42,22 @@ describe('loadConfig', () => {
       models: ['m-1', 'm-2'],
       rateLimit: { max: 5, windowMs: 2000 },
       hourlyBudget: 0,
-      staticDir: '../web/dist',
+      clientHourlyBudget: 7,
+      staticDir: site,
     });
+  });
+
+  it('reads STATIC_DIR from the repository root and fails fast when it has no index.html', () => {
+    const root = resolve(import.meta.dirname, '../..');
+    const relative = mkdtempSync(join(root, 'tmp-site-'));
+    try {
+      writeFileSync(join(relative, 'index.html'), '<!doctype html>');
+      const name = relative.slice(root.length + 1);
+      expect(loadConfig({ STATIC_DIR: name }).staticDir).toBe(relative);
+    } finally {
+      rmSync(relative, { recursive: true, force: true });
+    }
+    expect(() => loadConfig({ STATIC_DIR: 'web/dsit' })).toThrow('STATIC_DIR');
   });
 
   it('treats empty strings as unset', () => {

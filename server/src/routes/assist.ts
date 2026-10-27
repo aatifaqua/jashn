@@ -5,6 +5,7 @@
 import {
   assistOffline,
   buildPlan,
+  countWord,
   diffPlans,
   formatCount,
   getProfile,
@@ -28,10 +29,6 @@ import { assertClean, GuardRejectedError, readEvent, sendSourced, sourced } from
 export interface AssistDeps {
   readonly gemini: GeminiClient | null;
   readonly today: () => number;
-}
-
-function plural(count: number, one: string, many: string): string {
-  return `${String(count)} ${count === 1 ? one : many}`;
 }
 
 /**
@@ -58,9 +55,9 @@ export function describeDiff(diff: PlanDiff, language: Language = 'en'): string 
     parts.push(`budget verdict ${verdict.before} → ${verdict.after}`);
   }
   if (budget.length > 0)
-    parts.push(plural(budget.length, 'budget line changes', 'budget lines change'));
+    parts.push(countWord(budget.length, 'budget line changes', 'budget lines change'));
   if (newlyLate.length > 0)
-    parts.push(plural(newlyLate.length, 'task becomes late', 'tasks become late'));
+    parts.push(countWord(newlyLate.length, 'task becomes late', 'tasks become late'));
   const summary = parts.length > 0 ? `: ${parts.join('; ')}` : '';
   return `Here is the proposed change${summary}. Preview it and apply it if it looks right.`;
 }
@@ -85,12 +82,12 @@ export function proposal(call: FunctionCall, text: string, plan: Plan): AssistRe
 export async function liveAssist(
   gemini: GeminiClient,
   plan: Plan,
-  body: { readonly message: string; readonly history: Parameters<typeof assistContents>[0] },
+  body: { readonly message: string; readonly history: Parameters<typeof assistContents>[1] },
 ): Promise<AssistReply> {
   const generation = await gemini.generate({
     endpoint: 'assist',
     systemInstruction: assistSystem(plan),
-    contents: assistContents(body.history, body.message),
+    contents: assistContents(plan.input.note, body.history, body.message),
     tools: [...ASSIST_TOOLS],
   });
   const text = generation.text.trim();
@@ -108,6 +105,7 @@ export function assistHandler(deps: AssistDeps): Handler<AppEnv> {
     if (!request.ok) return request.response;
     const { plan, body } = request;
     const result = await sourced<AssistReply>(
+      c,
       deps.gemini,
       (gemini) => liveAssist(gemini, plan, body),
       () => assistOffline(body.message, plan),

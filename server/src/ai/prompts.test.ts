@@ -2,6 +2,7 @@ import { buildPlan, getProfile, toIso } from '@jashn/core';
 import { describe, expect, it } from 'vitest';
 import { sample, TODAY } from '../testing.ts';
 import {
+  assistContents,
   assistSystem,
   draftContent,
   draftSystem,
@@ -48,11 +49,17 @@ describe('ideas prompt', () => {
 });
 
 describe('assist prompt', () => {
-  it('carries the plan summary and the note as data', () => {
+  it('keeps the plan summary in the system instruction and the note in user content', () => {
     const system = assistSystem(plan);
     expect(system).toContain('call update_event');
     expect(system).toContain('"verdict":"tight"');
-    expect(system).toContain('<<<NOTE');
+    expect(system).not.toContain('<<<NOTE\n');
+    expect(system).not.toContain('Kanpur');
+    const history = [{ role: 'assistant', text: 'Hello.' }] as const;
+    const contents = assistContents(plan.input.note, history, 'What is late?');
+    expect(contents.map((turn) => turn.role)).toEqual(['user', 'model', 'user']);
+    expect(contents[0]?.parts?.[0]?.text).toContain('<<<NOTE\nGrandparents travel from Kanpur');
+    expect(contents.at(-1)?.parts?.[0]?.text).toBe('What is late?');
   });
 });
 

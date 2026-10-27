@@ -23,7 +23,7 @@ import {
   sizeLimit,
 } from './middleware/errors.ts';
 import { requestLogger, stdoutSink, type LogSink } from './middleware/logger.ts';
-import { hourlyBudget } from './middleware/quota.ts';
+import { clientShare, hourlyBudget } from './middleware/quota.ts';
 import { clientKey, rateLimit, type SocketAddress } from './middleware/rateLimit.ts';
 import { apiHeaders, corsAllowList } from './middleware/security.ts';
 import { assistHandler } from './routes/assist.ts';
@@ -75,12 +75,10 @@ export function createApp(deps: AppDeps): Hono<AppEnv> {
   app.use('/api/*', apiHeaders());
   app.use('/api/*', corsAllowList(config.corsOrigins));
 
-  const limiter = rateLimit({
-    ...config.rateLimit,
-    now,
-    keyOf: clientKey(config.trustProxy, deps.socketAddress ?? (() => undefined)),
-  });
-  const guards = [limiter, jsonOnly(), sizeLimit()] as const;
+  const keyOf = clientKey(config.trustProxy, deps.socketAddress ?? (() => undefined));
+  const limiter = rateLimit({ ...config.rateLimit, now, keyOf });
+  const share = clientShare(config.clientHourlyBudget, now, keyOf);
+  const guards = [limiter, share, jsonOnly(), sizeLimit()] as const;
 
   app.get('/api/health', healthHandler(gemini !== null));
   app.post(

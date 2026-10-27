@@ -4,7 +4,14 @@
  * (the Gemini key above all) are never echoed in errors or logs.
  */
 import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { z } from 'zod';
+
+/**
+ * STATIC_DIR is read relative to the repository root, so "web/dist" means the same folder
+ * whether the server runs from the root (Docker) or from server/ (npm start -w server).
+ */
+const REPO_ROOT = resolve(import.meta.dirname, '../..');
 
 /** Newest flash model first; each later one is tried only when the previous is overloaded. */
 export const DEFAULT_MODELS = 'gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash';
@@ -48,11 +55,17 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: count(20),
   RATE_LIMIT_WINDOW_MS: count(60_000, 1000),
   GEMINI_HOURLY_BUDGET: count(600, 0),
+  GEMINI_CLIENT_HOURLY: count(30),
   STATIC_DIR: z
     .string()
     .trim()
     .optional()
-    .transform((value) => (value === '' ? undefined : value)),
+    .transform((value) =>
+      value === undefined || value === '' ? undefined : resolve(REPO_ROOT, value),
+    )
+    .refine((dir) => dir === undefined || existsSync(join(dir, 'index.html')), {
+      message: 'STATIC_DIR must contain index.html',
+    }),
 });
 
 /** Validated server settings. */
@@ -69,6 +82,8 @@ export interface Config {
   readonly rateLimit: { readonly max: number; readonly windowMs: number };
   /** Gemini calls allowed per clock hour across all clients; past it, fallbacks are served. */
   readonly hourlyBudget: number;
+  /** Gemini requests one client may start per hour, so no client can spend the whole budget. */
+  readonly clientHourlyBudget: number;
   /** Built web app to serve from the same origin, if any. */
   readonly staticDir: string | undefined;
 }
@@ -92,6 +107,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
     models: value.GEMINI_MODELS,
     rateLimit: { max: value.RATE_LIMIT_MAX, windowMs: value.RATE_LIMIT_WINDOW_MS },
     hourlyBudget: value.GEMINI_HOURLY_BUDGET,
+    clientHourlyBudget: value.GEMINI_CLIENT_HOURLY,
     staticDir: value.STATIC_DIR,
   };
 }

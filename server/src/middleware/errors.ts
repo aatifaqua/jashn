@@ -84,6 +84,20 @@ export function sizeLimit(): MiddlewareHandler<AppEnv> {
 export const notFound: NotFoundHandler<AppEnv> = (c) =>
   problem(c, 404, 'not-found', 'There is nothing here.');
 
-/** 500 for anything unexpected; no details leave the server (the logger records the status). */
-export const internalError: ErrorHandler<AppEnv> = (_error, c) =>
-  problem(c, 500, 'internal', 'Something went wrong. Please try again.');
+/** Caps on what an unexpected error contributes to its log line. */
+const MESSAGE_MAX = 200;
+const STACK_MAX = 2000;
+
+/**
+ * 500 for anything unexpected. No details leave the server: the body is generic, while the
+ * error's name, message and stack go to the request's log line under the same request id, so
+ * an id a user quotes can be traced.
+ */
+export const internalError: ErrorHandler<AppEnv> = (error, c) => {
+  c.set('failure', {
+    name: error.name,
+    message: error.message.slice(0, MESSAGE_MAX),
+    stack: (error.stack ?? '').slice(0, STACK_MAX),
+  });
+  return problem(c, 500, 'internal', 'Something went wrong. Please try again.');
+};

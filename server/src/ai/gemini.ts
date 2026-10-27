@@ -66,11 +66,26 @@ export interface GeminiClient {
   generate(request: GenerateRequest): Promise<Generation>;
 }
 
-/** The single SDK method used; the real one is `ai.models.generateContent`. */
-export type GenerateFn = (params: GenerateContentParameters) => Promise<{
+/** The fields of one response part the client reads. */
+interface ResponsePart {
   readonly text?: string | undefined;
-  readonly functionCalls?: FunctionCall[] | undefined;
-}>;
+  /** Set on thinking parts, which are never shown. */
+  readonly thought?: boolean | undefined;
+  readonly functionCall?: FunctionCall | undefined;
+}
+
+/** The fields of an SDK response the client reads (a subset of GenerateContentResponse). */
+export interface RawResponse {
+  readonly candidates?:
+    | readonly {
+        readonly content?: { readonly parts?: readonly ResponsePart[] | undefined } | undefined;
+        readonly finishReason?: string | undefined;
+      }[]
+    | undefined;
+}
+
+/** The single SDK method used; the real one is `ai.models.generateContent`. */
+export type GenerateFn = (params: GenerateContentParameters) => Promise<RawResponse>;
 
 /** Timeouts and backoff of the chain, in milliseconds. */
 export interface Timings {
@@ -99,7 +114,8 @@ export class GeminiUnavailableError extends Error {
   override readonly name = 'GeminiUnavailableError';
 }
 
-function statusOf(error: unknown): number | undefined {
+/** The HTTP status of an SDK API error, if the value is one. */
+export function statusOf(error: unknown): number | undefined {
   if (typeof error !== 'object' || error === null || !('status' in error)) return undefined;
   return typeof error.status === 'number' ? error.status : undefined;
 }
@@ -147,6 +163,25 @@ function configFor(request: GenerateRequest, signal: AbortSignal): GenerateConte
   return config;
 }
 
+/**
+ * Text and function calls of the first candidate, read from its parts rather than the SDK's
+ * `text` getter, which writes an unstructured console warning whenever a part is a function
+ * call. A candidate that stopped for any reason but STOP (MAX_TOKENS, SAFETY, RECITATION) was
+ * cut short, so it is refused rather than served as a complete answer.
+ */
+function readResponse(response: RawResponse): Pick<Generation, 'text' | 'functionCalls'> {
+  const [candidate] = response.candidates ?? [];
+  const reason = candidate?.finishReason;
+  if (reason !== undefined && reason !== 'STOP') {
+    throw new GeminiUnavailableError(`finish: ${reason}`);
+  }
+  const parts = candidate?.content?.parts ?? [];
+  return {
+    text: parts.map((part) => (part.thought === true ? '' : (part.text ?? ''))).join(''),
+    functionCalls: parts.flatMap((part) => (part.functionCall ? [part.functionCall] : [])),
+  };
+}
+
 function pause(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -169,7 +204,7 @@ export function createGeminiClientFrom(generate: GenerateFn, options: ChainOptio
         try {
           const params = { model, contents: request.contents, config: configFor(request, signal) };
           const response = await untilAborted(generate(params), signal);
-          return { text: response.text ?? '', functionCalls: response.functionCalls ?? [], model };
+          return { ...readResponse(response), model };
         } catch (error) {
           lastError = error;
           if (!isRetryable(error)) break;

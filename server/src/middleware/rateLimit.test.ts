@@ -66,6 +66,19 @@ describe('clientKey', () => {
     expect(await app(true, '10.0.0.1')('6.6.6.6, 1.1.1.1')).toBe('1.1.1.1');
   });
 
+  it('strips a port or brackets from the forwarded entry, so ports share one window', async () => {
+    const behind = app(true, '10.0.0.1');
+    expect(await behind('203.0.113.7:51000')).toBe('203.0.113.7');
+    expect(await behind('203.0.113.7:51001')).toBe('203.0.113.7');
+    expect(await behind('[2001:db8::1]:443')).toBe('2001:db8:0:0::/64');
+    expect(await behind('[2001:db8::1]')).toBe('2001:db8:0:0::/64');
+  });
+
+  it('ignores a forwarded entry that is not an IP address', async () => {
+    expect(await app(true, '10.0.0.1')('garbage')).toBe('10.0.0.1');
+    expect(await app(true, '10.0.0.1')('1.2.3.4, evil.example')).toBe('10.0.0.1');
+  });
+
   it('falls back to the socket, then to a shared key', async () => {
     expect(await app(true, '10.0.0.1')()).toBe('10.0.0.1');
     expect(await app(true, undefined)(' ')).toBe('unknown');

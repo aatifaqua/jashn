@@ -38,6 +38,7 @@ export function ideasHandler(deps: IdeasDeps): Handler<AppEnv> {
     const key = cacheKey({ endpoint: 'ideas', input: plan.input });
     const result = await deps.cache.run(key, () =>
       sourced(
+        c,
         deps.gemini,
         (gemini) => liveIdeas(gemini, plan),
         () => ideasOffline(plan.input),

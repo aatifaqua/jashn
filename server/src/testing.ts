@@ -5,7 +5,7 @@
 import type { FunctionCall, GenerateContentParameters } from '@google/genai';
 import { indiaDay, sampleEvent, type EventInput, type Ideas, type SampleId } from '@jashn/core';
 import type { Hono } from 'hono';
-import type { GenerateFn } from './ai/gemini.ts';
+import type { GenerateFn, RawResponse } from './ai/gemini.ts';
 import { createApp, type AppDeps } from './app.ts';
 import type { Config } from './config.ts';
 import type { AppEnv } from './env.ts';
@@ -26,14 +26,33 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     models: ['model-a', 'model-b'],
     rateLimit: { max: 100, windowMs: 60_000 },
     hourlyBudget: 100,
+    clientHourlyBudget: 100,
     staticDir: undefined,
     ...overrides,
   };
 }
 
+/** A scripted reply: its text, function calls and, when it did not end normally, the reason. */
+export interface ScriptedReply {
+  readonly text?: string;
+  readonly functionCalls?: FunctionCall[];
+  readonly finishReason?: string;
+  /** Hidden thinking text the model also returned. */
+  readonly thought?: string;
+}
+
 /** One scripted SDK outcome: a response, an error to throw, or a call that never settles. */
-export type Scripted =
-  { readonly text?: string; readonly functionCalls?: FunctionCall[] } | Error | 'hang';
+export type Scripted = ScriptedReply | Error | 'hang';
+
+/** The SDK's response shape for a scripted reply: one candidate whose parts carry it. */
+function toResponse(reply: ScriptedReply): RawResponse {
+  const parts = [
+    ...(reply.thought === undefined ? [] : [{ text: reply.thought, thought: true }]),
+    ...(reply.text === undefined ? [] : [{ text: reply.text }]),
+    ...(reply.functionCalls ?? []).map((functionCall) => ({ functionCall })),
+  ];
+  return { candidates: [{ content: { parts }, finishReason: reply.finishReason ?? 'STOP' }] };
+}
 
 /** An error shaped like the SDK's ApiError. */
 export function apiError(status: number): Error {
@@ -51,7 +70,7 @@ export function fakeGenerate(script: readonly Scripted[]): {
     const next = script[Math.min(calls.length - 1, script.length - 1)];
     if (next === 'hang') return new Promise(() => undefined);
     if (next instanceof Error) return Promise.reject(next);
-    return Promise.resolve(next ?? {});
+    return Promise.resolve(toResponse(next ?? {}));
   };
   return { generate, calls };
 }

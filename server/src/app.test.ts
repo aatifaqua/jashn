@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createApp, usesGemini } from './app.ts';
 import { BODY_LIMIT_BYTES } from './middleware/errors.ts';
-import { NOW, post, sample, testApp, testConfig } from './testing.ts';
+import { apiError, fakeGenerate, NOW, post, sample, testApp, testConfig } from './testing.ts';
 
 describe('health', () => {
   it('reports fallback mode without a Gemini client and is cacheable', async () => {
@@ -174,12 +174,20 @@ describe('rate limit', () => {
 });
 
 describe('logging', () => {
-  it('logs route, method, status, latency and source only', async () => {
+  it('logs request id, route, method, status, latency and source only', async () => {
     const { app, logs } = testApp();
-    await post(app, '/api/ideas', { input: sample() });
+    const res = await post(app, '/api/ideas', { input: sample() });
     expect(logs).toHaveLength(1);
     const [entry] = logs;
-    expect(Object.keys(entry ?? {}).sort()).toEqual(['method', 'ms', 'route', 'source', 'status']);
+    expect(Object.keys(entry ?? {}).sort()).toEqual([
+      'method',
+      'ms',
+      'requestId',
+      'route',
+      'source',
+      'status',
+    ]);
+    expect(entry?.requestId).toBe(res.headers.get('X-Request-Id'));
     expect(entry).toMatchObject({
       route: '/api/ideas',
       method: 'POST',
@@ -187,6 +195,36 @@ describe('logging', () => {
       source: 'fallback',
     });
     expect(JSON.stringify(logs)).not.toContain('Kanpur');
+  });
+
+  it('logs why Gemini fell back, such as a rejected key, without the note', async () => {
+    const { generate } = fakeGenerate([apiError(403)]);
+    const { app, logs } = testApp({ generate });
+    await post(app, '/api/ideas', { input: sample() });
+    expect(logs[0]).toMatchObject({
+      source: 'fallback',
+      failure: { name: 'GeminiUnavailableError', status: 403 },
+    });
+    expect(JSON.stringify(logs)).not.toContain('Kanpur');
+  });
+
+  it('caps one client at its share of the Gemini budget, leaving the rest for others', async () => {
+    const fake = fakeGenerate([{ text: 'Your plan is on track.' }]);
+    let address = '198.51.100.1';
+    const { app, logs } = testApp({
+      generate: fake.generate,
+      config: testConfig({ clientHourlyBudget: 2 }),
+      socketAddress: () => address,
+    });
+    const ask = async () => {
+      const res = await post(app, '/api/assist', { input: sample(), message: 'Hi', history: [] });
+      return ((await res.json()) as { source: string }).source;
+    };
+    expect([await ask(), await ask(), await ask()]).toEqual(['gemini', 'gemini', 'fallback']);
+    expect(logs.at(-1)?.failure).toEqual({ name: 'ClientShareSpent' });
+    address = '198.51.100.2';
+    expect(await ask()).toBe('gemini');
+    expect(fake.calls).toHaveLength(3);
   });
 
   it('logs a null source when nothing was generated', async () => {

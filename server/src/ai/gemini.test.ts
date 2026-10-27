@@ -45,6 +45,24 @@ describe('createGeminiClientFrom', () => {
   it('defaults missing text and calls to empty values', async () => {
     const { gemini } = client([{}]);
     expect(await gemini.generate(request)).toEqual({ text: '', functionCalls: [], model: 'm1' });
+    const empty = createGeminiClientFrom(() => Promise.resolve({}), options());
+    expect(await empty.generate(request)).toEqual({ text: '', functionCalls: [], model: 'm1' });
+    const bare = createGeminiClientFrom(
+      () => Promise.resolve({ candidates: [{ content: { parts: [{}] } }] }),
+      options(),
+    );
+    expect(await bare.generate(request)).toEqual({ text: '', functionCalls: [], model: 'm1' });
+  });
+
+  it('leaves out thinking text and joins the visible parts', async () => {
+    const { gemini } = client([{ thought: 'Let me think.', text: 'Answer.' }]);
+    expect((await gemini.generate(request)).text).toBe('Answer.');
+  });
+
+  it('refuses a reply cut short by the token cap without trying another model', async () => {
+    const { gemini, calls } = client([{ text: 'Half a sent', finishReason: 'MAX_TOKENS' }]);
+    await expect(gemini.generate(request)).rejects.toThrow(GeminiUnavailableError);
+    expect(calls).toHaveLength(1);
   });
 
   it('sets JSON output and tool config only when asked', async () => {

@@ -53,9 +53,13 @@ export function draftHandler(deps: DraftDeps): Handler<AppEnv> {
         { field: 'vendorId', code: 'invalid', message: 'This vendor is not part of the plan.' },
       ]);
     }
-    const key = cacheKey({ endpoint: 'draft', input: plan.input, today, vendorId: vendor.id });
+    // The draft prompt leaves the note out, so the key does too: inputs that differ only in
+    // the note share one prompt, one Gemini call and one cache entry.
+    const input = { ...plan.input, note: '' };
+    const key = cacheKey({ endpoint: 'draft', input, today, vendorId: vendor.id });
     const result = await deps.cache.run(key, () =>
       sourced(
+        c,
         deps.gemini,
         (gemini) => liveDraft(gemini, plan, vendor),
         () => draftEnquiry(plan, vendor),

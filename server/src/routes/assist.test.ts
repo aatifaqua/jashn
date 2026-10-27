@@ -1,6 +1,7 @@
 import { assistOffline, buildPlan, diffPlans, getProfile, type PlanDiff } from '@jashn/core';
 import type { FunctionCall } from '@google/genai';
 import { describe, expect, it } from 'vitest';
+import { fenceNote } from '../ai/prompts.ts';
 import { describeDiff } from './assist.ts';
 import { fakeGenerate, post, sample, testApp, TODAY, type Scripted } from '../testing.ts';
 
@@ -38,6 +39,7 @@ describe('POST /api/assist', () => {
     expect(params?.config?.temperature).toBe(0.3);
     expect(params?.config?.tools).toHaveLength(1);
     expect(params?.contents).toEqual([
+      { role: 'user', parts: [{ text: fenceNote(sample().note) }] },
       { role: 'user', parts: [{ text: 'Hi' }] },
       { role: 'model', parts: [{ text: 'Hello! How can I help?' }] },
       { role: 'user', parts: [{ text: 'Is my budget enough?' }] },

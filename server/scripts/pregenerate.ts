@@ -6,10 +6,12 @@
  * app uses the core fallbacks for anything missing, and its own guards drop any entry whose
  * dates or figures no longer match the plan on the day it is read.
  *
- * The run is resumable and ordered by value: entries already in the file are kept (ideas
- * always; drafts and answers only while they still pass the guards for today's plan), ideas
- * come first, then English answers and drafts, then Hindi ones. A run cut short by a daily
- * quota can simply be repeated later to fill the gaps.
+ * The run is resumable and ordered by value: entries already in the file are kept while they
+ * still hold (ideas while the sample's season is the one they were written for and they still
+ * pass the schema and the diet guard; drafts and answers while they pass the guards for
+ * today's plan), ideas come first, then English answers and drafts, then Hindi ones. A run cut
+ * short by a daily quota can simply be repeated later to fill the gaps. The file is written
+ * through Prettier, so it passes the repository's format check as it is.
  *
  * Usage: GEMINI_API_KEY in the environment or in server/.env, then
  *   npm run pregenerate -w server
@@ -17,12 +19,17 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { format, resolveConfig } from 'prettier';
 import {
   buildPlan,
+  fromIso,
   getProfile,
   guardDraft,
+  guardIdeas,
   guardReply,
   indiaDay,
+  month,
+  seasonOf,
   sampleEvent,
   SAMPLE_IDS,
   SUGGESTED_PROMPTS,
@@ -37,6 +44,7 @@ import {
   type Sourced,
 } from '@jashn/core';
 import { sdkGenerate, type GenerateFn } from '../src/ai/gemini.ts';
+import { ideasSchema } from '../src/ai/schemas.ts';
 import { createApp } from '../src/app.ts';
 import { loadConfig, loadLocalEnv } from '../src/config.ts';
 
@@ -130,9 +138,25 @@ function empty(): LanguageContent {
   return { drafts: {}, answers: {} };
 }
 
+/** The season a sample falls in when it is dated from `day`; ideas are written for it. */
+function seasonOn(id: SampleId, day: number): string {
+  const eventDay = fromIso(sampleEvent(id, day).date) ?? day;
+  return JSON.stringify(seasonOf(month(eventDay)));
+}
+
+/**
+ * Ideas from the old file still hold when the sample now falls in the same season as when they
+ * were written (samples move with today), and they still pass the schema and the diet guard
+ * for the sample's needs, which may have changed since.
+ */
+function ideasHold(ideas: unknown, plan: Plan, id: SampleId, oldToday: number | null): boolean {
+  if (oldToday === null || seasonOn(id, oldToday) !== seasonOn(id, today)) return false;
+  const parsed = ideasSchema.safeParse(ideas);
+  return parsed.success && guardIdeas(parsed.data, plan.input.constraints).length === 0;
+}
+
 /** Copies the entries of one sample and language that still hold for today's plan. */
 function keep(from: Partial<LanguageContent>, into: LanguageContent, plan: Plan): void {
-  if (from.ideas !== undefined) into.ideas = from.ideas;
   for (const [vendorId, text] of Object.entries(from.drafts ?? {})) {
     if (guardDraft(text, plan).length === 0) into.drafts[vendorId] = text;
   }
@@ -142,8 +166,9 @@ function keep(from: Partial<LanguageContent>, into: LanguageContent, plan: Plan)
 }
 
 /**
- * The previous file's entries that are still worth keeping: ideas (they hold no dates) and
- * drafts and answers that still pass the guards against today's plan.
+ * The previous file's entries that are still worth keeping: ideas for the same season that
+ * still pass their checks, and drafts and answers that still pass the guards against today's
+ * plan.
  */
 function previous(): Samples {
   const kept = Object.fromEntries(
@@ -151,12 +176,19 @@ function previous(): Samples {
   ) as Samples;
   if (!existsSync(OUTPUT)) return kept;
   const old = JSON.parse(readFileSync(OUTPUT, 'utf8')) as {
+    generatedOn?: string;
     samples?: Partial<Record<SampleId, Partial<Record<Language, Partial<LanguageContent>>>>>;
   };
+  const oldToday = fromIso(old.generatedOn ?? '');
   for (const id of SAMPLE_IDS) {
     for (const language of LANGUAGE_ORDER) {
       const from = old.samples?.[id]?.[language];
-      if (from !== undefined) keep(from, kept[id][language], planOf(id, language));
+      if (from === undefined) continue;
+      const plan = planOf(id, language);
+      const { ideas, ...rest } = from;
+      const into = kept[id][language];
+      keep(rest, into, plan);
+      if (ideas !== undefined && ideasHold(ideas, plan, id, oldToday)) into.ideas = ideas;
     }
   }
   return kept;
@@ -164,10 +196,14 @@ function previous(): Samples {
 
 const samples = previous();
 
-/** Writes after every result, so an interrupted run keeps what it already paid for. */
-function save(): void {
+/**
+ * Writes after every result, so an interrupted run keeps what it already paid for. The JSON
+ * goes through Prettier with the repository's settings, so the format check passes on it.
+ */
+async function save(): Promise<void> {
   const file = { version: 1, generatedOn: toIso(today), samples };
-  writeFileSync(OUTPUT, `${JSON.stringify(file, null, 2)}\n`);
+  const options = (await resolveConfig(OUTPUT)) ?? {};
+  writeFileSync(OUTPUT, await format(JSON.stringify(file), { ...options, parser: 'json' }));
 }
 
 async function fillIdeas(id: SampleId, language: Language): Promise<void> {
@@ -175,7 +211,7 @@ async function fillIdeas(id: SampleId, language: Language): Promise<void> {
   if (into.ideas !== undefined) return;
   const ideas = await generated<Ideas>('/api/ideas', { input: inputOf(id, language) });
   if (ideas !== null) into.ideas = strip(ideas);
-  save();
+  await save();
 }
 
 async function fillAnswers(id: SampleId, language: Language): Promise<void> {
@@ -185,7 +221,7 @@ async function fillAnswers(id: SampleId, language: Language): Promise<void> {
     if (Object.hasOwn(into.answers, message)) continue;
     const answer = await generated<AssistReply>('/api/assist', { input, message, history: [] });
     if (answer !== null) into.answers[message] = strip(answer);
-    save();
+    await save();
   }
 }
 
@@ -196,7 +232,7 @@ async function fillDrafts(id: SampleId, language: Language): Promise<void> {
     if (Object.hasOwn(into.drafts, vendor.id)) continue;
     const draft = await generated<Draft>('/api/draft', { input, vendorId: vendor.id });
     if (draft !== null) into.drafts[vendor.id] = draft.text;
-    save();
+    await save();
   }
 }
 
@@ -207,5 +243,5 @@ for (const language of LANGUAGE_ORDER) {
   for (const id of SAMPLE_IDS) await fillAnswers(id, language);
   for (const id of SAMPLE_IDS) await fillDrafts(id, language);
 }
-save();
+await save();
 console.log(`Wrote ${OUTPUT}.`);

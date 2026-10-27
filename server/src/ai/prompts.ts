@@ -5,6 +5,7 @@
  */
 import type { Content } from '@google/genai';
 import {
+  MS_PER_DAY,
   month,
   occasion,
   planSummary,
@@ -73,7 +74,6 @@ export function ideasSystem(language: Language): string {
 
 /** Built once: constructing an Intl formatter costs far more than calling one. */
 const MONTH_NAME = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' });
-const MS_PER_DAY = 86_400_000;
 
 /**
  * User content for /api/ideas: event facts without any amount or exact date, then the fenced
@@ -97,7 +97,10 @@ export function ideasContent(plan: Plan): string {
   return `Facts: ${JSON.stringify(facts)}\n${fenceNote(plan.input.note)}`;
 }
 
-/** System instruction for /api/assist, carrying the plan summary the answer must stick to. */
+/**
+ * System instruction for /api/assist, carrying the plan summary the answer must stick to. The
+ * user's note is not here: it is user content (assistContents), never part of the rules.
+ */
 export function assistSystem(plan: Plan): string {
   const facts = JSON.stringify(planSummary(plan));
   return [
@@ -105,16 +108,21 @@ export function assistSystem(plan: Plan): string {
     ASSIST_RULES,
     languageRule(plan.input.language),
     `Facts (the plan, computed by the planning engine): ${facts}`,
-    fenceNote(plan.input.note),
   ].join('\n\n');
 }
 
-/** Earlier turns plus the new message, in the API's role names. */
+/**
+ * The conversation in the API's role names: the fenced note as a user turn of its own, then the
+ * earlier turns and the new message. Keeping the note in user content, as ideas does, means it
+ * never carries the weight of the system instruction.
+ */
 export function assistContents(
+  note: string,
   history: readonly { readonly role: 'user' | 'assistant'; readonly text: string }[],
   message: string,
 ): Content[] {
   return [
+    { role: 'user', parts: [{ text: fenceNote(note) }] },
     ...history.map((turn) => ({
       role: turn.role === 'user' ? 'user' : 'model',
       parts: [{ text: turn.text }],

@@ -40,6 +40,15 @@ describe('POST /api/draft', () => {
     expect(fake.calls).toHaveLength(2);
   });
 
+  it('shares one draft between inputs that differ only in the note, which it leaves out', async () => {
+    const fake = fakeGenerate([{ text: JSON.stringify({ text: TEXT }) }]);
+    const { app } = testApp({ generate: fake.generate });
+    await post(app, '/api/draft', { input: sample(), vendorId: 'caterer' });
+    const renoted = { ...sample(), note: 'Another note entirely' };
+    await post(app, '/api/draft', { input: renoted, vendorId: 'caterer' });
+    expect(fake.calls).toHaveLength(1);
+  });
+
   it('rejects a vendor the plan does not include', async () => {
     const { app } = testApp();
     const res = await post(app, '/api/draft', { input: sample(), vendorId: 'sanitation' });
