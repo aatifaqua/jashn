@@ -1,0 +1,50 @@
+{
+  "name": "jashn",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plan a wedding, birthday or community event: a realistic budget split, a dated timeline, a vendor checklist, a day-of run sheet and personalised ideas.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/core",
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build -w packages/core && npm run build -w server && npm run build -w web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.2",
+    "@vitest/coverage-v8": "5.0.1",
+    "eslint": "10.11.0",
+    "eslint-plugin-svelte": "3.23.0",
+    "fast-check": "4.10.2",
+    "globals": "17.12.0",
+    "prettier": "3.9.8",
+    "prettier-plugin-svelte": "4.1.1",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.70.0",
+    "vitest": "5.0.1"
+  },
+  "keywords": [
+    "event-planning",
+    "wedding",
+    "birthday",
+    "community-events",
+    "budget",
+    "gemini",
+    "svelte",
+    "hono"
+  ]
+}
