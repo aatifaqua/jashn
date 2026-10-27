@@ -4,7 +4,7 @@
  */
 import { applies } from './applies.ts';
 import { weekday } from './days.ts';
-import { formatDay } from './text.ts';
+import { countWord, formatDay } from './text.ts';
 import type { FiredRule } from './rules.ts';
 import type {
   EventContext,
@@ -54,9 +54,15 @@ const SUNDAY = 0;
 
 function leadReason(leadDays: number): Reason {
   if (leadDays > 0)
-    return { code: 'lead-time', text: `Usually done ${String(leadDays)} days before the event.` };
+    return {
+      code: 'lead-time',
+      text: `Usually done ${countWord(leadDays, 'day', 'days')} before the event.`,
+    };
   if (leadDays === 0) return { code: 'lead-time', text: 'Done on the day of the event.' };
-  return { code: 'lead-time', text: `Done within ${String(-leadDays)} days after the event.` };
+  return {
+    code: 'lead-time',
+    text: `Done within ${countWord(-leadDays, 'day', 'days')} after the event.`,
+  };
 }
 
 /** Lead-time multipliers per vendor id with the reasons of the rules that set them. */
@@ -121,8 +127,23 @@ function setIdealDue(entries: Map<string, Entry>, stage: StageInput): void {
 }
 
 /** Task ids the fired rules pin to the front, such as "Lock the venue today". */
-function pinnedIds(stage: StageInput): Set<string> {
-  return new Set(stage.fired.flatMap((rule) => rule.effects.pinTasks ?? []));
+export function pinnedIds(fired: readonly FiredRule[]): string[] {
+  return fired.flatMap((rule) => rule.effects.pinTasks ?? []);
+}
+
+/**
+ * The top actions once the user has ticked some tasks off: ticked ones drop out and the next
+ * late, at-risk or upcoming tasks move up, while the plan's own top actions keep their order.
+ */
+export function remainingActions(
+  plan: { readonly tasks: readonly Task[]; readonly topActions: readonly Task[] },
+  ticked: ReadonlySet<string>,
+): Task[] {
+  const open = plan.tasks.filter((task) => !ticked.has(task.id));
+  return topActions(
+    open,
+    plan.topActions.map((task) => task.id),
+  );
 }
 
 /**
@@ -163,8 +184,8 @@ function nextWorkingDay(day: number): number {
   return weekday(next) === SUNDAY ? next + 1 : next;
 }
 
-function phaseOf(status: TaskStatus, leadDays: number, daysBefore: number): Phase {
-  if (status === 'late') return 'do-now';
+function phaseOf(late: boolean, leadDays: number, daysBefore: number): Phase {
+  if (late) return 'do-now';
   if (leadDays < 0) return 'after';
   for (const { min, phase } of PHASE_FLOORS) if (daysBefore >= min) return phase;
   return 'day-of';
@@ -180,34 +201,46 @@ interface Pass {
   cursor: number;
 }
 
-function statusReason(
-  status: TaskStatus,
-  entry: Entry,
-  raw: number,
-  pass: Pass,
-): Reason | undefined {
+/**
+ * Reasons the status adds: how late the task is, and, when even the earliest workable day falls
+ * after its last realistic day, why it is at risk. A late task can be both.
+ */
+function statusReasons(entry: Entry, raw: number, late: boolean, pass: Pass): Reason[] {
   const { today, eventDay } = pass.ctx;
-  if (status === 'late') {
-    const days = String(today - entry.idealDue);
-    return {
+  const done = pass.done.get(entry.template.id);
+  if (done !== undefined) return [done];
+  const reasons: Reason[] = [];
+  if (late) {
+    const ago = countWord(today - entry.idealDue, 'day', 'days');
+    reasons.push({
       code: 'late',
-      text: `Ideally done by ${formatDay(entry.idealDue)}, ${days} days ago.`,
-    };
+      text: `Ideally done by ${formatDay(entry.idealDue)}, ${ago} ago.`,
+    });
   }
-  if (status === 'done') return pass.done.get(entry.template.id);
-  if (status !== 'at-risk') return undefined;
-  const lastDay = formatDay(eventDay - (entry.template.minLead ?? 0));
-  return {
-    code: 'at-risk',
-    text: `The earliest workable date, ${formatDay(raw)}, is after ${lastDay}, the last day this can realistically happen.`,
-  };
+  if (impossible(entry, raw, pass)) {
+    const lastDay = formatDay(eventDay - (entry.template.minLead ?? 0));
+    reasons.push({
+      code: 'at-risk',
+      text: `The earliest workable date, ${formatDay(raw)}, is after ${lastDay}, the last day this can realistically happen.`,
+    });
+  }
+  return reasons;
 }
 
-function statusOf(entry: Entry, raw: number, pass: Pass): TaskStatus {
-  const { id, leadDays, minLead } = entry.template;
-  if (pass.done.has(id)) return 'done';
-  if (entry.idealDue < pass.ctx.today) return 'late';
-  return leadDays >= 0 && raw > pass.ctx.eventDay - (minLead ?? 0) ? 'at-risk' : 'upcoming';
+/** True when the earliest workable day of a pre-event task is past its last realistic day. */
+function impossible(entry: Entry, raw: number, pass: Pass): boolean {
+  const { leadDays, minLead } = entry.template;
+  return leadDays >= 0 && raw > pass.ctx.eventDay - (minLead ?? 0);
+}
+
+/**
+ * At-risk wins over late: a late task spread past its last workable day must say so, rather
+ * than sit quietly on the event day looking merely overdue.
+ */
+function statusOf(entry: Entry, raw: number, late: boolean, pass: Pass): TaskStatus {
+  if (pass.done.has(entry.template.id)) return 'done';
+  if (impossible(entry, raw, pass)) return 'at-risk';
+  return late ? 'late' : 'upcoming';
 }
 
 /** Schedules one task: due = max(idealDue, today, due(after) + 1), late tasks spread apart. */
@@ -219,12 +252,11 @@ function schedule(entry: Entry, pass: Pass): Task {
   const isLate = !pass.done.has(id) && entry.idealDue < today;
   const raw = isLate ? Math.max(pass.cursor, floor) : Math.max(entry.idealDue, floor);
   if (isLate) pass.cursor = nextWorkingDay(raw);
-  const status = statusOf(entry, raw, pass);
+  const status = statusOf(entry, raw, isLate, pass);
   const due = leadDays >= 0 ? Math.min(raw, eventDay) : raw;
   pass.dueById.set(id, status === 'done' ? today - 1 : due);
-  const extra = statusReason(status, entry, raw, pass);
-  const reasons = extra === undefined ? entry.reasons : [...entry.reasons, extra];
-  const phase = phaseOf(status, leadDays, eventDay - due);
+  const reasons = [...entry.reasons, ...statusReasons(entry, raw, isLate, pass)];
+  const phase = phaseOf(isLate, leadDays, eventDay - due);
   const task = { id, title, due, idealDue: entry.idealDue, phase, status, reasons };
   return vendorId === undefined ? task : { ...task, vendorId };
 }
@@ -243,7 +275,8 @@ export function buildTimeline(stage: StageInput): Task[] {
     dueById: new Map(),
     cursor: stage.ctx.today,
   };
-  const tasks = dependencyOrder(entries, pinnedIds(stage)).map((entry) => schedule(entry, pass));
+  const pinned = new Set(pinnedIds(stage.fired));
+  const tasks = dependencyOrder(entries, pinned).map((entry) => schedule(entry, pass));
   return tasks.sort((a, b) => PHASE_RANK[a.phase] - PHASE_RANK[b.phase] || a.due - b.due);
 }
 
@@ -251,10 +284,10 @@ const TOP_ACTIONS = 3;
 const ACTION_ORDER: readonly TaskStatus[] = Object.freeze(['late', 'at-risk', 'upcoming']);
 
 /**
- * The first three of: tasks pinned by a fired rule, late tasks, at-risk tasks, then the next
- * upcoming ones. Done tasks never appear. Expects tasks in timeline order.
+ * The first three of: the pinned tasks (those a fired rule pins), late tasks, at-risk tasks,
+ * then the next upcoming ones. Done tasks never appear. Expects tasks in timeline order.
  */
-export function topActions(tasks: readonly Task[], fired: readonly FiredRule[]): Task[] {
+export function topActions(tasks: readonly Task[], pinned: readonly string[]): Task[] {
   const picks: Task[] = [];
   const take = (task: Task | undefined): void => {
     if (
@@ -266,8 +299,7 @@ export function topActions(tasks: readonly Task[], fired: readonly FiredRule[]):
       picks.push(task);
     }
   };
-  for (const rule of fired)
-    for (const id of rule.effects.pinTasks ?? []) take(tasks.find((t) => t.id === id));
+  for (const id of pinned) take(tasks.find((t) => t.id === id));
   for (const status of ACTION_ORDER)
     for (const task of tasks) if (task.status === status) take(task);
   return picks;

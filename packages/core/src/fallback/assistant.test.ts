@@ -30,6 +30,15 @@ describe('parseChanges: guests', () => {
     ['reduce to 150 guests', 150],
     ['cut guests by 10%', 270],
     ['add guests by 5 percent', 315],
+    ['remove 50 guests', 250],
+    ['take off 50 guests', 250],
+    ['we want fewer than 200 guests', 200],
+    ['increase guests to 400', 400],
+    ['guests 250', 250],
+    ['headcount: 260', 260],
+    ['add 10% more guests', 330],
+    ['reduce guests from 300 to 250', 250],
+    ['200 मेहमान', 200],
   ])('%s → %i', (message, invited) => {
     expect(changes(message).invited).toBe(invited);
   });
@@ -47,8 +56,24 @@ describe('parseChanges: budget', () => {
     ['cut the budget by 2 lakh', 2_300_000],
     ['add ₹50,000 to the budget', 2_550_000],
     ['budget 950000', 950_000],
+    ['reduce budget from 25 lakh to 20 lakh', 2_000_000],
+    ['budget 5 lakh 50 thousand', 550_000],
+    ['बजट 5 लाख 50 हजार', 550_000],
+    ['बजट 8 लाख', 800_000],
+    ['बजट ८ लाख', 800_000],
+    ['बजट 1 करोड़', 10_000_000],
+    ['बजट 90 हज़ार', 90_000],
+    ['बजट 90 हजार', 90_000],
   ])('%s → %i', (message, budget) => {
     expect(changes(message).budget).toBe(budget);
+  });
+
+  it('keeps both figures when a comma separates the budget from a noun-first headcount', () => {
+    expect(changes('budget 10 lakh, guests 200')).toEqual({ budget: 1_000_000, invited: 200 });
+  });
+
+  it('reads a precomposed nukta like the decomposed one', () => {
+    expect(changes('बजट 2 करोड़')).toEqual({ budget: 20_000_000 });
   });
 
   it('reads the money, not the headcount, when both share a clause', () => {
@@ -297,6 +322,19 @@ describe('assistOffline: questions', () => {
     expect(ask('Is my budget enough?').reply).toBe(expected);
     expect(ask('tell me about the budget').reply).toBe(expected);
     expect(ask('is it realistic?', samplePlan({ expected: 1 })).reply).toContain('for 1 guest,');
+  });
+
+  it.each(['is 20 lakh enough?', 'can we afford 400 guests?'])(
+    'answers "%s" instead of proposing a change',
+    (message) => {
+      const result = ask(message);
+      expect(result.patch).toBeUndefined();
+      expect(result.reply).toMatch(/^Your budget is tight/);
+    },
+  );
+
+  it('still proposes a change asked as a question with a change word', () => {
+    expect(ask('what if we cut to 200 guests?').patch).toEqual({ invited: 200 });
   });
 
   it('offers help for anything else', () => {

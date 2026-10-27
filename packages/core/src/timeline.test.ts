@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { weekday } from './days.ts';
 import type { FiredRule } from './rules.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';
-import { buildTimeline, topActions, type StageInput } from './timeline.ts';
+import {
+  buildTimeline,
+  pinnedIds,
+  remainingActions,
+  topActions,
+  type StageInput,
+} from './timeline.ts';
 import type { EventContext, Profile, RuleEffects, Task, TaskTemplate } from './types.ts';
 
 const EVENT = TODAY + 100;
@@ -153,6 +159,43 @@ describe('buildTimeline', () => {
     expect(byId(tasks, 'b').reasons.at(-1)?.code).toBe('at-risk');
   });
 
+  it('flags a late task spread past its last workable day as at-risk with both reasons', () => {
+    const late = [100, 99, 98].map((leadDays, i) => ({
+      id: `late-${String(i)}`,
+      title: 'Late',
+      leadDays,
+      minLead: 3,
+    }));
+    const tasks = buildTimeline(stage(late, [], TODAY + 4));
+    expect(tasks.map((t) => [t.id, t.due - TODAY, t.status, t.phase])).toEqual([
+      ['late-0', 0, 'late', 'do-now'],
+      ['late-1', 1, 'late', 'do-now'],
+      ['late-2', 2, 'at-risk', 'do-now'],
+    ]);
+    expect(
+      byId(tasks, 'late-2')
+        .reasons.slice(-2)
+        .map((r) => r.code),
+    ).toEqual(['late', 'at-risk']);
+  });
+
+  it('words single days in the singular', () => {
+    const tasks = buildTimeline(
+      stage(
+        [
+          { id: 'kit', title: 'Kit', leadDays: 1 },
+          { id: 'settle', title: 'Settle', leadDays: -1 },
+          { id: 'missed', title: 'Missed', leadDays: 101 },
+        ],
+        [],
+        TODAY + 100,
+      ),
+    );
+    expect(byId(tasks, 'kit').reasons[0]?.text).toBe('Usually done 1 day before the event.');
+    expect(byId(tasks, 'settle').reasons[0]?.text).toBe('Done within 1 day after the event.');
+    expect(byId(tasks, 'missed').reasons.at(-1)?.text).toMatch(/, 1 day ago\.$/);
+  });
+
   it('stretches booking lead times by rule factors with the rule as the reason', () => {
     const peak = rule('peak-season', { leadFactor: { vendorIds: ['venue'], factor: 1.25 } });
     const double = rule('double', { leadFactor: { vendorIds: ['venue'], factor: 2 } });
@@ -290,10 +333,26 @@ describe('topActions', () => {
 
   it('puts pinned tasks first, skipping unknown and done ids', () => {
     const pin = rule('short-notice', { pinTasks: ['later', 'missing', 'done', 'late'] });
-    expect(topActions(tasks, [pin, rule('noop', {})]).map((t) => t.id)).toEqual([
-      'later',
-      'late',
-      'risky',
-    ]);
+    const pinned = pinnedIds([pin, rule('noop', {})]);
+    expect(topActions(tasks, pinned).map((t) => t.id)).toEqual(['later', 'late', 'risky']);
+  });
+});
+
+describe('remainingActions', () => {
+  const tasks = buildTimeline(
+    stage([
+      { id: 'late', title: 'Late', leadDays: 150 },
+      { id: 'soon', title: 'Soon', leadDays: 60 },
+      { id: 'later', title: 'Later', leadDays: 30 },
+      { id: 'last', title: 'Last', leadDays: 10 },
+    ]),
+  );
+  const plan = { tasks, topActions: topActions(tasks, []) };
+
+  it('drops ticked tasks and moves the next ones up, keeping the plan order', () => {
+    expect(plan.topActions.map((t) => t.id)).toEqual(['late', 'soon', 'later']);
+    expect(remainingActions(plan, new Set()).map((t) => t.id)).toEqual(['late', 'soon', 'later']);
+    const ticked = new Set(['late']);
+    expect(remainingActions(plan, ticked).map((t) => t.id)).toEqual(['soon', 'later', 'last']);
   });
 });

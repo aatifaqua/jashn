@@ -58,6 +58,21 @@ const DIET_TABLE: readonly [string, Constraint, boolean][] = [
   ['शराब', 'alcohol-free', true],
   ['Non-alcoholic punch', 'alcohol-free', false],
   ['Virgin mojitos', 'alcohol-free', false],
+  ['Non-alcoholic cocktails at the bar', 'alcohol-free', false],
+  ['Alcohol-free cocktails and mocktails', 'alcohol-free', false],
+  ['Zero-proof cocktails', 'alcohol-free', false],
+  ['Cocktails, then alcohol-free punch', 'alcohol-free', true],
+  ['Tandoori pomfret and surmai fry', 'vegetarian', true],
+  ['Hilsa (ilish) paturi', 'vegetarian', true],
+  ['Kingfish curry', 'vegetarian', true],
+  ['Shellfish platter', 'vegetarian', true],
+  ['Crabmeat cakes', 'vegetarian', true],
+  // Galouti and kebab name vegetarian dishes too (yam galouti, hara bhara kebab).
+  ['Galouti kebab-style yam tikki', 'vegetarian', false],
+  ['Hara bhara kebab', 'vegetarian', false],
+  ['Batata vada and kanda poha', 'jain', true],
+  ['Alu tikki chaat', 'jain', true],
+  ['Lasun chutney', 'jain', true],
   ['An alcohol-free bar', 'alcohol-free', false],
   ['Mocktail counter', 'alcohol-free', false],
   ['Ginger and rumali roti', 'alcohol-free', false],
@@ -135,6 +150,19 @@ describe('inventedAmounts', () => {
     expect(inventedAmounts('2.5 crore? no: 0.25 crore', allowed)).toEqual([25_000_000]);
     expect(inventedAmounts('1.5k', allowed)).toEqual([]);
     expect(inventedAmounts('25 लाख', allowed)).toEqual([]);
+    expect(inventedAmounts('₹25L, or 8.2 lakh', allowed)).toEqual([]);
+  });
+
+  it('reads lakh shorthand and a precomposed nukta', () => {
+    const venue = new Set([800_000]);
+    expect(inventedAmounts('₹8L for the venue', venue)).toEqual([]);
+    expect(inventedAmounts('Rs 9L', venue)).toEqual([900_000]);
+    expect(inventedAmounts('₹9.5L', venue)).toEqual([950_000]);
+    expect(inventedAmounts('₹2 lks', venue)).toEqual([200_000]);
+    expect(inventedAmounts('8 litres of milk', venue)).toEqual([]);
+    // U+095C (ड़) and U+095B (ज़) are the precomposed nukta letters.
+    expect(inventedAmounts('5 करोड़ रुपये', venue)).toEqual([50_000_000]);
+    expect(inventedAmounts('50 हज़ार रुपये', venue)).toEqual([50_000]);
   });
 
   it('flags figures absent from the plan', () => {
@@ -171,17 +199,29 @@ describe('guardIdeas', () => {
     const issues = guardIdeas(
       ideas({
         menu: [{ title: 'Chicken tikka', detail: 'From www.example.com' }],
-        theme: { name: 'x'.repeat(GUARD_LIMITS.themeName + 1), palette: ['wine'], why: '' },
+        theme: {
+          name: 'x'.repeat(GUARD_LIMITS.themeName + 1),
+          palette: ['wine', 'www.x.com'],
+          why: '',
+        },
         activities: [{ title: 'Quiz', detail: 'Prize of ₹5,000' }],
       }),
       ['vegetarian', 'alcohol-free'],
     );
     expect(issues.map(({ code, where }) => `${code}@${where}`)).toEqual([
       'length@theme.name',
-      'diet@theme.palette.0',
       'diet@menu.0.title',
       'link@menu.0.detail',
       'amount@activities.0.detail',
+      'link@theme.palette.1',
+    ]);
+  });
+
+  it('reads palette words as colours, not food or drink', () => {
+    const palette = ['Champagne', 'wine', 'salmon'];
+    const colours = ideas({ theme: { name: 'Champagne and gold', palette, why: 'Soft.' } });
+    expect(guardIdeas(colours, ['halal', 'vegetarian']).map((i) => i.where)).toEqual([
+      'theme.name',
     ]);
   });
 });

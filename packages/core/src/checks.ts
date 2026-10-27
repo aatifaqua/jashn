@@ -1,5 +1,5 @@
 /** Value rules for a structurally sound, normalised EventInput (design section 5). */
-import { fromIso, parseTime } from './days.ts';
+import { addYears, fromIso, parseTime } from './days.ts';
 import { INPUT_FIELDS, INPUT_LIMITS, fieldError, isOneOf } from './fields.ts';
 import { CATEGORY_IDS, STYLE_IDS, WEDDING_FUNCTIONS } from './ids.ts';
 import type { ErrorCode, EventInput, FieldError, InputField } from './types.ts';
@@ -19,7 +19,7 @@ function checkDate(input: EventInput, today: number): ErrorCode | null {
   const day = fromIso(input.date);
   if (day === null) return 'format';
   if (day < today) return 'past';
-  return day > today + INPUT_LIMITS.maxLeadDays ? 'too-far' : null;
+  return day > addYears(today, INPUT_LIMITS.maxLeadYears) ? 'too-far' : null;
 }
 
 function checkFunctions(input: EventInput): ErrorCode | null {

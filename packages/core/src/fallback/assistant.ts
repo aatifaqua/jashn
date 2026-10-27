@@ -2,6 +2,7 @@
  * Offline assistant (design section 7, /api/assist fallback): a deterministic intent parser
  * that either proposes a validated PlanPatch or answers a question from the plan's own data.
  */
+import { asciiDigits } from '../date-mentions.ts';
 import { ASSIST_LIMITS } from '../fields.ts';
 import { applyPatch, validatePatch } from '../input.ts';
 import { planSummary, type PlanSummary } from '../summary.ts';
@@ -18,6 +19,7 @@ import { leadVerb, parseFunctions, parseNeeds, parseSetting } from './choices.ts
 import { formatCount, formatIsoDate, formatRupees } from '../text.ts';
 import {
   figureClause,
+  hasChangeWord,
   parseBudget,
   parseDate,
   parseGuests,
@@ -30,6 +32,8 @@ const MESSAGE_MAX = ASSIST_LIMITS.message;
 /** Clause breaks; commas inside figures such as 8,00,000 are not followed by a space. */
 const CLAUSE = /\s+and\s+|\s+also\s+|;|\n|\.\s+|,\s+/;
 const BOTH_SETTINGS = /\bindoors?\s+and\s+outdoors?\b|\boutdoors?\s+and\s+indoors?\b/g;
+/** A question rather than an instruction: "is 20 lakh enough?", "can we afford 400 guests". */
+const QUESTION = /\?\s*$|^\s*(?:is|are|can|could|will|would|should|what\s+if)\b/;
 
 /** Parsers of figures and dates; they read each clause exactly as written. */
 const FIGURE_PARSERS: readonly ClauseParser[] = Object.freeze([
@@ -62,7 +66,7 @@ const QUESTIONS: readonly (readonly [RegExp, (summary: PlanSummary) => string])[
  * otherwise it is read as written, so "add 20 guests and budget 8 lakh" sets the budget.
  */
 export function parseChanges(message: string, plan: Plan): PlanPatch {
-  const text = message.slice(0, MESSAGE_MAX).toLowerCase().replace(BOTH_SETTINGS, 'mixed');
+  const text = readable(message).replace(BOTH_SETTINGS, 'mixed');
   let patch: PlanPatch = {};
   let verb = '';
   let change = '';
@@ -106,20 +110,31 @@ function describe(before: EventInput, after: EventInput): string[] {
   return out;
 }
 
-function answer(message: string, plan: Plan): string {
-  const text = message.slice(0, MESSAGE_MAX).toLowerCase();
+/**
+ * The message as the parsers read it: capped, lower-cased, NFC (so a precomposed nukta matches
+ * the word lists) and with Devanagari digits as ASCII digits.
+ */
+function readable(message: string): string {
+  return asciiDigits(message.slice(0, MESSAGE_MAX).normalize('NFC').toLowerCase());
+}
+
+function answer(text: string, plan: Plan): string {
   const match = QUESTIONS.find(([pattern]) => pattern.test(text));
   return (match?.[1] ?? helpAnswer)(planSummary(plan));
 }
 
 /**
- * Answers a message offline from the plan summary, the same facts Gemini sees. A requested change is validated exactly like the form; when it
- * passes, the reply describes it and carries the patch for the user to preview and confirm.
- * A change the form would reject gets the validator's own message and no patch.
+ * Answers a message offline from the plan summary, the same facts Gemini sees. A question with
+ * no change word ("is 20 lakh enough?") is answered, never turned into a change. A requested
+ * change is validated exactly like the form; when it passes, the reply describes it and carries
+ * the patch for the user to preview and confirm. A change the form would reject gets the
+ * validator's own message and no patch.
  */
 export function assistOffline(message: string, plan: Plan): AssistReply {
-  const patch = parseChanges(message, plan);
-  if (Object.keys(patch).length === 0) return { reply: answer(message, plan) };
+  const text = readable(message);
+  const asks = QUESTION.test(text) && !hasChangeWord(text) && leadVerb(text) === undefined;
+  const patch = asks ? {} : parseChanges(message, plan);
+  if (Object.keys(patch).length === 0) return { reply: answer(text, plan) };
   const result = validatePatch(patch, plan.input, plan.today);
   if (!result.ok) {
     const reasons = result.errors.map((error) => error.message).join(' ');

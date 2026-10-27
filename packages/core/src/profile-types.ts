@@ -54,6 +54,12 @@ export interface VendorTemplate {
   readonly taskId: string;
   /** Typical deposit as a fraction of the vendor's line, 0..1. */
   readonly depositShare: number;
+  /**
+   * Fraction of the budget line this vendor is paid, for a line that also buys other things
+   * (the attire line pays for outfits as well as the make-up artist). Vendors without it split
+   * what the others leave evenly; the shares on one line add up to at most 1.
+   */
+  readonly lineShare?: number;
   readonly questions: readonly string[];
   readonly appliesWhen?: Applicability;
 }
@@ -91,6 +97,11 @@ export interface FunctionDef {
   readonly label: string;
   /** Share of expected guests who attend, used to split catering and decor. */
   readonly guestShare: number;
+  /**
+   * Customary start as minutes after midnight; the run sheet's offsets count from it on the
+   * function's own day, so a haldi stays a morning event whatever time the ceremony starts.
+   */
+  readonly anchorMin: number;
   readonly runSheet: readonly SlotTemplate[];
 }
 

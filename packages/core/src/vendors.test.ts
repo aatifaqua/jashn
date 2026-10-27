@@ -175,10 +175,10 @@ describe('buildPayments', () => {
 
   it('schedules deposits on book-by and balances a week before, from the budget lines', () => {
     const payments = buildPayments(vendors, budget, EVENT);
-    // The venue is booked, so its deposit counts as paid and only the balance is listed.
+    // The venue is booked, so its 30% deposit counts as paid and only the rest is listed.
     expect(payments).toEqual([
       { vendorId: 'mehndi-artist', kind: 'deposit', due: EVENT - 30, amount: 25_000 },
-      { vendorId: 'venue', kind: 'balance', due: EVENT - 7, amount: 450_000 },
+      { vendorId: 'venue', kind: 'balance', due: EVENT - 7, amount: 315_000 },
       { vendorId: 'mehndi-artist', kind: 'balance', due: EVENT - 7, amount: 100_150 },
       { vendorId: 'makeup-artist', kind: 'deposit', due: EVENT - 3, amount: 25_000 },
       { vendorId: 'makeup-artist', kind: 'balance', due: EVENT - 3, amount: 100_000 },
@@ -187,6 +187,37 @@ describe('buildPayments', () => {
       .filter((p) => p.vendorId !== 'venue')
       .reduce((sum, p) => sum + p.amount, 0);
     expect(attire).toBe(250_150);
+  });
+
+  it('pays vendors with a line share only their part, the rest split among the others', () => {
+    const attire = (lineShare?: number): VendorItem => ({
+      ...find(vendors, 'makeup-artist'),
+      ...(lineShare === undefined ? {} : { lineShare }),
+    });
+    const paid = (payments: readonly { vendorId: string; amount: number }[], id: string) =>
+      payments.filter((p) => p.vendorId === id).reduce((sum, p) => sum + p.amount, 0);
+    // Alone on the line a vendor is owed its share, or the whole line without one.
+    expect(paid(buildPayments([attire(0.35)], budget, EVENT), 'makeup-artist')).toBe(87_600);
+    expect(paid(buildPayments([attire()], budget, EVENT), 'makeup-artist')).toBe(250_150);
+    const both = buildPayments(
+      [
+        { ...attire(0.35), id: 'makeup' },
+        { ...attire(0.15), id: 'mehndi' },
+      ],
+      budget,
+      EVENT,
+    );
+    expect([paid(both, 'makeup'), paid(both, 'mehndi')]).toEqual([87_600, 37_500]);
+    const mixed = buildPayments(
+      [
+        { ...attire(0.35), id: 'makeup' },
+        { ...attire(), id: 'a' },
+        { ...attire(), id: 'b' },
+      ],
+      budget,
+      EVENT,
+    );
+    expect(['makeup', 'a', 'b'].map((id) => paid(mixed, id))).toEqual([87_600, 81_350, 81_200]);
   });
 
   it('skips vendors without a funded line and zero-sized parts', () => {

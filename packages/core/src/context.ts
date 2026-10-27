@@ -15,10 +15,21 @@ const BEFORE_CEREMONY: readonly FunctionId[] = WEDDING_FUNCTIONS.filter(
   (id) => id !== 'ceremony' && id !== 'reception',
 );
 
+/** Latest start (15:00) at which an intimate ceremony still leaves the evening for a reception. */
+const SAME_EVENING_LATEST_START = 15 * 60;
+
+/** True when an intimate wedding holds its reception on the ceremony's own evening. */
+function sameEvening(input: EventInput): boolean {
+  return (
+    input.style === 'intimate' && (parseTime(input.startTime) ?? 0) <= SAME_EVENING_LATEST_START
+  );
+}
+
 /**
  * Days of each chosen wedding function relative to the ceremony: earlier functions on
  * consecutive days ending the day before it, and the reception the next day (the same evening
- * for an intimate wedding, where guests rarely stay over). Empty for other event types.
+ * for an intimate wedding that starts by 15:00, since guests rarely stay over). Empty for other
+ * event types.
  */
 export function functionDays(input: EventInput): readonly FunctionDay[] {
   if (input.type !== 'wedding') return [];
@@ -30,7 +41,7 @@ export function functionDays(input: EventInput): readonly FunctionDay[] {
   }));
   days.push({ functionId: 'ceremony', offset: 0 });
   if (chosen.has('reception')) {
-    days.push({ functionId: 'reception', offset: input.style === 'intimate' ? 0 : 1 });
+    days.push({ functionId: 'reception', offset: sameEvening(input) ? 0 : 1 });
   }
   return days;
 }

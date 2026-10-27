@@ -67,6 +67,7 @@ export const WEDDING_VENDORS: readonly VendorTemplate[] = [
     category: 'attire',
     taskId: 'book-makeup',
     depositShare: 0.2,
+    lineShare: 0.35,
     questions: [
       'Is a trial included in the package?',
       'Which products do you use, and are they suitable for sensitive skin?',
@@ -80,6 +81,7 @@ export const WEDDING_VENDORS: readonly VendorTemplate[] = [
     category: 'attire',
     taskId: 'book-mehndi',
     depositShare: 0.2,
+    lineShare: 0.15,
     appliesWhen: { functions: ['mehndi'] },
     questions: [
       'How many artists will come, and how many guests can they cover per hour?',
@@ -106,7 +108,7 @@ export const WEDDING_VENDORS: readonly VendorTemplate[] = [
     category: 'bar',
     taskId: 'book-bartender',
     depositShare: 0.2,
-    appliesWhen: { noConstraint: ['alcohol-free'] },
+    appliesWhen: { noConstraint: ['alcohol-free', 'halal'] },
     questions: [
       'Do you arrange the one-day liquor licence?',
       'Is the bar priced per head or per bottle?',
@@ -119,6 +121,7 @@ export const WEDDING_VENDORS: readonly VendorTemplate[] = [
     category: 'gifts',
     taskId: 'book-officiant',
     depositShare: 0.2,
+    lineShare: 0.3,
     questions: [
       'Which dates and times suit the families?',
       'What items should we arrange for the rituals?',

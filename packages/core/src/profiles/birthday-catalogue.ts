@@ -66,7 +66,7 @@ export const BIRTHDAY_TASKS: readonly TaskTemplate[] = [
     title: 'Book a bartender and check the liquor licence',
     leadDays: 14,
     vendorId: 'bartender',
-    appliesWhen: { styles: ['milestone', 'adult'], noConstraint: ['alcohol-free'] },
+    appliesWhen: { styles: ['milestone', 'adult'], noConstraint: ['alcohol-free', 'halal'] },
     minLead: 3,
   },
   {
@@ -191,6 +191,7 @@ export const BIRTHDAY_VENDORS: readonly VendorTemplate[] = [
     category: 'food',
     taskId: 'order-cake',
     depositShare: 0.2,
+    lineShare: 0.15,
     questions: [
       'What size of cake serves our guest count?',
       'Do you deliver, and at what time?',
@@ -203,7 +204,7 @@ export const BIRTHDAY_VENDORS: readonly VendorTemplate[] = [
     category: 'bar',
     taskId: 'book-bartender',
     depositShare: 0.2,
-    appliesWhen: { styles: ['milestone', 'adult'], noConstraint: ['alcohol-free'] },
+    appliesWhen: { styles: ['milestone', 'adult'], noConstraint: ['alcohol-free', 'halal'] },
     questions: [
       'Do you arrange the one-day liquor licence?',
       'Is the bar priced per head or per bottle?',

@@ -172,6 +172,8 @@ export interface VendorItem {
   readonly booked: boolean;
   /** Deposit as a fraction of the vendor's budget line, 0..1. */
   readonly depositShare: number;
+  /** Fraction of its budget line the vendor is paid, when the line also buys other things. */
+  readonly lineShare?: number;
   readonly questions: readonly string[];
   readonly reasons: readonly Reason[];
 }

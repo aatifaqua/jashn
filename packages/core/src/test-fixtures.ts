@@ -1,6 +1,6 @@
 /** Shared test fixtures; imported only by *.test.ts files and excluded from coverage. */
 import fc from 'fast-check';
-import { fromCivil, toIso } from './days.ts';
+import { addYears, fromCivil, toIso } from './days.ts';
 import { INPUT_LIMITS } from './fields.ts';
 import {
   CATEGORY_IDS,
@@ -81,10 +81,15 @@ function typed(
   });
 }
 
+/** Days from `today` to the latest valid event day, three calendar years on. */
+export function maxLead(today: number): number {
+  return addYears(today, INPUT_LIMITS.maxLeadYears) - today;
+}
+
 /** A valid input of the given type for an event up to three years after `today`. */
 export function inputArb(type: EventType, today: number): fc.Arbitrary<EventInput> {
   return fc
-    .tuple(common, typed(type), fc.integer({ min: 0, max: INPUT_LIMITS.maxLeadDays }))
+    .tuple(common, typed(type), fc.integer({ min: 0, max: maxLead(today) }))
     .map(([shared, own, lead]) => ({ type, ...shared, ...own, date: toIso(today + lead) }));
 }
 

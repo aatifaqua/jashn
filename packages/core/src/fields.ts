@@ -12,8 +12,8 @@ export const INPUT_LIMITS = {
   cityMax: 60,
   noteMax: 300,
   maxPriorities: 2,
-  /** Three years ahead, counting one leap day. */
-  maxLeadDays: 3 * 365 + 1,
+  /** The event may be up to this many calendar years after today (see addYears). */
+  maxLeadYears: 3,
 } as const;
 
 /**

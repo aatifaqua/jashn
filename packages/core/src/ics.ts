@@ -3,13 +3,12 @@
  * itself. Output uses CRLF line endings, TEXT escaping and 75-octet line folding, so it imports
  * cleanly into common calendar apps.
  */
-import { toCivil, toIso } from './days.ts';
+import { MS_PER_DAY, toCivil, toIso } from './days.ts';
 import { formatCount, occasion } from './text.ts';
 import type { Plan, Task } from './types.ts';
 
 const CRLF = '\r\n';
 const MAX_OCTETS = 75;
-const MS_PER_DAY = 86_400_000;
 const NEWLINE = /\r\n|\r|\n/g;
 const SPECIAL = /[\\;,]/g;
 const UNSAFE_ID = /[^A-Za-z0-9-]/g;

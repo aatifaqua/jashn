@@ -13,6 +13,7 @@ export default defineConfig({
         'src/types.ts',
         'src/*-types.ts',
         'src/test-fixtures.ts',
+        'src/**/*.fixture.ts',
       ],
       thresholds: { lines: 100, functions: 100, branches: 100, statements: 100 },
     },

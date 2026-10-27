@@ -105,6 +105,7 @@ interface ItemParts {
 
 function vendorItem(template: VendorTemplate, parts: ItemParts): VendorItem {
   const { task, bookBy, extra, labels } = parts;
+  const { lineShare } = template;
   return {
     id: template.id,
     label: template.label,
@@ -112,6 +113,7 @@ function vendorItem(template: VendorTemplate, parts: ItemParts): VendorItem {
     bookBy,
     booked: task?.status === 'done',
     depositShare: template.depositShare,
+    ...(lineShare === undefined ? {} : { lineShare }),
     questions: mergeQuestions(template.questions, extra.questions),
     reasons: [
       bookByReason(task, bookBy),
@@ -122,13 +124,27 @@ function vendorItem(template: VendorTemplate, parts: ItemParts): VendorItem {
 }
 
 /**
- * Splits a budget line evenly between the vendors it pays, in whole hundreds; leftover hundreds
- * (and any odd rupees) go to the first vendors so the parts add up to the line exactly.
+ * Splits an amount evenly between `count` vendors, in whole hundreds; leftover hundreds (and any
+ * odd rupees) go to the first vendors so the parts add up to the amount exactly.
  */
 function splitLine(total: number, count: number, index: number): number {
   const units = Math.floor(total / ROUNDING_UNIT);
   const share = Math.floor(units / count) + (index < units % count ? 1 : 0);
   return share * ROUNDING_UNIT + (index === 0 ? total - units * ROUNDING_UNIT : 0);
+}
+
+/**
+ * What each vendor of one budget line is owed: a vendor with a line share gets that share of
+ * the line; the others split what is left evenly. When every vendor has a share, the rest of
+ * the line is left for purchases (outfits, favours) that no vendor bills.
+ */
+function lineParts(total: number, group: readonly VendorItem[]): [VendorItem, number][] {
+  const own = (v: VendorItem): number | undefined =>
+    v.lineShare === undefined ? undefined : roundRupees(total * v.lineShare);
+  const open = group.filter((v) => v.lineShare === undefined).length;
+  const left = total - group.reduce((sum, v) => sum + (own(v) ?? 0), 0);
+  let index = 0;
+  return group.map((v) => [v, own(v) ?? splitLine(left, open, index++)]);
 }
 
 function pushPayments(
@@ -137,9 +153,10 @@ function pushPayments(
   amount: number,
   eventDay: number,
 ): void {
-  // A vendor the user has already booked is taken to hold its deposit, so only the balance is left.
-  const deposit = vendor.booked ? 0 : Math.min(amount, roundRupees(amount * vendor.depositShare));
-  if (deposit > 0) {
+  // A vendor the user has already booked is taken to hold its deposit: it is not listed again,
+  // and only the balance after it is left to pay.
+  const deposit = Math.min(amount, roundRupees(amount * vendor.depositShare));
+  if (deposit > 0 && !vendor.booked) {
     payments.push({ vendorId: vendor.id, kind: 'deposit', due: vendor.bookBy, amount: deposit });
   }
   if (amount > deposit) {
@@ -150,11 +167,10 @@ function pushPayments(
 
 /**
  * Payment schedule: the deposit on the book-by date and the balance seven days before the event
- * (or on the book-by date when booking is later than that); a booked vendor owes only the
- * balance. Amounts come from the vendor's budget
- * line, shared evenly when one line pays several vendors; a vendor with no funded line has no
- * payments. Vendors are grouped by line in one pass and lines are looked up in a Map. Sorted by
- * due day, deposits first.
+ * (or on the book-by date when booking is later than that); a booked vendor has paid its
+ * deposit and owes only the balance after it. Amounts come from the vendor's part of its budget
+ * line (lineParts); a vendor with no funded line has no payments. Vendors are grouped by line
+ * in one pass and lines are looked up in a Map. Sorted by due day, deposits first.
  */
 export function buildPayments(
   vendors: readonly VendorItem[],
@@ -170,11 +186,9 @@ export function buildPayments(
   const lineAmount = new Map(budget.map((line) => [line.category, line.amount]));
   const payments: Payment[] = [];
   for (const [category, group] of groups) {
-    const total = lineAmount.get(category) ?? 0;
-    group.forEach((vendor, index) => {
-      const amount = splitLine(total, group.length, index);
+    for (const [vendor, amount] of lineParts(lineAmount.get(category) ?? 0, group)) {
       if (amount > 0) pushPayments(payments, vendor, amount, eventDay);
-    });
+    }
   }
   return payments.sort((a, b) => a.due - b.due || KIND_RANK[a.kind] - KIND_RANK[b.kind]);
 }

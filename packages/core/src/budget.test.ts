@@ -78,6 +78,16 @@ describe('contingencyShare', () => {
 });
 
 describe('allocateBudget', () => {
+  it('drops lines and function parts a tiny budget rounds to ₹0', () => {
+    const { lines, contingency } = run(sampleInput({ budget: 1000, invited: 2 }));
+    for (const line of lines) {
+      expect(line.amount).toBeGreaterThan(0);
+      for (const part of line.perFunction ?? []) expect(part.amount).toBeGreaterThan(0);
+    }
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.reduce((sum, line) => sum + line.amount, contingency)).toBe(1000);
+  });
+
   it('pins the sample wedding', () => {
     const result = run(sampleInput());
     expect(result.contingency).toBe(250_000);

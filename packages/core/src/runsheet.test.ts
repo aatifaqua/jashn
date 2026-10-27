@@ -35,8 +35,8 @@ function slot(title: string, offsetMin: number, durationMin: number): SlotTempla
   return { offsetMin, durationMin, title, owner: 'Host' };
 }
 
-function fn(id: FunctionId, runSheet: readonly SlotTemplate[]): FunctionDef {
-  return { id, label: id, guestShare: 1, runSheet };
+function fn(id: FunctionId, runSheet: readonly SlotTemplate[], anchorMin = 18 * 60): FunctionDef {
+  return { id, label: id, guestShare: 1, anchorMin, runSheet };
 }
 
 function profile(type: Profile['type'], extra: Partial<Profile>): Profile {
@@ -150,40 +150,60 @@ describe('buildRunSheet', () => {
     functions: [
       fn('reception', [slot('Stage check', -60, 60), slot('Reception dinner', 0, 120)]),
       fn('ceremony', [slot('Pheras', 0, 120)]),
-      fn('haldi', [slot('Haldi', -480, 120)]),
+      fn('haldi', [slot('Haldi', -60, 120)], 11 * 60),
       fn('mehndi', [slot('Mehndi', -120, 180)]),
     ],
   });
 
-  it('puts earlier functions on consecutive days and the reception the next day', () => {
+  it('puts earlier functions on consecutive days at their own customary hours', () => {
     const input = sampleInput({
       functions: ['ceremony', 'haldi', 'mehndi', 'sangeet', 'reception'],
     });
-    expect(brief(run({ profile: wedding, input, start: 16 * 60 }))).toEqual([
-      '-3 08:00-10:00 Haldi',
-      '-2 14:00-17:00 Mehndi',
-      '0 15:00-16:00 Baraat',
-      '0 16:00-18:00 Pheras',
-      '1 15:00-16:00 Stage check',
-      '1 16:00-18:00 Reception dinner',
-    ]);
+    const expected = [
+      '-3 10:00-12:00 Haldi',
+      '-2 16:00-19:00 Mehndi',
+      '1 17:00-18:00 Stage check',
+      '1 18:00-20:00 Reception dinner',
+    ];
+    for (const start of [7 * 60, 16 * 60, 21 * 60]) {
+      const slots = brief(run({ profile: wedding, input, start }));
+      expect(slots.filter((line) => !line.startsWith('0 '))).toEqual(expected);
+    }
   });
 
-  it('holds an intimate reception the same day, prepared once the main day ends', () => {
-    const input = sampleInput({ style: 'intimate', functions: ['ceremony', 'reception'] });
+  it('holds an early intimate reception that evening, after the main day ends', () => {
+    const input = sampleInput({
+      style: 'intimate',
+      startTime: '11:00',
+      functions: ['ceremony', 'reception'],
+    });
     expect(brief(run({ profile: wedding, input, start: 11 * 60 }))).toEqual([
       '0 11:00-13:00 Pheras',
       '0 11:00-12:30 Rituals',
-      '0 13:00-14:00 Stage check',
-      '0 14:00-16:00 Reception dinner',
+      '0 17:00-18:00 Stage check',
+      '0 18:00-20:00 Reception dinner',
     ]);
     const plain = profile('wedding', {
       styles: wedding.styles,
-      functions: [fn('reception', [slot('Dinner', 30, 60)])],
+      functions: [fn('reception', [slot('Dinner', 30, 60)], 12 * 60)],
     });
     expect(brief(run({ profile: plain, input, start: 11 * 60 }))).toEqual([
       '0 11:00-12:30 Rituals',
       '0 13:00-14:00 Dinner',
+    ]);
+  });
+
+  it('moves a late intimate reception to the next evening instead of past midnight', () => {
+    const input = sampleInput({
+      style: 'intimate',
+      startTime: '21:00',
+      functions: ['ceremony', 'reception'],
+    });
+    expect(brief(run({ profile: wedding, input, start: 21 * 60 }))).toEqual([
+      '0 21:00-23:00 Pheras',
+      '0 21:00-22:30 Rituals',
+      '1 17:00-18:00 Stage check',
+      '1 18:00-20:00 Reception dinner',
     ]);
   });
 
@@ -196,7 +216,7 @@ describe('buildRunSheet', () => {
   it('skips the ceremony block when it is not chosen', () => {
     const input = sampleInput({ functions: ['mehndi'] });
     expect(brief(run({ profile: wedding, input, start: 10 * 60 }))).toEqual([
-      '-1 08:00-11:00 Mehndi',
+      '-1 16:00-19:00 Mehndi',
       '0 09:00-10:00 Baraat',
     ]);
   });

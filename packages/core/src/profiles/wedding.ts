@@ -98,27 +98,30 @@ export const WEDDING: Profile = deepFreeze<Profile>({
       id: 'haldi',
       label: 'Haldi',
       guestShare: 0.4,
+      anchorMin: 11 * 60,
       runSheet: [
-        slot(-480, 60, 'Set up haldi seating and marigold decor', 'Decorator'),
-        slot(-420, 90, 'Haldi ceremony', 'Family'),
-        slot(-330, 90, 'Lunch', 'Caterer'),
+        slot(-60, 60, 'Set up haldi seating and marigold decor', 'Decorator'),
+        slot(0, 90, 'Haldi ceremony', 'Family'),
+        slot(90, 90, 'Lunch', 'Caterer'),
       ],
     },
     {
       id: 'mehndi',
       label: 'Mehndi',
       guestShare: 0.6,
+      anchorMin: 16 * 60,
       runSheet: [
-        slot(-150, 30, 'Mehndi artists set up', 'Mehndi artist'),
-        slot(-120, 180, 'Mehndi for the bride and guests', 'Mehndi artist'),
-        slot(-60, 120, 'Music, games and snacks', 'Host family'),
-        slot(60, 90, 'Dinner', 'Caterer'),
+        slot(-30, 30, 'Mehndi artists set up', 'Mehndi artist'),
+        slot(0, 180, 'Mehndi for the bride and guests', 'Mehndi artist'),
+        slot(60, 120, 'Music, games and snacks', 'Host family'),
+        slot(180, 90, 'Dinner', 'Caterer'),
       ],
     },
     {
       id: 'sangeet',
       label: 'Sangeet',
       guestShare: 0.8,
+      anchorMin: 18 * 60,
       runSheet: [
         slot(-90, 60, 'Sound check and stage rehearsal', 'DJ'),
         slot(0, 30, 'Guests arrive; welcome drinks', 'Host family'),
@@ -127,11 +130,13 @@ export const WEDDING: Profile = deepFreeze<Profile>({
         slot(150, 90, 'Dinner', 'Caterer'),
       ],
     },
-    { id: 'ceremony', label: 'Wedding ceremony', guestShare: 1, runSheet: [] },
+    // The ceremony follows the chosen start time, so its anchor is never read.
+    { id: 'ceremony', label: 'Wedding ceremony', guestShare: 1, anchorMin: 0, runSheet: [] },
     {
       id: 'reception',
       label: 'Reception',
       guestShare: 1,
+      anchorMin: 19 * 60 + 30,
       runSheet: [
         slot(-60, 60, 'Stage and lighting check', 'Decorator'),
         slot(0, 30, "Couple's entry", 'Emcee'),

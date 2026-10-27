@@ -1,5 +1,6 @@
 /**
- * Day-of run sheet (design section 6.7). Templates are anchored to the start time; slots are
+ * Day-of run sheet (design section 6.7). The event day's templates are anchored to the start
+ * time and each other wedding function to its customary hour; slots are
  * placed on an absolute minute line (day x 1440 + minute) so a slot past midnight lands on the
  * right day and sorting is a single integer compare.
  */
@@ -36,15 +37,17 @@ function leadIn(templates: readonly SlotTemplate[]): number {
 
 /**
  * Places the wedding function blocks on the days context.ts assigns them, so the run sheet and
- * the plan's span always agree: earlier functions on consecutive days before the ceremony, and
- * a reception either the next day at the start time or, on the same day, straight after the
- * main day's last slot (its preparation starting as that slot ends).
+ * the plan's span always agree. Each block starts at its function's customary time on its own
+ * day (a morning haldi, an evening sangeet) rather than at the ceremony's start time. A
+ * same-day reception starts at its customary time or, if the main day runs later, once the
+ * main day's last slot ends (its preparation starting as that slot ends).
  */
-function placeFunctions(into: Placed[], stage: StageInput, anchor: number, mainEnd: number): void {
+function placeFunctions(into: Placed[], stage: StageInput, mainEnd: number): void {
   for (const { functionId, offset } of functionDays(stage.input)) {
     const def = stage.profile.functions.find((f) => f.id === functionId);
     if (def === undefined || functionId === 'ceremony') continue;
-    const at = offset === 0 ? mainEnd + leadIn(def.runSheet) : anchor + offset * MINUTES_PER_DAY;
+    const customary = (stage.ctx.eventDay + offset) * MINUTES_PER_DAY + def.anchorMin;
+    const at = offset === 0 ? Math.max(customary, mainEnd + leadIn(def.runSheet)) : customary;
     place(into, def.runSheet, at);
   }
 }
@@ -80,6 +83,6 @@ export function buildRunSheet(stage: StageInput): RunSheetSlot[] {
   const placed: Placed[] = [];
   const anchor = stage.ctx.eventDay * MINUTES_PER_DAY + stage.ctx.startMinutes;
   const mainEnd = place(placed, mainDayTemplates(stage), anchor);
-  placeFunctions(placed, stage, anchor, mainEnd);
+  placeFunctions(placed, stage, mainEnd);
   return placed.sort((a, b) => a.at - b.at).map(toSlot);
 }

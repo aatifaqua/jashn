@@ -15,15 +15,25 @@ import type {
   PlanPatch,
 } from './types.ts';
 
-/** Control and invisible format characters (zero-width spaces, bidi overrides, BOM). */
-const INVISIBLE = /[\p{Cc}\p{Cf}]/gu;
+/**
+ * Control and invisible format characters (zero-width spaces, bidi overrides, BOM). The
+ * zero-width joiner and non-joiner (U+200D, U+200C) are kept: Devanagari half-forms and emoji
+ * sequences such as a family emoji need them.
+ */
+const INVISIBLE = /(?![‌‍])[\p{Cc}\p{Cf}]/gu;
 const WHITESPACE = /\s+/gu;
 
 /** Fields whose rules depend on the event type, so they are skipped when the type is bad. */
 const TYPE_DEPENDENT: readonly InputField[] = ['style', 'functions', 'priorities'];
 
+/** NFC as well, so the same text typed composed or decomposed compares and caches as equal. */
 function cleanText(value: string): string {
-  return value.replace(WHITESPACE, ' ').replace(INVISIBLE, '').replace(WHITESPACE, ' ').trim();
+  return value
+    .normalize('NFC')
+    .replace(WHITESPACE, ' ')
+    .replace(INVISIBLE, '')
+    .replace(WHITESPACE, ' ')
+    .trim();
 }
 
 /** De-duplicated and sorted, so equal choices in any order compare and cache as equal. */

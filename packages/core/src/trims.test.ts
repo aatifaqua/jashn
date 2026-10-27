@@ -37,7 +37,6 @@ describe('rankTrims', () => {
     expect(list.map((item) => [item.id, item.saves])).toEqual([
       ['invite-fewer', 338_800],
       ['lunch', 120_000],
-      ['merge-functions', 115_400],
       ['e-invites', 40_000],
       ['weekday', 40_000],
     ]);
@@ -75,10 +74,26 @@ describe('rankTrims', () => {
     expect(byId(list, 'lunch')).toBeUndefined();
   });
 
-  it('merges the two smallest functions other than the ceremony', () => {
+  it('skips the weekday trim once the venue is booked for the date', () => {
+    expect(byId(trims({ budget: 900_000 }), 'weekday')).toBeDefined();
+    expect(byId(trims({ budget: 900_000, venueBooked: true }), 'weekday')).toBeUndefined();
+  });
+
+  it('merges the two smallest functions held before the ceremony', () => {
     const list = trims({ functions: ['ceremony', 'haldi', 'sangeet', 'reception'] });
     expect(byId(list, 'merge-functions')?.label).toBe('Hold the haldi and sangeet on one day');
     expect(byId(trims({ functions: ['ceremony', 'mehndi'] }), 'merge-functions')).toBeUndefined();
+  });
+
+  it('never merges a pre-wedding function with the reception', () => {
+    for (const style of ['traditional', 'intimate'] as const) {
+      const list = trims({
+        style,
+        budget: 900_000,
+        functions: ['ceremony', 'mehndi', 'reception'],
+      });
+      expect(byId(list, 'merge-functions')).toBeUndefined();
+    }
   });
 
   it('skips e-invites when the event is already eco-friendly', () => {

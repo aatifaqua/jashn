@@ -81,6 +81,15 @@ export function weekday(dayNumber: number): number {
   return (((dayNumber + 4) % 7) + 7) % 7;
 }
 
+/**
+ * The same calendar date `years` later, as a day number; 29 February falls back to 28 February
+ * in a common year. Counting by the calendar keeps "three years ahead" exact across leap days.
+ */
+export function addYears(dayNumber: number, years: number): number {
+  const { year, month, day } = toCivil(dayNumber);
+  return fromCivil(year + years, month, Math.min(day, daysInMonth(year + years, month)));
+}
+
 /** Day number `days` after (or before, when negative) the given day. */
 export function addDays(dayNumber: number, days: number): number {
   return dayNumber + days;
@@ -93,7 +102,8 @@ export function month(dayNumber: number): number {
 
 /** India Standard Time is a fixed UTC+05:30 with no daylight saving, so arithmetic is exact. */
 const IST_OFFSET_MS = 330 * 60_000;
-const MS_PER_DAY = 86_400_000;
+/** Milliseconds in a day; a day number times this is that day's UTC midnight. */
+export const MS_PER_DAY = 86_400_000;
 
 /**
  * The calendar date in India at an epoch time, as a day number. Jashn plans events in India,

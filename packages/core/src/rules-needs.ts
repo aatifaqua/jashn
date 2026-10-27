@@ -1,9 +1,10 @@
 /**
  * Contextual rules driven by the needs the user declares (design 6.2: step-free, diets,
- * alcohol-free, kid-friendly, eco-friendly, budget-strict). Each reason names the need.
+ * alcohol-free, kid-friendly, eco-friendly, budget-strict). Each reason names the need. Halal
+ * also drops the bar, since alcohol is not halal.
  */
 import { slot } from './profiles/slot.ts';
-import type { Constraint, EventInput, Reason, Rule } from './types.ts';
+import type { Constraint, EventInput, Reason, Rule, RuleEffects } from './types.ts';
 
 const has =
   (need: Constraint) =>
@@ -11,6 +12,15 @@ const has =
     input.constraints.includes(need);
 
 const said = (code: string, text: string) => (): Reason => ({ code, text });
+
+/** Drops the bar line and the bartender, with a mocktail counter in their place. */
+const NO_BAR = Object.freeze<RuleEffects>({
+  budget: [{ kind: 'remove', category: 'bar' }],
+  removeVendors: ['bartender'],
+  notices: [
+    { code: 'mocktails', text: 'Plan a mocktail and fresh-juice counter in place of a bar.' },
+  ],
+});
 
 /** Rules for declared needs, in the order of the design's rules table. */
 export const NEED_RULES: readonly Rule[] = [
@@ -76,13 +86,14 @@ export const NEED_RULES: readonly Rule[] = [
     id: 'alcohol-free',
     when: has('alcohol-free'),
     reason: said('alcohol-free', 'You asked for an alcohol-free event, so there is no bar.'),
-    effects: {
-      budget: [{ kind: 'remove', category: 'bar' }],
-      removeVendors: ['bartender'],
-      notices: [
-        { code: 'mocktails', text: 'Plan a mocktail and fresh-juice counter in place of a bar.' },
-      ],
-    },
+    effects: NO_BAR,
+  },
+  {
+    // Halal excludes alcohol too (the idea guard rejects it), so the plan must not fund a bar.
+    id: 'halal-no-bar',
+    when: (ctx, input) => has('halal')(ctx, input) && !has('alcohol-free')(ctx, input),
+    reason: said('halal-no-bar', 'You asked for halal, so there is no bar.'),
+    effects: NO_BAR,
   },
   {
     id: 'kid-friendly',

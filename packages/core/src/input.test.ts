@@ -4,7 +4,7 @@ import { fromIso, toIso } from './days.ts';
 import { INPUT_FIELDS, INPUT_LIMITS } from './fields.ts';
 import { CATEGORY_IDS, CONSTRAINTS, STYLE_IDS } from './ids.ts';
 import { applyPatch, canonicalKey, normaliseInput, validateInput, validatePatch } from './input.ts';
-import { TODAY, sampleInput } from './test-fixtures.ts';
+import { TODAY, maxLead, sampleInput } from './test-fixtures.ts';
 import type { EventInput, FieldError, PlanPatch } from './types.ts';
 
 function errorsOf(raw: unknown): readonly FieldError[] {
@@ -30,6 +30,16 @@ describe('normaliseInput', () => {
     expect(clean.city).toBe('New Delhi');
     expect(clean.note).toBe('veg food please');
     expect(clean.date).toBe('2027-02-20');
+  });
+
+  it('keeps joiners that emoji and Devanagari need, and composes text to NFC', () => {
+    const family = '\u{1F468}‍\u{1F469}‍\u{1F467} family';
+    const marathi = 'कार्‍यक्रम';
+    const clean = normaliseInput(sampleInput({ note: family, city: marathi }));
+    expect(clean.note).toBe(family);
+    expect(clean.city).toBe(marathi);
+    const decomposed = normaliseInput(sampleInput({ city: 'Bandra Café' }));
+    expect(decomposed.city).toBe('Bandra Café');
   });
 
   it('de-duplicates and sorts lists', () => {
@@ -60,9 +70,15 @@ describe('validateInput', () => {
     expect(result).toEqual({ ok: true, value: sampleInput() });
   });
 
+  it('allows exactly three calendar years ahead when no leap day falls in the window', () => {
+    const today = fromIso('2028-03-01') ?? 0;
+    expect(validateInput(sampleInput({ date: '2031-03-01' }), today).ok).toBe(true);
+    expect(validateInput(sampleInput({ date: '2031-03-02' }), today).ok).toBe(false);
+  });
+
   it('accepts the boundaries', () => {
     const edges = sampleInput({
-      date: toIso(TODAY + INPUT_LIMITS.maxLeadDays),
+      date: toIso(TODAY + maxLead(TODAY)),
       invited: INPUT_LIMITS.invited.max,
       budget: INPUT_LIMITS.budget.min,
       city: '',
@@ -111,7 +127,7 @@ describe('validateInput', () => {
     [{ functions: ['mehndi'] }, 'functions:required'],
     [{ date: '20-02-2027' }, 'date:format'],
     [{ date: toIso(TODAY - 1) }, 'date:past'],
-    [{ date: toIso(TODAY + INPUT_LIMITS.maxLeadDays + 1) }, 'date:too-far'],
+    [{ date: toIso(TODAY + maxLead(TODAY) + 1) }, 'date:too-far'],
     [{ startTime: '6pm' }, 'startTime:format'],
     [{ city: 'L'.repeat(61) }, 'city:too-long'],
     [{ city: 'Lucknow 226001' }, 'city:invalid'],
@@ -194,7 +210,7 @@ describe('validatePatch', () => {
 
 const validPatch: fc.Arbitrary<PlanPatch> = fc.record(
   {
-    date: fc.integer({ min: TODAY, max: TODAY + INPUT_LIMITS.maxLeadDays }).map(toIso),
+    date: fc.integer({ min: TODAY, max: TODAY + maxLead(TODAY) }).map(toIso),
     startTime: fc
       .tuple(fc.integer({ min: 0, max: 23 }), fc.integer({ min: 0, max: 59 }))
       .map(([h, m]) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`),

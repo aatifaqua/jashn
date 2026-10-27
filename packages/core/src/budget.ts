@@ -155,16 +155,18 @@ function weighCategories(
 /** Splits a line across the chosen wedding functions by their guest share. */
 function splitByFunction(amount: number, input: EventInput, profile: Profile): FunctionAmount[] {
   const chosen = profile.functions.filter((def) => input.functions.includes(def.id));
-  return apportion(amount / ROUNDING_UNIT, chosen, (def) => def.guestShare).map(
-    ({ item, units }) => ({ functionId: item.id, amount: units * ROUNDING_UNIT }),
-  );
+  return apportion(amount / ROUNDING_UNIT, chosen, (def) => def.guestShare)
+    .filter(({ units }) => units > 0)
+    .map(({ item, units }) => ({ functionId: item.id, amount: units * ROUNDING_UNIT }));
 }
 
 /**
  * Allocates the budget across the profile's categories. Weights are renormalised to the
  * non-contingency share and apportioned in ₹100 units in one pass; the contingency takes the
  * rupees left over, so lines plus contingency always equal the budget exactly. Categories
- * whose weight ends at zero (an unfunded or removed bar) get no line.
+ * whose weight ends at zero (an unfunded or removed bar) get no line, and neither does a
+ * category (or a function's part of one) that a very small budget rounds down to ₹0, so no
+ * ₹0 line is shown with reasons for money it never receives.
  */
 export function allocateBudget(
   input: EventInput,
@@ -177,15 +179,16 @@ export function allocateBudget(
   const reservePercent = Math.round(contingencyShare(fired) * 100);
   const spendUnits = Math.floor((input.budget * (100 - reservePercent)) / (100 * ROUNDING_UNIT));
   const split = input.type === 'wedding' && input.functions.length > 1;
-  const lines = apportion(spendUnits, funded, (entry) => entry.weight).map(
-    ({ item, units }): BudgetLine => {
+  const shares = apportion(spendUnits, funded, (entry) => entry.weight);
+  const lines = shares
+    .filter(({ units }) => units > 0)
+    .map(({ item, units }): BudgetLine => {
       const amount = units * ROUNDING_UNIT;
       const { category, reasons } = item;
       const line = { category, amount, share: amount / input.budget, reasons };
       if (!split || !SPLIT_CATEGORIES.has(category)) return line;
       return { ...line, perFunction: splitByFunction(amount, input, profile) };
-    },
-  );
+    });
   return { lines, contingency: input.budget - spendUnits * ROUNDING_UNIT };
 }
 

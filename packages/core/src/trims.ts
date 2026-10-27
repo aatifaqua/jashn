@@ -3,6 +3,7 @@
  * themselves; the user or the assistant turns one into a patch.
  */
 import { attendanceBasisPoints, expectedFor, maxInvitedFor } from './attendance.ts';
+import { functionDays } from './context.ts';
 import { ROUNDING_UNIT, roundRupees } from './money.ts';
 import { formatCount, formatDay, formatRupees, weekdayName } from './text.ts';
 import type {
@@ -75,8 +76,9 @@ function inviteFewer({ input, profile, ctx, lines, floor, verdict }: TrimContext
   );
 }
 
-function weekdayDate({ ctx, lines }: TrimContext): Trim | null {
-  if (ctx.midweek) return null;
+/** Not offered once the venue is booked: its date and price are already contracted. */
+function weekdayDate({ input, ctx, lines }: TrimContext): Trim | null {
+  if (input.venueBooked || ctx.midweek) return null;
   return trim(
     'weekday',
     'Move to a weekday (Monday to Thursday)',
@@ -95,11 +97,19 @@ function lunch({ input, ctx, lines }: TrimContext): Trim | null {
   );
 }
 
-/** Folds the two smallest functions other than the ceremony into one day. */
+/**
+ * Folds the two smallest functions held before the ceremony (haldi, mehndi, sangeet) into one
+ * day. The reception comes after the ceremony, so it is never merged with them.
+ */
 function mergeFunctions({ input, profile, lines }: TrimContext): Trim | null {
   const chosen = profile.functions.filter((def) => input.functions.includes(def.id));
+  const before = new Set(
+    functionDays(input)
+      .filter((day) => day.offset < 0)
+      .map((d) => d.functionId),
+  );
   const [smaller, other] = chosen
-    .filter((def) => def.id !== 'ceremony')
+    .filter((def) => before.has(def.id))
     .sort((a, b) => a.guestShare - b.guestShare);
   if (smaller === undefined || other === undefined) return null;
   const totalShare = chosen.reduce((sum, def) => sum + def.guestShare, 0);

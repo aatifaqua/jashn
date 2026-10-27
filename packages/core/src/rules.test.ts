@@ -127,6 +127,14 @@ describe('fireRules', () => {
     ]);
   });
 
+  it('drops the bar for halal once, with its own reason, unless alcohol-free already did', () => {
+    const halal = find('halal-no-bar', { constraints: ['halal'] });
+    expect(halal.reason.text).toBe('You asked for halal, so there is no bar.');
+    expect(halal.effects.budget).toEqual([{ kind: 'remove', category: 'bar' }]);
+    expect(halal.effects.removeVendors).toEqual(['bartender']);
+    expect(ids({ constraints: ['halal', 'alcohol-free'] })).not.toContain('halal-no-bar');
+  });
+
   it('gives each need a reason and effects that name it', () => {
     const cases: [Constraint, string][] = [
       ['step-free', 'step-free'],

@@ -7,7 +7,7 @@ import { SAFETY_THRESHOLDS } from './attendance.ts';
 import { deepFreeze } from './profiles/freeze.ts';
 import { slot } from './profiles/slot.ts';
 import { NEED_RULES } from './rules-needs.ts';
-import { formatCount, formatDay, weekdayName } from './text.ts';
+import { countWord, formatCount, formatDay, weekdayName } from './text.ts';
 import type { EventContext, EventInput, Reason, Rule, RuleEffects } from './types.ts';
 
 /** A rule that fired for one plan, with its reason already worded for this input. */
@@ -99,7 +99,7 @@ const CALENDAR_RULES: readonly Rule[] = [
     when: (ctx) => ctx.flags.shortNotice,
     reason: (ctx, input) => ({
       code: 'short-notice',
-      text: `Only ${formatCount(ctx.daysToGo)} days to go for this ${input.type}, so bookings are compressed.`,
+      text: `Only ${countWord(ctx.daysToGo, 'day', 'days')} to go for this ${input.type}, so bookings are compressed.`,
     }),
     effects: {
       tasks: [{ id: 'lock-venue', title: 'Lock the venue today', leadDays: ALREADY_DUE }],

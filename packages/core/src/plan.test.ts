@@ -13,6 +13,31 @@ function plan(overrides: Partial<EventInput> = {}, today = TODAY): Plan {
 }
 
 describe('buildPlan', () => {
+  it('funds no bar and books no bartender for a halal wedding', () => {
+    const plan = buildPlan(
+      sampleInput({ style: 'intimate', constraints: ['halal'] }),
+      TODAY,
+      WEDDING,
+    );
+    expect(plan.budget.map((line) => line.category)).not.toContain('bar');
+    expect(plan.vendors.map((vendor) => vendor.id)).not.toContain('bartender');
+    expect(plan.tasks.some((task) => task.vendorId === 'bartender')).toBe(false);
+  });
+
+  it('flags invitations as at-risk for a wedding six days out instead of hiding them', () => {
+    const all = ['haldi', 'mehndi', 'sangeet', 'ceremony', 'reception'] as const;
+    const plan = buildPlan(
+      sampleInput({ date: '2026-11-02', functions: [...all] }),
+      TODAY,
+      WEDDING,
+    );
+    for (const id of ['order-invites', 'send-invites']) {
+      const task = plan.tasks.find((t) => t.id === id);
+      expect(task?.status).toBe('at-risk');
+      expect(task?.reasons.at(-1)?.text).toContain('the last day this can realistically happen');
+    }
+  });
+
   it('assembles every stage for the input', () => {
     const built = plan();
     expect(built.input).toEqual(sampleInput({ functions: ['ceremony', 'mehndi', 'reception'] }));

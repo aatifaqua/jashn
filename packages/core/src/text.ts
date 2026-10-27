@@ -2,9 +2,8 @@
  * Plain-language formatting for everything the core words for people: rule reasons, trims,
  * fallback replies, drafts, ideas and the calendar export (Indian conventions).
  */
+import { MS_PER_DAY } from './days.ts';
 import type { EventInput, StyleId } from './types.ts';
-
-const MS_PER_DAY = 86_400_000;
 
 /**
  * Formatters are built once at module scope because constructing an Intl formatter is far
@@ -50,6 +49,11 @@ const OCCASIONS: Readonly<Record<StyleId, string>> = Object.freeze({
 /** A whole number with Indian grouping: 250000 → "2,50,000"; fractions are rounded. */
 export function formatCount(value: number): string {
   return COUNT.format(value);
+}
+
+/** A count with the matching noun: (1, 'day', 'days') → "1 day", (2, …) → "2 days". */
+export function countWord(count: number, one: string, many: string): string {
+  return `${formatCount(count)} ${count === 1 ? one : many}`;
 }
 
 /** Rupees with Indian grouping and the ₹ sign, no paise: 250000 → "₹2,50,000". */

@@ -2,6 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
+  addYears,
   daysInMonth,
   formatTime,
   fromCivil,
@@ -88,6 +89,26 @@ describe('weekday and addDays', () => {
   it('adds and subtracts days', () => {
     expect(addDays(10, 5)).toBe(15);
     expect(addDays(10, -12)).toBe(-2);
+  });
+});
+
+describe('addYears', () => {
+  it('keeps the calendar date and falls back from 29 February', () => {
+    expect(toIso(addYears(fromCivil(2028, 3, 1), 3))).toBe('2031-03-01');
+    expect(toIso(addYears(fromCivil(2028, 2, 29), 3))).toBe('2031-02-28');
+    expect(toIso(addYears(fromCivil(2027, 2, 28), 1))).toBe('2028-02-28');
+  });
+
+  it('is exactly three calendar years on either side of any leap day', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: fromCivil(2000, 1, 1), max: fromCivil(2100, 1, 1) }), (day) => {
+        const later = toCivil(addYears(day, 3));
+        const now = toCivil(day);
+        expect(later.year).toBe(now.year + 3);
+        expect(later.month).toBe(now.month);
+        expect(later.day).toBe(Math.min(now.day, daysInMonth(now.year + 3, now.month)));
+      }),
+    );
   });
 });
 

@@ -104,7 +104,7 @@ export const WEDDING_TASKS: readonly TaskTemplate[] = [
     title: 'Book the bar service and check the liquor licence',
     leadDays: 45,
     vendorId: 'bartender',
-    appliesWhen: { noConstraint: ['alcohol-free'] },
+    appliesWhen: { noConstraint: ['alcohol-free', 'halal'] },
     minLead: 7,
   },
   {

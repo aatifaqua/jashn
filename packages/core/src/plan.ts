@@ -9,7 +9,7 @@ import { canonicalKey, normaliseInput } from './input.ts';
 import { deepFreeze } from './profiles/freeze.ts';
 import { fireRules } from './rules.ts';
 import { buildRunSheet } from './runsheet.ts';
-import { buildTimeline, topActions, type StageInput } from './timeline.ts';
+import { buildTimeline, pinnedIds, topActions, type StageInput } from './timeline.ts';
 import { buildPayments, buildVendors } from './vendors.ts';
 import type { BudgetLine, EventInput, Plan, PlanDiff, Profile } from './types.ts';
 
@@ -47,7 +47,7 @@ function assemble(input: EventInput, today: number, profile: Profile): Plan {
     vendors,
     payments: buildPayments(vendors, budget.lines, ctx.eventDay),
     runSheet: buildRunSheet(stage),
-    topActions: topActions(tasks, stage.fired),
+    topActions: topActions(tasks, pinnedIds(stage.fired)),
     notices: stage.fired.flatMap((rule) => rule.effects.notices ?? []),
   };
 }

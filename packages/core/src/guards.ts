@@ -25,13 +25,15 @@ const MEAT =
   'veal venison turkey duck fish prawn shrimp crab lobster squid calamari oyster mussel clam ' +
   'anchovy tuna salmon seafood gelatin gelatine keema kheema murg murgh gosht machli machhli ' +
   'macchi jhinga jheenga nalli nihari haleem paya kaleji boti tangdi bheja rogan ' +
+  'pomfret surmai rohu hilsa ilish bangda bombil kingfish shellfish catfish crabmeat ' +
   'मुर्ग मुर्गा मुर्गी चिकन मटन गोश्त मछली झींगा कीमा';
 const EGG = 'egg omelette omelet meringue anda ande अंडा अंडे ऑमलेट';
 /** Roots, bulbs and fungi a Jain menu leaves out, plus honey. */
 const ROOTS =
   'onion garlic potato carrot radish beetroot beet turnip ginger yam shallot leek mushroom ' +
   'honey pyaz pyaaz piyaz lehsun lahsun aloo aalu gajar mooli adrak shakarkandi arbi chukandar ' +
-  'jimikand suran प्याज लहसुन आलू गाजर मूली अदरक शकरकंद अरबी चुकंदर';
+  'jimikand suran batata kanda alu aaloo lasun lassan pyaj ' +
+  'प्याज लहसुन आलू गाजर मूली अदरक शकरकंद अरबी चुकंदर';
 const PORK = 'pork ham bacon lard pepperoni salami prosciutto gelatin gelatine';
 const ALCOHOL =
   'alcohol alcoholic wine beer whisky whiskey vodka rum gin tequila champagne prosecco cocktail ' +
@@ -40,13 +42,15 @@ const ALCOHOL =
 
 /**
  * Whole words only (Unicode letters and marks count as word characters, so Devanagari works),
- * with an optional English plural. "Non-alcoholic", "virgin mojito", "egg-free" and "eggless"
- * are not conflicts; only a hyphen joins "free" or "less", so "fish, less oil" is still caught.
+ * with an optional English plural. "Non-alcoholic", "virgin mojito", "non-alcoholic
+ * cocktails", "alcohol-free cocktails", "zero-proof cocktails", "egg-free" and "eggless" are not
+ * conflicts; only a hyphen joins "free" or "less", so "fish, less oil" is still caught.
  */
 function wordPattern(...lists: string[]): RegExp {
   const words = lists.join(' ').split(' ').join('|');
   return new RegExp(
-    `(?<![\\p{L}\\p{M}])(?<!(?:non|zero|virgin)[- ])(?:${words})(?:e?s)?` +
+    `(?<![\\p{L}\\p{M}])(?<!(?:non|zero|virgin|non-alcoholic|alcohol-free|zero-proof)[- ])` +
+      `(?:${words})(?:e?s)?` +
       `(?![\\p{L}\\p{M}])(?!-(?:free|less)(?![\\p{L}]))`,
     'giu',
   );
@@ -65,10 +69,12 @@ const LINK =
 
 /** A rupee figure: a currency mark before it, or a unit or the word rupees after it. */
 const AMOUNT =
-  /(₹|\brs\.?|\binr|रु\.?)?\s*(\d[\d,]*(?:\.\d+)?)\s*(lakhs?|lacs?|crores?|cr|k|thousand|लाख|करोड़|हज़ार|हजार)?(?![\p{L}\p{M}])\s*(rupees|रुपये|रुपए)?/giu;
+  /(₹|\brs\.?|\binr|रु\.?)?\s*(\d[\d,]*(?:\.\d+)?)\s*(lakhs?|lacs?|lks?|l|crores?|cr|k|thousand|लाख|करोड़|हज़ार|हजार)?(?![\p{L}\p{M}])\s*(rupees|रुपये|रुपए)?/giu;
 const UNITS = Object.freeze({
   lakh: 1e5,
   lac: 1e5,
+  l: 1e5,
+  lk: 1e5,
   लाख: 1e5,
   crore: 1e7,
   cr: 1e7,
@@ -169,7 +175,9 @@ function matches(value: number, tolerance: number, allowed: ReadonlySet<number>)
  */
 export function inventedAmounts(text: string, allowed: ReadonlySet<number>): readonly number[] {
   const invented: number[] = [];
-  for (const [, mark, digits, unitWord, rupees] of asciiDigits(text).matchAll(AMOUNT)) {
+  // NFC splits a precomposed nukta letter (U+0958–U+095F) the way the unit words spell it.
+  const plain = asciiDigits(text.normalize('NFC'));
+  for (const [, mark, digits, unitWord, rupees] of plain.matchAll(AMOUNT)) {
     // The digits group is never empty in a match; the check narrows its type.
     if (digits === undefined || (mark ?? unitWord ?? rupees) === undefined) continue;
     const unit = unitOf(unitWord);
@@ -226,16 +234,21 @@ export function guardIdeas(ideas: Ideas, constraints: readonly Constraint[]): Gu
     ['touch.title', ideas.touch.title, title],
     ['touch.detail', ideas.touch.detail, detail],
   ];
-  ideas.theme.palette.forEach((word, i) => {
-    fields.push([`theme.palette.${String(i)}`, word, GUARD_LIMITS.paletteWord]);
-  });
   for (const key of ['decor', 'menu', 'activities'] as const) {
     ideas[key].forEach((item, i) => {
       fields.push([`${key}.${String(i)}.title`, item.title, title]);
       fields.push([`${key}.${String(i)}.detail`, item.detail, detail]);
     });
   }
-  return fields.flatMap(([where, text, max]) => checkText(where, text, max, scope));
+  // Palette words are colours ("champagne", "wine", "salmon"), never food, so diet is skipped.
+  const colours = { ...scope, diet: false };
+  const palette = ideas.theme.palette.flatMap((word, i) =>
+    checkText(`theme.palette.${String(i)}`, word, GUARD_LIMITS.paletteWord, colours),
+  );
+  return [
+    ...fields.flatMap(([where, text, max]) => checkText(where, text, max, scope)),
+    ...palette,
+  ];
 }
 
 /**

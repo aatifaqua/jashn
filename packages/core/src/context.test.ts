@@ -106,12 +106,16 @@ describe('functionDays', () => {
     ]);
   });
 
-  it('holds an intimate reception on the ceremony day', () => {
-    const days = functionDays(sampleInput({ style: 'intimate', functions: ['reception'] }));
-    expect(days).toEqual([
+  it('holds an intimate reception on the ceremony evening only when it starts by 15:00', () => {
+    const at = (startTime: string) =>
+      functionDays(sampleInput({ style: 'intimate', startTime, functions: ['reception'] }));
+    expect(at('11:00')).toEqual([
       { functionId: 'ceremony', offset: 0 },
       { functionId: 'reception', offset: 0 },
     ]);
+    expect(at('15:00').at(-1)?.offset).toBe(0);
+    expect(at('15:01').at(-1)?.offset).toBe(1);
+    expect(at('bad').at(-1)?.offset).toBe(0);
   });
 
   it('is empty for other event types', () => {
