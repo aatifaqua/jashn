@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Demo pre-generation makes one Gemini request per sample, returning its ideas, every vendor
+  draft and the suggested-prompt answers; each item passes the live routes' own checks or is
+  left out. The demo file drops its per-language level (version 2).
+
+### Removed
+
+- The output-language choice: generated text is English only. Plans saved earlier still load.
+
 ## [0.1.0] - 2026-10-27
 
 ### Added
