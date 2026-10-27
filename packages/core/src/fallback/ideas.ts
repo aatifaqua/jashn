@@ -8,7 +8,7 @@ import { applies } from '../applies.ts';
 import { seasonOf } from '../context.ts';
 import { fromIso, month } from '../days.ts';
 import type { Constraint, EventInput, IdeaItem, Ideas } from '../types.ts';
-import { formatLongDay, occasion, withArticle } from '../text.ts';
+import { occasion, withArticle } from '../text.ts';
 import { ACTIVITIES, DECOR, DEFAULT_TOUCH, TOUCHES, type IdeaEntry } from './ideas-catalogue.ts';
 import { DISHES, type Course, type Dish, type Season, type Tags } from './menu-catalogue.ts';
 import { DEFAULT_THEME, THEMES } from './themes.ts';
@@ -94,16 +94,18 @@ function menu(input: EventInput, seasons: readonly Season[]): IdeaItem[] {
   );
 }
 
+/**
+ * Invitation wording with [names], [date] and [venue] left for the user: ideas never state a
+ * date, so saved or pre-generated wording cannot go stale when the plan moves.
+ */
 function invitation(input: EventInput): string {
-  const day = fromIso(input.date);
-  const when = day === null ? '' : ` on ${formatLongDay(day)}`;
   const where = input.city === '' ? '' : ` in ${input.city}`;
   const extras = [
     input.constraints.includes('kid-friendly') ? 'Children are very welcome.' : '',
     input.constraints.includes('eco-friendly') ? 'Please skip plastic gift wrap.' : '',
   ].filter((line) => line !== '');
   return [
-    `We warmly invite you to our ${occasion(input)}${where}${when}, starting at ${input.startTime}.`,
+    `[Names] warmly invite you to our ${occasion(input)}${where} on [date] at [venue], starting at ${input.startTime}.`,
     CLOSINGS[input.type],
     ...extras,
     'Kindly let us know if you can join us.',

@@ -207,3 +207,41 @@ describe('guardReply', () => {
     expect(guardReply('Budget → ₹8,00,000', plan)[0]?.detail).toBe('₹800000 is not in the plan');
   });
 });
+
+describe('date guard', () => {
+  it('lets replies and drafts repeat plan dates but not invent or keep stale ones', () => {
+    const plan = samplePlan();
+    expect(guardReply('Pay the caterer by 6 Nov 2026.', plan)).toEqual([]);
+    expect(guardReply('Pay the caterer by 9 Nov please.', plan)).toEqual([
+      { code: 'date', where: 'reply', detail: '"9 Nov" is not a date in the plan' },
+    ]);
+    expect(guardReply('Moved to 13 March 2027.', plan, { date: '2027-03-13' })).toEqual([]);
+    expect(guardDraft('Event on 20 February 2027; can you confirm by 6 November?', plan)).toEqual(
+      [],
+    );
+    expect(guardDraft('Event on 27 February 2027.', plan).map((issue) => issue.code)).toEqual([
+      'date',
+    ]);
+  });
+
+  it('reads Devanagari digits in amounts', () => {
+    const plan = samplePlan();
+    expect(guardReply('कैटरर को ₹२,२५,००० जमा करें', plan)).toEqual([]);
+    expect(guardReply('कैटरर को ₹७७,७७७ दें', plan).map((issue) => issue.code)).toEqual(['amount']);
+  });
+
+  it('rejects any date in ideas, which leave the date as a placeholder', () => {
+    const ideas = guardIdeas(
+      {
+        theme: { name: 'Marigold', palette: ['saffron'], why: 'Warm.' },
+        decor: [],
+        menu: [],
+        activities: [],
+        touch: { title: 'Welcome', detail: 'Rose water at the door.' },
+        invitation: 'Join us on 20 February 2027 at [venue].',
+      },
+      [],
+    );
+    expect(ideas.map((issue) => issue.code)).toEqual(['date']);
+  });
+});

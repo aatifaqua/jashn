@@ -2,6 +2,7 @@
  * Offline assistant (design section 7, /api/assist fallback): a deterministic intent parser
  * that either proposes a validated PlanPatch or answers a question from the plan's own data.
  */
+import { ASSIST_LIMITS } from '../fields.ts';
 import { applyPatch, validatePatch } from '../input.ts';
 import { planSummary, type PlanSummary } from '../summary.ts';
 import type { AssistReply, EventInput, Plan, PlanPatch } from '../types.ts';
@@ -25,7 +26,7 @@ import {
 } from './intents.ts';
 
 /** Messages are capped like the API's, which also bounds the regex work per message. */
-const MESSAGE_MAX = 500;
+const MESSAGE_MAX = ASSIST_LIMITS.message;
 /** Clause breaks; commas inside figures such as 8,00,000 are not followed by a space. */
 const CLAUSE = /\s+and\s+|\s+also\s+|;|\n|\.\s+|,\s+/;
 const BOTH_SETTINGS = /\bindoors?\s+and\s+outdoors?\b|\boutdoors?\s+and\s+indoors?\b/g;

@@ -2,11 +2,11 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
-  dayFromDate,
   daysInMonth,
   formatTime,
   fromCivil,
   fromIso,
+  indiaDay,
   month,
   parseTime,
   toCivil,
@@ -91,10 +91,11 @@ describe('weekday and addDays', () => {
   });
 });
 
-describe('dayFromDate', () => {
-  it('uses the local calendar date, not UTC', () => {
-    expect(dayFromDate(new Date(2026, 9, 27, 0, 5))).toBe(fromIso('2026-10-27'));
-    expect(dayFromDate(new Date(2026, 9, 27, 23, 55))).toBe(fromIso('2026-10-27'));
+describe('indiaDay', () => {
+  it('turns over at midnight in India, not at midnight UTC', () => {
+    expect(indiaDay(Date.UTC(2026, 9, 26, 18, 29))).toBe(fromIso('2026-10-26'));
+    expect(indiaDay(Date.UTC(2026, 9, 26, 18, 30))).toBe(fromIso('2026-10-27'));
+    expect(indiaDay(Date.UTC(2026, 9, 27, 18, 29))).toBe(fromIso('2026-10-27'));
   });
 });
 

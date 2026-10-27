@@ -91,9 +91,17 @@ export function month(dayNumber: number): number {
   return toCivil(dayNumber).month;
 }
 
-/** Today's local calendar date as a day number; the only place a Date enters the core. */
-export function dayFromDate(date: Date): number {
-  return fromCivil(date.getFullYear(), date.getMonth() + 1, date.getDate());
+/** India Standard Time is a fixed UTC+05:30 with no daylight saving, so arithmetic is exact. */
+const IST_OFFSET_MS = 330 * 60_000;
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * The calendar date in India at an epoch time, as a day number. Jashn plans events in India,
+ * so the browser and the server both use it: they then agree on "today" (and on which dates are
+ * in the past) wherever the user or the host happens to be.
+ */
+export function indiaDay(epochMs: number): number {
+  return Math.floor((epochMs + IST_OFFSET_MS) / MS_PER_DAY);
 }
 
 /** Parses a strict 24-hour HH:MM time into minutes after midnight; null if malformed. */

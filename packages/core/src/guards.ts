@@ -3,6 +3,8 @@
  * validation; any issue makes the server serve the deterministic fallback instead. Word tables
  * and regexes are compiled once at module scope so a check is a few linear scans.
  */
+import { asciiDigits, inventedDates, planDays } from './date-mentions.ts';
+import { ASSIST_LIMITS } from './fields.ts';
 import type { Constraint, Ideas, Plan, PlanPatch } from './types.ts';
 
 /** Upper bounds, in characters, for each kind of generated text. */
@@ -13,7 +15,7 @@ export const GUARD_LIMITS = Object.freeze({
   paletteWord: 30,
   why: 300,
   invitation: 700,
-  reply: 900,
+  reply: ASSIST_LIMITS.turn,
   draft: 1800,
 });
 
@@ -84,7 +86,7 @@ export interface DietConflict {
 }
 
 /** Which check failed. */
-export type GuardCode = 'diet' | 'link' | 'length' | 'amount';
+export type GuardCode = 'diet' | 'link' | 'length' | 'amount' | 'date';
 
 /** One reason generated output was rejected; `where` names the field. */
 export interface GuardIssue {
@@ -161,12 +163,13 @@ function matches(value: number, tolerance: number, allowed: ReadonlySet<number>)
 }
 
 /**
- * Rupee figures in the text that are not in `allowed`. "₹8,00,000" must match exactly (to the
- * rupee); a rounded figure such as "8.2 lakh" matches any allowed amount it rounds from.
+ * Rupee figures in the text that are not in `allowed`; Devanagari digits count as digits.
+ * "₹8,00,000" must match exactly (to the rupee); a rounded figure such as "8.2 lakh" matches
+ * any allowed amount it rounds from.
  */
 export function inventedAmounts(text: string, allowed: ReadonlySet<number>): readonly number[] {
   const invented: number[] = [];
-  for (const [, mark, digits, unitWord, rupees] of text.matchAll(AMOUNT)) {
+  for (const [, mark, digits, unitWord, rupees] of asciiDigits(text).matchAll(AMOUNT)) {
     // The digits group is never empty in a match; the check narrows its type.
     if (digits === undefined || (mark ?? unitWord ?? rupees) === undefined) continue;
     const unit = unitOf(unitWord);
@@ -182,6 +185,8 @@ export function inventedAmounts(text: string, allowed: ReadonlySet<number>): rea
 interface Scope {
   readonly constraints: readonly Constraint[];
   readonly amounts: ReadonlySet<number>;
+  /** Day numbers the text may mention; any other calendar date is reported. */
+  readonly days: ReadonlySet<number>;
   readonly diet: boolean;
 }
 
@@ -200,15 +205,19 @@ function checkText(where: string, text: string, max: number, scope: Scope): Guar
   for (const value of inventedAmounts(text, scope.amounts)) {
     issues.push({ code: 'amount', where, detail: `₹${String(value)} is not in the plan` });
   }
+  for (const written of inventedDates(text, scope.days)) {
+    issues.push({ code: 'date', where, detail: `"${written}" is not a date in the plan` });
+  }
   return issues;
 }
 
 /**
  * Checks generated ideas: lengths, links, dietary conflicts in every field, and no rupee
- * figures at all, since ideas never carry prices.
+ * figures or calendar dates at all, since ideas never carry prices and leave the date as a
+ * placeholder (so saved or pre-generated ideas cannot go stale when the plan moves).
  */
 export function guardIdeas(ideas: Ideas, constraints: readonly Constraint[]): GuardIssue[] {
-  const scope: Scope = { constraints, amounts: new Set(), diet: true };
+  const scope: Scope = { constraints, amounts: new Set(), days: new Set(), diet: true };
   const { title, detail } = GUARD_LIMITS;
   const fields: [string, string, number][] = [
     ['theme.name', ideas.theme.name, GUARD_LIMITS.themeName],
@@ -230,19 +239,30 @@ export function guardIdeas(ideas: Ideas, constraints: readonly Constraint[]): Gu
 }
 
 /**
- * Checks a vendor enquiry draft: length, links, and no rupee figure absent from the plan.
- * Diet words are not checked here because an enquiry legitimately says "no onion or garlic".
+ * Checks a vendor enquiry draft: length, links, and no rupee figure or date absent from the
+ * plan. Diet words are not checked here because an enquiry legitimately says "no onion".
  */
 export function guardDraft(text: string, plan: Plan): GuardIssue[] {
-  const scope: Scope = { constraints: [], amounts: planAmounts(plan), diet: false };
+  const scope: Scope = {
+    constraints: [],
+    amounts: planAmounts(plan),
+    days: planDays(plan),
+    diet: false,
+  };
   return checkText('draft', text, GUARD_LIMITS.draft, scope);
 }
 
 /**
- * Checks an assistant reply: length, links, and no rupee figure absent from the plan or the
- * proposed patch, so the assistant can never quote a price the engine did not compute.
+ * Checks an assistant reply: length, links, and no rupee figure or date absent from the plan
+ * or the proposed patch, so the assistant can never quote a price or a deadline the engine did
+ * not compute, and a reply written for an older plan is rejected once its dates move.
  */
 export function guardReply(reply: string, plan: Plan, patch?: PlanPatch): GuardIssue[] {
-  const scope: Scope = { constraints: [], amounts: planAmounts(plan, patch), diet: false };
+  const scope: Scope = {
+    constraints: [],
+    amounts: planAmounts(plan, patch),
+    days: planDays(plan, patch),
+    diet: false,
+  };
   return checkText('reply', reply, GUARD_LIMITS.reply, scope);
 }

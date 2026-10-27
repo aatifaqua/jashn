@@ -83,13 +83,13 @@ describe('ideasOffline', () => {
     );
   });
 
-  it('personalises the theme and invitation with the city, date and needs', () => {
+  it('personalises the theme and invitation with the city and needs, leaving the date as a placeholder', () => {
     const ideas = ideasOffline(
       sampleInput({ style: 'intimate', constraints: ['kid-friendly', 'eco-friendly'] }),
     );
     expect(ideas.theme.why).toMatch(/Chosen for an intimate wedding in Lucknow\.$/);
     expect(ideas.invitation).toBe(
-      'We warmly invite you to our intimate wedding in Lucknow on Saturday, 20 February 2027, ' +
+      '[Names] warmly invite you to our intimate wedding in Lucknow on [date] at [venue], ' +
         'starting at 18:00. Your presence and blessings will make the day complete. ' +
         'Children are very welcome. Please skip plastic gift wrap. ' +
         'Kindly let us know if you can join us.',
@@ -103,6 +103,8 @@ describe('ideasOffline', () => {
     expect(ideas.theme.name).toBe('Festive Classic');
     expect(ideas.theme.why).toMatch(/Chosen for a birthday\.$/);
     expect(ideas.touch.title).toBe('Handwritten welcome');
-    expect(ideas.invitation).toMatch(/^We warmly invite you to our birthday, starting at 18:00\./);
+    expect(ideas.invitation).toMatch(
+      /^\[Names\] warmly invite you to our birthday on \[date\] at \[venue\], starting at 18:00\./,
+    );
   });
 });

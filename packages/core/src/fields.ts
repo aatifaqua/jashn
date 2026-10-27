@@ -16,6 +16,19 @@ export const INPUT_LIMITS = {
   maxLeadDays: 3 * 365 + 1,
 } as const;
 
+/**
+ * Limits of an assistant turn, shared by the form, the API schema and the offline parser so the
+ * three can never disagree. Capping the message also bounds prompt size and regex work.
+ */
+export const ASSIST_LIMITS = Object.freeze({
+  /** Characters in one user message. */
+  message: 500,
+  /** Earlier turns sent with a message; the client drops older ones. */
+  history: 6,
+  /** Characters in one earlier turn: the longest reply the guards let through. */
+  turn: 900,
+});
+
 /** User-facing field names; the Record type guarantees every field has one. */
 export const FIELD_LABELS: Readonly<Record<InputField, string>> = {
   type: 'Event type',

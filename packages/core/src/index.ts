@@ -7,7 +7,7 @@
 export type * from './types.ts';
 export * from './ids.ts';
 export * from './days.ts';
-export { FIELD_LABELS, INPUT_FIELDS, INPUT_LIMITS } from './fields.ts';
+export { ASSIST_LIMITS, FIELD_LABELS, INPUT_FIELDS, INPUT_LIMITS } from './fields.ts';
 export { applyPatch, canonicalKey, normaliseInput, validateInput, validatePatch } from './input.ts';
 export { applies } from './applies.ts';
 export { ROUNDING_UNIT, roundRupees } from './money.ts';
@@ -35,7 +35,13 @@ export { buildPayments, buildVendors } from './vendors.ts';
 export { buildRunSheet } from './runsheet.ts';
 export { buildPlan, diffPlans } from './plan.ts';
 export { planSummary, type PlanSummary, type SummaryPayment, type SummaryTask } from './summary.ts';
-export { SAMPLE_IDS, sampleEvent, sampleLabel, type SampleId } from './samples.ts';
+export {
+  SAMPLE_IDS,
+  SUGGESTED_PROMPTS,
+  sampleEvent,
+  sampleLabel,
+  type SampleId,
+} from './samples.ts';
 export {
   formatCount,
   formatDay,
@@ -59,6 +65,7 @@ export {
   type GuardCode,
   type GuardIssue,
 } from './guards.ts';
+export { asciiDigits, inventedDates, planDays } from './date-mentions.ts';
 export { escapeText, foldLine, toIcs, type IcsOptions } from './ics.ts';
 export { decodeShare, encodeShare } from './share.ts';
 export { ideasOffline } from './fallback/ideas.ts';

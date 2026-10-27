@@ -3,7 +3,8 @@
  * date is an integer day number, so scheduling is plain integer arithmetic with no Date objects.
  */
 import { applies } from './applies.ts';
-import { toIso, weekday } from './days.ts';
+import { weekday } from './days.ts';
+import { formatDay } from './text.ts';
 import type { FiredRule } from './rules.ts';
 import type {
   EventContext,
@@ -188,14 +189,17 @@ function statusReason(
   const { today, eventDay } = pass.ctx;
   if (status === 'late') {
     const days = String(today - entry.idealDue);
-    return { code: 'late', text: `Ideally done by ${toIso(entry.idealDue)}, ${days} days ago.` };
+    return {
+      code: 'late',
+      text: `Ideally done by ${formatDay(entry.idealDue)}, ${days} days ago.`,
+    };
   }
   if (status === 'done') return pass.done.get(entry.template.id);
   if (status !== 'at-risk') return undefined;
-  const lastDay = toIso(eventDay - (entry.template.minLead ?? 0));
+  const lastDay = formatDay(eventDay - (entry.template.minLead ?? 0));
   return {
     code: 'at-risk',
-    text: `The earliest workable date, ${toIso(raw)}, is after ${lastDay}, the last day this can realistically happen.`,
+    text: `The earliest workable date, ${formatDay(raw)}, is after ${lastDay}, the last day this can realistically happen.`,
   };
 }
 

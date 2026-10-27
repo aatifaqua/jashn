@@ -1,6 +1,6 @@
 /** Vendor checklist, questions and payment schedule (design section 6.6). */
 import { applies } from './applies.ts';
-import { toIso } from './days.ts';
+import { formatDay } from './text.ts';
 import { ROUNDING_UNIT, roundRupees } from './money.ts';
 import type { StageInput } from './timeline.ts';
 import type { BudgetLine, Payment, Reason, Task, VendorItem, VendorTemplate } from './types.ts';
@@ -54,13 +54,13 @@ function mergeQuestions(base: readonly string[], added: readonly string[]): stri
 }
 
 function bookByReason(task: Task | undefined, bookBy: number): Reason {
-  if (task === undefined) return { code: 'book-by', text: `Book by ${toIso(bookBy)}.` };
+  if (task === undefined) return { code: 'book-by', text: `Book by ${formatDay(bookBy)}.` };
   if (task.status === 'done') {
     return { code: 'booked', text: 'Already booked, so the deposit is taken as paid.' };
   }
   return {
     code: 'book-by',
-    text: `Book by ${toIso(bookBy)}: the "${task.title}" task on the timeline.`,
+    text: `Book by ${formatDay(bookBy)}: the "${task.title}" task on the timeline.`,
   };
 }
 

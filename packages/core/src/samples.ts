@@ -90,6 +90,19 @@ const SAMPLES: Readonly<Record<SampleId, SampleDef>> = deepFreeze({
   },
 });
 
+/**
+ * Prompts the assistant panel suggests. They live here, beside the samples, because the
+ * pre-generated demo answers are keyed by these exact strings in the web app and the script
+ * that writes them. None changes the date, since sample dates move with today.
+ */
+export const SUGGESTED_PROMPTS = Object.freeze([
+  'What is late?',
+  'How can I save money?',
+  'What should I book first?',
+  'When are payments due?',
+  'Cut guests by 20',
+] as const);
+
 /** The start-screen label of a sample, e.g. "Lucknow wedding". */
 export function sampleLabel(id: SampleId): string {
   return SAMPLES[id].label;

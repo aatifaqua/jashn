@@ -132,7 +132,7 @@ describe('buildVendors', () => {
     );
     const bar = find(vendors, 'bartender');
     expect(bar.bookBy).toBe(TODAY);
-    expect(bar.reasons[0]).toEqual({ code: 'book-by', text: 'Book by 2026-10-27.' });
+    expect(bar.reasons[0]).toEqual({ code: 'book-by', text: 'Book by 27 Oct 2026.' });
     expect(bar.reasons[1]?.text).toContain('of the bar line');
   });
 
