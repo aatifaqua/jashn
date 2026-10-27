@@ -1,0 +1,48 @@
+/** POST /api/ideas: personalised ideas, cached per input, guarded for diet, links and prices. */
+import { guardIdeas, ideasOffline, type Ideas, type Plan, type Sourced } from '@jashn/core';
+import type { Handler } from 'hono';
+import type { GeminiClient } from '../ai/gemini.ts';
+import { ideasContent, ideasSystem } from '../ai/prompts.ts';
+import { IDEAS_RESPONSE_SCHEMA, ideasRequestSchema, ideasSchema } from '../ai/schemas.ts';
+import { cacheKey, type ResponseCache } from '../cache.ts';
+import type { AppEnv } from '../env.ts';
+import { assertClean, readEvent, sendSourced, sourced } from './common.ts';
+
+/** What the ideas route needs. */
+export interface IdeasDeps {
+  readonly gemini: GeminiClient | null;
+  readonly today: () => number;
+  readonly cache: ResponseCache<Sourced<Ideas>>;
+}
+
+/** Asks Gemini for schema-constrained ideas, then re-validates them with zod and the guards. */
+export async function liveIdeas(gemini: GeminiClient, plan: Plan): Promise<Ideas> {
+  const generation = await gemini.generate({
+    endpoint: 'ideas',
+    systemInstruction: ideasSystem(plan.input.language),
+    contents: ideasContent(plan),
+    responseJsonSchema: IDEAS_RESPONSE_SCHEMA,
+  });
+  const ideas = ideasSchema.parse(JSON.parse(generation.text));
+  assertClean(guardIdeas(ideas, plan.input.constraints));
+  return ideas;
+}
+
+/** Handler for POST /api/ideas. */
+export function ideasHandler(deps: IdeasDeps): Handler<AppEnv> {
+  return async (c) => {
+    const today = deps.today();
+    const request = await readEvent(c, ideasRequestSchema, today);
+    if (!request.ok) return request.response;
+    const { plan } = request;
+    const key = cacheKey({ endpoint: 'ideas', input: plan.input });
+    const result = await deps.cache.run(key, () =>
+      sourced(
+        deps.gemini,
+        (gemini) => liveIdeas(gemini, plan),
+        () => ideasOffline(plan.input),
+      ),
+    );
+    return sendSourced(c, result);
+  };
+}
