@@ -15,3 +15,8 @@ declare module 'vitest' {
 }
 
 expect.extend(axeMatchers);
+
+// jsdom has no canvas; axe probes one for its colour-contrast rule, which jsdom cannot compute
+// anyway (contrast is documented on every token in app.css). Returning null keeps logs quiet.
+HTMLCanvasElement.prototype.getContext = (() =>
+  null) as typeof HTMLCanvasElement.prototype.getContext;
