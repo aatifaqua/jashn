@@ -164,7 +164,7 @@ describe('demo mode', () => {
 
   it('uses the shipped demo file by default', async () => {
     const client = createGenAi({ apiBase: '  ' });
-    expect((await client.ideas(plan)).source).toBe('fallback');
+    expect((await client.ideas(plan)).source).toBe('gemini');
     expect(defaultGenAi()).toBe(defaultGenAi());
     expect(defaultGenAi().mode).toBe('demo');
   });

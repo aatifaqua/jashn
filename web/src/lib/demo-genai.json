@@ -5,66 +5,269 @@
     "lucknow-wedding": {
       "ideas": {
         "theme": {
-          "name": "Awadhi Marigold Elegance",
-          "palette": ["Marigold Yellow", "Rust Orange", "Deep Green", "Gold"],
-          "why": "This theme honours traditional Awadhi hospitality while keeping decor simple, cheerful, and budget-friendly for a large family gathering."
+          "name": "Royal Awadhi Elegance",
+          "palette": ["Marigold Yellow", "Deep Crimson", "Gold", "Ivory"],
+          "why": "It honors traditional Awadhi heritage in Lucknow while keeping decor budget-friendly through classic marigolds and warm ambient lighting for evening functions."
         },
         "decor": [
           {
-            "title": "Marigold and Mango Leaf Garlands",
-            "detail": "Drape fresh marigold flowers and mango leaves along the venue entrance and stage to create a vibrant, traditional look without heavy costs."
+            "title": "Marigold and Brass Entrance Arch",
+            "detail": "A simple entryway decorated with fresh yellow and orange marigold garlands paired with traditional brass lamps."
           },
           {
-            "title": "Brass Diya Lighting Accent",
-            "detail": "Set up brass lamps and flower-filled urlis along step-free pathways to safely illuminate the venue for evening festivities."
+            "title": "Ramp-Accessible Low Mandap",
+            "detail": "A beautiful step-free mandap built on level ground with rich draped fabric and warm fairylights for easy access."
           },
           {
-            "title": "Fabric Canopy Stage Background",
-            "detail": "Use flowing orange and yellow dupattas draped over a basic frame to form an elegant backdrop for photos and ceremonies."
+            "title": "Seating Lounges with Bolster Cushions",
+            "detail": "Comfortable floor and chair seating with colorful cushions placed close to the main stage for easy movement."
           }
         ],
         "menu": [
           {
-            "title": "Paneer Pasanda",
-            "detail": "Rich, tender cottage cheese slices stuffed with nuts and cooked in a mild, aromatic gravy that pleases all generations."
+            "title": "Lucknowi Veg Biryani",
+            "detail": "A fragrant rice dish cooked with seasonal vegetables, aromatic spices, and saffrony milk."
           },
           {
-            "title": "Awadhi Veg Biryani",
-            "detail": "Fragrant basmati rice layered with seasonal vegetables and mild spices, cooked dum-style for an authentic regional taste."
+            "title": "Paneer Pasanda in Rich Gravy",
+            "detail": "Stuffed cottage cheese triangles simmered in a smooth cashew, tomato, and spice sauce."
           },
           {
-            "title": "Galouti Kebab-Style Tikki",
-            "detail": "Melt-in-your-mouth spiced yam and chana dal patties, served with mint chutney as a delicious vegetarian appetizer."
+            "title": "Dal Tadka and Roomali Roti",
+            "detail": "Slow-cooked yellow lentils tempered with ghee and cumin, served alongside soft paper-thin flatbreads."
           },
           {
-            "title": "Zafrani Kheer",
-            "detail": "A classic slow-cooked rice pudding infused with saffron and cardamom, offering a comforting traditional dessert."
+            "title": "Galouti Kebab of Raw Banana and Chana",
+            "detail": "Melt-in-your-mouth spiced patties made from raw banana and bengal gram cooked on a flat griddle."
+          },
+          {
+            "title": "Kesar Phirni in Clay Pots",
+            "detail": "A chilled ground rice pudding infused with saffron, cardamom, and sliced almonds."
           }
         ],
         "activities": [
           {
-            "title": "Sangeet and Antakshari Fusion",
-            "detail": "A lively yet relaxing musical game combining classic hits and family performances, ensuring grandparents can participate comfortably."
+            "title": "Mehndi Design Corner",
+            "detail": "A relaxed seating area where artists apply detailed henna patterns for family and guests."
           },
           {
-            "title": "Interactive Mehndi Station",
-            "detail": "A shaded seating corner with skilled artists applying quick, traditional henna designs for guests of all ages."
+            "title": "Sangeet Family Performances",
+            "detail": "A lively evening of choreographed dances and music performed by relatives on a flat level stage."
           },
           {
-            "title": "Family Blessing Tree",
-            "detail": "A setup where guests write heart-felt wishes on cards and hang them on a decorative wooden branch display."
+            "title": "Traditional Flower Shower",
+            "detail": "Guests shower the couple with fresh rose and marigold petals during the main ceremony rituals."
           }
         ],
         "touch": {
-          "title": "Elder Comfort Lounge",
-          "detail": "A dedicated lounge area near the main stage equipped with cushioned seating, warm shawls, and easy accessibility for comfortable viewing."
+          "title": "Dedicated Priority Lounge",
+          "detail": "A quiet, easily accessible seating space near the entrance with soft chairs and prompt refreshment service for elder family members."
         },
-        "invitation": "Warm greetings! We joyfully invite you to celebrate the traditional wedding festivities of [names]. Join us for an evening of blessings, music, and delicious food at [venue] on [date] starting at 7:00 PM. Your presence and blessings will make our special day complete."
+        "invitation": "Together with their families\n[names]\nrequest the pleasure of your company at their wedding celebration\non [date]\nat [venue], Lucknow.\n\nFunctions:\nMehndi & Sangeet | Ceremony & Reception\nStarting at 7:00 PM\n\nPlease join us to shower your blessings on the couple."
       },
-      "drafts": {},
-      "answers": {}
+      "drafts": {
+        "venue": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Which dates are free, and is the rate lower on weekdays?\n2. Is outside catering allowed, or is there an in-house per-plate rate?\n3. How many guests does it seat, and how much parking is there?\n4. Is there power backup, and what is the music cut-off time?\n5. What does the booking include: rooms, cleaning, security and taxes?\n6. Is there a ramp or level entry from the parking?\n7. Is there a lift to every floor we will use?\n8. Is there an accessible toilet?\n\nThank you.",
+        "caterer": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Can we do a tasting before booking?\n2. What is the per-plate rate for each menu, including GST?\n3. How many service staff come per hundred guests?\n4. What is the minimum guaranteed count, and the last day to change it?\n5. Do you bring counters, crockery and live stations?\n6. Is every dish free of meat, fish and egg?\n\nThank you.",
+        "photographer": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Which functions and how many hours does the package cover?\n2. How many edited photos do we get, and when is the album delivered?\n3. Is a second shooter or drone included?\n4. Do we receive the raw files and a highlight film?\n\nThank you.",
+        "decorator": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Can you share photos of set-ups you have done at this venue?\n2. Is the quote for fresh or artificial flowers?\n3. How long do set-up and take-down take?\n4. Is lighting included, or quoted separately?\n\nThank you.",
+        "makeup-artist": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Is a trial included in the package?\n2. Which products do you use, and are they suitable for sensitive skin?\n3. How many family members can you cover, and at what rate?\n4. Do you travel to the venue, and is travel charged?\n\nThank you.",
+        "mehndi-artist": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. How many artists will come, and how many guests can they cover per hour?\n2. Is the henna natural and free of chemical dyes?\n3. What is the rate for the bridal design?\n\nThank you.",
+        "dj": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Do you bring sound and lights sized for the venue?\n2. Will you play a list we send, and can you arrange a dhol?\n3. What is the overtime rate past the music cut-off?\n\nThank you.",
+        "bartender": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Do you arrange the one-day liquor licence?\n2. Is the bar priced per head or per bottle?\n3. Do you also run a mocktail counter for guests who do not drink?\n\nThank you.",
+        "officiant": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Which dates and times suit the families?\n2. What items should we arrange for the rituals?\n3. How long will the ceremony take?\n\nThank you.",
+        "printer": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Can you send a printed proof before the full run?\n2. How long does the full order take?\n3. Can you print on recycled or seed paper?\n\nThank you.",
+        "tent-sound": "Dear Vendor,\n\nWe are planning a traditional wedding in Lucknow on 2027-02-27 starting at 19:00 for approximately 298 expected guests across ceremony, mehndi, reception, and sangeet functions. The event setting is mixed, and we require step-free access and strict vegetarian food.\n\nPlease share your availability and quote after addressing these questions:\n1. Is the tent waterproof and made of fire-retardant fabric?\n2. Do you supply a generator, and is fuel included?\n3. When do you set up and take everything down?\n\nThank you."
+      },
+      "answers": {
+        "What is late?": {
+          "reply": "Five key tasks are currently late on your timeline. These include agreeing on the budget and guest estimate, booking the venue, confirming the officiant, booking the caterer, and securing the photographer. Completing these as soon as possible will help keep your planning on track."
+        },
+        "How can I save money?": {
+          "reply": "You have several trimming options to lower expenses. Serving lunch instead of dinner saves 78,300, while inviting 305 guests saves 66,500. Combining the mehndi and sangeet on one day saves 60,800, moving to a weekday saves 25,000, and using e-invites saves 22,200."
+        },
+        "What should I book first?": {
+          "reply": "Your immediate priority is to book the venue by 2026-10-28, followed by the officiant on 2026-10-29. After that, focus on booking the caterer on 2026-10-30 and the photographer on 2026-10-31."
+        },
+        "When are payments due?": {
+          "reply": "The venue deposit of 75,100 is due on 2026-10-28, and the officiant deposit of 2,500 is due on 2026-10-29. Deposits for the caterer (130,400) and photographer (41,700) are due on 2026-10-30 and 2026-10-31 respectively. Finally, the decorator deposit of 25,100 is due on 2026-11-19."
+        },
+        "Cut guests by 20": {
+          "reply": "I can update the guest list count for your wedding. Please preview this proposed update to lower your invited guest count from 350 to 330. You can accept the change to adjust your planning figures.",
+          "patch": { "invited": 330 }
+        }
+      }
     },
-    "kids-birthday": { "drafts": {}, "answers": {} },
-    "diwali-mela": { "drafts": {}, "answers": {} }
+    "kids-birthday": {
+      "drafts": {
+        "venue": "Dear Venue Partner,\n\nWe are planning an indoor children's birthday party in Pune for around 36 expected guests on 21 November 2026, starting at 16:00. The gathering requires kid-friendly arrangements and vegetarian catering.\n\nCould you please clarify the following:\n1. Is the hall free on the date, and for how many hours?\n2. Can we bring our own cake and decorator?\n3. Is there a minimum spend or a fixed package per head?\n\nPlease confirm availability and share your quote as soon as possible.",
+        "caterer": "Dear Catering Team,\n\nWe are organising an indoor children's birthday party in Pune for about 36 expected guests on 21 November 2026, starting at 16:00. We require fully vegetarian food suitable for children.\n\nCould you please help us with the following details:\n1. What is the per-head rate for snacks and dinner, including GST?\n2. Do you have a separate menu for children?\n3. What is the minimum order, and the last day to change the count?\n4. Is every dish free of meat, fish and egg?\n\nPlease confirm your availability and provide a detailed quote by 31 October 2026.",
+        "photographer": "Dear Photographer,\n\nWe are hosting an indoor children's birthday party in Pune on 21 November 2026, starting at 16:00, with around 36 expected guests.\n\nCould you kindly answer the following:\n1. How many hours and edited photos does the package include?\n2. When will we receive the photos?\n\nPlease share your availability and pricing details by 31 October 2026.",
+        "decorator": "Dear Decor Partner,\n\nWe are organising an indoor children's birthday party in Pune for about 36 expected guests on 21 November 2026, starting at 16:00.\n\nCould you please share your guidance on the following:\n1. Can you share photos of this theme from earlier parties?\n2. How long does set-up take, and do you clear up afterwards?\n3. Are the balloons latex or foil, and can you avoid plastic confetti?\n\nPlease confirm your availability and send a quote by 07 November 2026.",
+        "entertainer": "Dear Entertainer,\n\nWe are planning an indoor children's birthday party in Pune on 21 November 2026, beginning at 16:00, with around 36 expected guests.\n\nCould you please assist us with the following:\n1. What age group is the act designed for?\n2. How long is the show, and what space and sound do you need?\n3. Do you bring your own props and prizes?\n\nPlease confirm your availability and share your quote by 31 October 2026.",
+        "baker": "Dear Baker,\n\nWe are celebrating an indoor children's birthday party in Pune on 21 November 2026, starting at 16:00, for about 36 expected guests. We need an eggless birthday cake.\n\nCould you please advise on the following:\n1. What size of cake serves our guest count?\n2. Do you deliver, and at what time?\n3. Can the design match the party theme?\n4. Is the cake eggless?\n\nPlease let us know your availability and provide your pricing by 14 November 2026."
+      },
+      "answers": {
+        "What is late?": {
+          "reply": "Setting the budget and the guest list is marked late as it was due on 2026-10-27."
+        },
+        "How can I save money?": {
+          "reply": "Your budget verdict is currently comfortable at ₹60,000 for 40 invited guests. You have planned line items across venue, food, decor, entertainment, and return gifts, with ₹6,000 kept as contingency. If you wish to save, you can trim decor, return gifts, or food expenses by negotiating simpler packages with vendors."
+        },
+        "What should I book first?": {
+          "reply": "Right now, the caterer or restaurant, entertainer, and photographer are all due to be booked by 2026-10-31. Completing your guest list and budget comes first, followed directly by these three vendor bookings."
+        },
+        "When are payments due?": {
+          "reply": "On 2026-10-31, deposits of ₹3,900 for the caterer, ₹2,600 for the entertainer, and ₹800 for the photographer are due. On 2026-11-07, a ₹1,900 deposit is due for the decorator, followed by ₹500 for the cake baker on 2026-11-14."
+        },
+        "Cut guests by 20": {
+          "reply": "I can preview reducing the invited guest count from 40 to 20 for you. Check the updated numbers to confirm if you want to proceed.",
+          "patch": { "invited": 20 }
+        }
+      },
+      "ideas": {
+        "theme": {
+          "name": "Galactic Rocket Explorer",
+          "palette": ["Midnight Blue", "Silver Chrome", "Cosmic Orange", "Starlight White"],
+          "why": "Perfect for an energetic indoor 7th birthday celebration in Pune, bringing the thrill of space exploration to life with vibrant rocket-inspired visuals."
+        },
+        "decor": [
+          {
+            "title": "Rocket Blast Backdrop",
+            "detail": "A midnight blue drape featuring a large cardboard rocket cutout with glowing warm LED fairy lights that simulate fiery engine launch plumes."
+          },
+          {
+            "title": "Hanging Planetary Mobiles",
+            "detail": "Lightweight paper lantern planets in silver, blue, and orange suspended from the indoor ceiling at varied heights."
+          },
+          {
+            "title": "Cosmic Balloon Archway",
+            "detail": "An arch of deep blue and silver latex balloons framing the cake table, topped with foil starburst balloons."
+          }
+        ],
+        "menu": [
+          {
+            "title": "Galaxy Cheese Sliders",
+            "detail": "Soft toasted mini burger buns filled with crisp paneer patties, melted cheese, and mild herb mayonnaise."
+          },
+          {
+            "title": "Rocket Corn Cones",
+            "detail": "Crispy savory pastry cones packed with warm sweet corn kernels, diced capsicum, and mild spices."
+          },
+          {
+            "title": "Starry Fruit Skewers",
+            "detail": "Fresh watermelon and pineapple pieces cut into playful star shapes, threaded on bamboo skewers with ripe grapes."
+          },
+          {
+            "title": "Cosmic Sparkle Punch",
+            "detail": "A chilled blend of tangy blue curacao syrup, sparkling club soda, and fresh lemon juice served in star-stickered cups."
+          }
+        ],
+        "activities": [
+          {
+            "title": "Junior Astronaut Obstacle Run",
+            "detail": "A fun, kid-friendly indoor obstacle course with soft tunnels and stepping rings representing planetary craters."
+          },
+          {
+            "title": "DIY Paper Rocket Workshop",
+            "detail": "A guided crafting session where children assemble and decorate paper straw rockets before having a friendly launch contest."
+          },
+          {
+            "title": "Cosmic Freeze Dance",
+            "detail": "High-energy space-themed musical statues game led by the entertainer with planetary music cues and fun prizes."
+          }
+        ],
+        "touch": {
+          "title": "Astronaut Passports",
+          "detail": "Personalised mission logbooks given at entry where young guests collect stamps across every party station and activity."
+        },
+        "invitation": "Blast off to fun! Join us as [names] turns seven with an epic space and rocket adventure. Suit up for games, snacks, and cosmic celebrations on [date] at 4:00 PM at [venue]. Please confirm your attendance so our mission control can prepare!"
+      }
+    },
+    "diwali-mela": {
+      "ideas": {
+        "theme": {
+          "name": "Eco Street Mela",
+          "palette": ["Marigold Yellow", "Clay Brown", "Leaf Green"],
+          "why": "Fits a budget-conscious outdoor community festival in Indore focused on eco-friendly, accessible fun."
+        },
+        "decor": [
+          {
+            "title": "Fabric Bunting",
+            "detail": "String reusable cloth flags and marigold garlands across trees for colourful, low-cost overhead decor."
+          },
+          {
+            "title": "Earthen Lamp Borders",
+            "detail": "Line step-free walkways with terracotta diyas and LED lights for clear, safe illumination."
+          },
+          {
+            "title": "Clay Pot Signage",
+            "detail": "Paint direction signs on reusable clay pots or recycled cardboard displays at ground level."
+          }
+        ],
+        "menu": [
+          {
+            "title": "Poha Jalebi",
+            "detail": "Flattened rice tempered with mustard seeds and turmeric, served alongside sweet crisp spirals."
+          },
+          {
+            "title": "Khatta Meetha Bhutte Ka Kees",
+            "detail": "Grated fresh corn cooked with milk, mild spices and lemon juice in a traditional local style."
+          },
+          {
+            "title": "Sabudana Vada",
+            "detail": "Crispy tapioca and peanut patties served with fresh coconut chutney."
+          },
+          {
+            "title": "Fresh Sugarcane Juice",
+            "detail": "Chilled natural sugarcane juice flavoured with ginger, mint and lemon."
+          }
+        ],
+        "activities": [
+          {
+            "title": "Neighbourhood Rangoli Contest",
+            "detail": "A step-free, eco-friendly rangoli competition using natural flower petals and coloured organic powders."
+          },
+          {
+            "title": "Community Talent Showcase",
+            "detail": "An open stage for local residents of all ages to perform songs, dances and skits."
+          },
+          {
+            "title": "Recycled Crafts Workshop",
+            "detail": "A fun DIY stall where kids and families create decorative art from home recyclables."
+          }
+        ],
+        "touch": {
+          "title": "Eco Welcome Station",
+          "detail": "A ramp-accessible booth providing cloth bags, reusable water bottles and event maps."
+        },
+        "invitation": "Join us for our annual Neighbourhood Community Mela! Enjoy food stalls, a rangoli contest and cultural performances.\n\nDate: [date]\nTime: 5:00 PM onwards\nVenue: [venue]\n\nAll residents and families are warmly welcome! Entry is step-free and accessible to all."
+      },
+      "drafts": {
+        "venue": "Dear Vendor,\n\nWe are organising a community festival in Indore on 21/11/2026 starting at 17:00 for 900 expected guests. The event is outdoor, alcohol-free, eco-friendly and step-free.\n\nPlease answer the following questions:\n1. Who grants use of the ground, and what fee or deposit applies?\n2. What are the permitted hours and the sound limit?\n3. Is there drinking water, power and a clear emergency exit?\n4. Is there a ramp or level entry from the parking?\n5. Is there a lift to every floor we will use?\n6. Is there an accessible toilet?\n\nPlease confirm availability for 21/11/2026 and provide your quote. Kindly respond by 2026-10-29.",
+        "tent-sound": "Dear Vendor,\n\nWe are organising a community festival in Indore on 21/11/2026 starting at 17:00 for 900 expected guests. The event is outdoor, alcohol-free, eco-friendly and step-free.\n\nPlease answer the following questions:\n1. Is the tent fabric fire-retardant, and do you supply extinguishers?\n2. Do you bring a generator, and is fuel included?\n3. How long do set-up and take-down take?\n\nPlease confirm availability for 21/11/2026 and provide your quote. Kindly respond by 2026-10-31.",
+        "caterer": "Dear Vendor,\n\nWe are organising a community festival in Indore on 21/11/2026 starting at 17:00 for 900 expected guests. The event is outdoor, alcohol-free, eco-friendly and step-free.\n\nPlease answer the following questions:\n1. What is the per-plate or per-stall rate?\n2. Do you hold an FSSAI food licence?\n3. Can you serve in disposable-free plates and cups?\n4. Can you serve without single-use plastic, on steel, leaf or areca plates?\n\nPlease confirm availability for 21/11/2026 and provide your quote. Kindly respond by 2026-11-02.",
+        "entertainer": "Dear Vendor,\n\nWe are organising a community festival in Indore on 21/11/2026 starting at 17:00 for 900 expected guests. The event is outdoor, alcohol-free, eco-friendly and step-free.\n\nPlease answer the following questions:\n1. How long is the act, and what stage space and sound do you need?\n2. Is your fee waived or reduced for a community cause?\n\nPlease confirm availability for 21/11/2026 and provide your quote. Kindly respond by 2026-11-03.",
+        "sanitation": "Dear Vendor,\n\nWe are organising a community festival in Indore on 21/11/2026 starting at 17:00 for 900 expected guests. The event is outdoor, alcohol-free, eco-friendly and step-free.\n\nPlease answer the following questions:\n1. How many toilets do you recommend for our expected crowd?\n2. Do you collect segregated wet and dry waste?\n3. When do you deliver and pick up?\n\nPlease confirm availability for 21/11/2026 and provide your quote. Kindly respond by 2026-10-31.",
+        "photographer": "Dear Vendor,\n\nWe are organising a community festival in Indore on 21/11/2026 starting at 17:00 for 900 expected guests. The event is outdoor, alcohol-free, eco-friendly and step-free.\n\nPlease answer the following questions:\n1. Can you cover the opening and the main programme?\n2. Can we use the photos freely for publicity?\n\nPlease confirm availability for 21/11/2026 and provide your quote. Kindly respond by 2026-11-07."
+      },
+      "answers": {
+        "What is late?": {
+          "reply": "There are 9 tasks currently overdue in your schedule. The top overdue actions include locking the venue today, forming the organising team, and booking the ground or hall. Booking the tent, stage, sound, lights, and approaching sponsors are also overdue."
+        },
+        "How can I save money?": {
+          "reply": "You can trim costs by serving lunch instead of dinner to save 3,700, or inviting 533 guests instead of 600 to save 2,700. Moving the event to a weekday (Monday to Thursday) will save another 1,300."
+        },
+        "What should I book first?": {
+          "reply": "You should lock in the venue ground, park, or hall first. After securing the venue, book the caterer or food stalls, followed by infrastructure and other vendors."
+        },
+        "When are payments due?": {
+          "reply": "Deposit payments start on 2026-10-29 with 4,000 for the ground or park. On 2026-10-31, deposits of 5,600 for tent/sound and 1,300 for sanitation are due. On 2026-11-02, 6,100 is due for food stalls, followed by 2,700 for performers on 2026-11-03."
+        },
+        "Cut guests by 20": {
+          "reply": "I can help update your guest count from 600 to 580. Please preview this change below.",
+          "patch": { "invited": 580 }
+        }
+      }
+    }
   }
 }
