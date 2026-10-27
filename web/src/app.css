@@ -7,28 +7,29 @@
  */
 :root {
   color-scheme: light;
-  --bg: #fbf6ec; /* page, cream */
-  --surface: #fffdf8; /* cards, ivory */
-  --surface-2: #f3eadb; /* tabs, table heads */
-  --ink: #2a1f1a; /* body text: 14.89 [bg], 15.78 [surface], 13.44 [surface-2] */
-  --ink-muted: #5e4f45; /* secondary text: 7.27 [bg], 6.57 [surface-2] */
-  --accent: #8f4f00; /* saffron text and links: 5.93 [bg], 6.29 [surface] */
-  --marigold: #f0b04a; /* decorative fills only; ink on it 8.41 */
-  --on-marigold: #2a1f1a; /* 8.41 [marigold] */
-  --plum: #6b2d5c; /* primary buttons, focus ring: 9.05 [bg], 8.17 [surface-2] */
-  --on-plum: #fffdf8; /* 9.59 [plum] */
-  --bar: #b5650a; /* chart bars: 4.28 [surface] */
-  --bar-reserve: #6b2d5c; /* contingency bar: 9.59 [surface] */
-  --control: #857462; /* input borders: 4.42 [surface], 4.17 [bg] */
-  --rule: #e4d7c2; /* decorative dividers only */
-  --ok: #1d6436; /* 7.05 [surface], 6.23 [ok-bg] */
-  --ok-bg: #e6f2e8;
-  --warn: #7d4a00; /* 7.24 [surface], 6.37 [warn-bg] */
-  --warn-bg: #fbedd4;
-  --bad: #9b1f2b; /* 7.87 [surface], 7.43 [bg], 6.52 [bad-bg]; surface text on it 7.87 */
-  --bad-bg: #f9e3e3;
+  --bg: #fff6f1; /* page, blush white */
+  --surface: #fffcfa; /* cards */
+  --surface-2: #ffe8de; /* tabs, table heads */
+  --ink: #442a1f; /* body text, cocoa: 12.34 [bg], 12.87 [surface], 11.18 [surface-2] */
+  --ink-muted: #6b4c3f; /* secondary text: 7.22 [bg], 6.54 [surface-2] */
+  --accent: #466c02; /* leaf text and links: 5.78 [bg], 6.03 [surface] */
+  --leaf: #558303; /* logo green, decorative stripes: 4.25 [bg] */
+  --blush: #ffdbcd; /* decorative fills only; ink on it 10.19 */
+  --on-blush: #442a1f; /* 10.19 [blush] */
+  --brand: #442a1f; /* primary buttons, focus ring: 12.34 [bg], 11.18 [surface-2] */
+  --on-brand: #ffdbcd; /* 10.19 [brand] */
+  --bar: #558303; /* chart bars: 4.44 [surface] */
+  --bar-reserve: #442a1f; /* contingency bar: 12.87 [surface] */
+  --control: #8a6c5f; /* input borders: 4.68 [surface], 4.49 [bg] */
+  --rule: #f3d5c8; /* decorative dividers only */
+  --ok: #2f6a12; /* 6.44 [surface], 5.73 [ok-bg] */
+  --ok-bg: #e8f3dc;
+  --warn: #7a4600; /* 7.60 [surface], 6.66 [warn-bg] */
+  --warn-bg: #fdebd3;
+  --bad: #9b1f2b; /* 7.83 [surface], 7.51 [bg], 6.45 [bad-bg]; surface text on it 7.83 */
+  --bad-bg: #fbe1df;
   --radius: 10px;
-  --shadow: 0 1px 2px rgb(42 31 26 / 8%), 0 4px 16px rgb(42 31 26 / 6%);
+  --shadow: 0 1px 2px rgb(68 42 31 / 8%), 0 4px 16px rgb(68 42 31 / 7%);
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
 }
 
@@ -36,25 +37,26 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #1a1411;
-    --surface: #251d19;
-    --surface-2: #30261f;
-    --ink: #f6ecdf; /* 15.61 [bg], 14.18 [surface], 12.64 [surface-2] */
-    --ink-muted: #cdbdaa; /* 9.03 [surface], 8.05 [surface-2] */
-    --accent: #f4b860; /* 10.30 [bg], 9.36 [surface] */
-    --marigold: #f0b04a; /* 8.68 [surface] */
-    --on-marigold: #1a1411; /* 9.56 [marigold] */
-    --plum: #e4b3d6; /* 10.17 [bg], 8.24 [surface-2] */
-    --on-plum: #1a1411; /* 10.17 [plum] */
-    --bar: #e9a23b; /* 7.64 [surface] */
-    --bar-reserve: #e4b3d6; /* 9.24 [surface] */
-    --control: #9c8a76; /* 4.98 [surface], 5.48 [bg] */
-    --rule: #3d3129;
-    --ok: #8fd4a4; /* 9.56 [surface], 8.27 [ok-bg] */
-    --ok-bg: #1d2e22;
-    --warn: #f4c46e; /* 10.22 [surface], 9.02 [warn-bg] */
-    --warn-bg: #33270f;
-    --bad: #f5a3a8; /* 8.43 [surface], 7.83 [bad-bg]; surface text on it 8.43 */
+    --bg: #181514; /* desaturated cocoa */
+    --surface: #221e1c;
+    --surface-2: #2e2926;
+    --ink: #f6f1ea; /* 16.16 [bg], 14.71 [surface], 12.79 [surface-2] */
+    --ink-muted: #cfc8bb; /* 9.94 [surface], 8.64 [surface-2] */
+    --accent: #a8d06a; /* 10.29 [bg], 9.36 [surface] */
+    --leaf: #9cc75a; /* 9.28 [bg] */
+    --blush: #ffdbcd; /* 12.80 [surface] */
+    --on-blush: #442a1f; /* 10.19 [blush] */
+    --brand: #ffdbcd; /* 14.07 [bg], 11.13 [surface-2] */
+    --on-brand: #442a1f; /* 10.19 [brand] */
+    --bar: #9cc75a; /* 8.45 [surface] */
+    --bar-reserve: #ffdbcd; /* 12.80 [surface] */
+    --control: #958a83; /* 4.91 [surface], 5.40 [bg] */
+    --rule: #3a3431;
+    --ok: #a8d88a; /* 10.12 [surface], 8.80 [ok-bg] */
+    --ok-bg: #1f2e17;
+    --warn: #f4c46e; /* 10.21 [surface], 9.26 [warn-bg] */
+    --warn-bg: #33240f;
+    --bad: #f5a3a8; /* 8.41 [surface], 7.83 [bad-bg]; surface text on it 8.41 */
     --bad-bg: #3a1c1e;
     --shadow: 0 1px 2px rgb(0 0 0 / 40%);
   }
@@ -62,25 +64,26 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #1a1411;
-  --surface: #251d19;
-  --surface-2: #30261f;
-  --ink: #f6ecdf; /* 15.61 [bg], 14.18 [surface], 12.64 [surface-2] */
-  --ink-muted: #cdbdaa; /* 9.03 [surface], 8.05 [surface-2] */
-  --accent: #f4b860; /* 10.30 [bg], 9.36 [surface] */
-  --marigold: #f0b04a; /* 8.68 [surface] */
-  --on-marigold: #1a1411; /* 9.56 [marigold] */
-  --plum: #e4b3d6; /* 10.17 [bg], 8.24 [surface-2] */
-  --on-plum: #1a1411; /* 10.17 [plum] */
-  --bar: #e9a23b; /* 7.64 [surface] */
-  --bar-reserve: #e4b3d6; /* 9.24 [surface] */
-  --control: #9c8a76; /* 4.98 [surface], 5.48 [bg] */
-  --rule: #3d3129;
-  --ok: #8fd4a4; /* 9.56 [surface], 8.27 [ok-bg] */
-  --ok-bg: #1d2e22;
-  --warn: #f4c46e; /* 10.22 [surface], 9.02 [warn-bg] */
-  --warn-bg: #33270f;
-  --bad: #f5a3a8; /* 8.43 [surface], 7.83 [bad-bg]; surface text on it 8.43 */
+  --bg: #181514; /* desaturated cocoa */
+  --surface: #221e1c;
+  --surface-2: #2e2926;
+  --ink: #f6f1ea; /* 16.16 [bg], 14.71 [surface], 12.79 [surface-2] */
+  --ink-muted: #cfc8bb; /* 9.94 [surface], 8.64 [surface-2] */
+  --accent: #a8d06a; /* 10.29 [bg], 9.36 [surface] */
+  --leaf: #9cc75a; /* 9.28 [bg] */
+  --blush: #ffdbcd; /* 12.80 [surface] */
+  --on-blush: #442a1f; /* 10.19 [blush] */
+  --brand: #ffdbcd; /* 14.07 [bg], 11.13 [surface-2] */
+  --on-brand: #442a1f; /* 10.19 [brand] */
+  --bar: #9cc75a; /* 8.45 [surface] */
+  --bar-reserve: #ffdbcd; /* 12.80 [surface] */
+  --control: #958a83; /* 4.91 [surface], 5.40 [bg] */
+  --rule: #3a3431;
+  --ok: #a8d88a; /* 10.12 [surface], 8.80 [ok-bg] */
+  --ok-bg: #1f2e17;
+  --warn: #f4c46e; /* 10.21 [surface], 9.26 [warn-bg] */
+  --warn-bg: #33240f;
+  --bad: #f5a3a8; /* 8.41 [surface], 7.83 [bad-bg]; surface text on it 8.41 */
   --bad-bg: #3a1c1e;
   --shadow: 0 1px 2px rgb(0 0 0 / 40%);
 }
@@ -138,7 +141,7 @@ h2[tabindex='-1']:focus-visible {
 }
 :focus-visible,
 [tabindex='-1']:focus-visible {
-  outline: 3px solid var(--plum);
+  outline: 3px solid var(--brand);
   outline-offset: 2px;
 }
 .muted {
@@ -189,8 +192,8 @@ h2[tabindex='-1']:focus-visible {
   top: -4rem;
   z-index: 10;
   padding: 0.6rem 1rem;
-  background: var(--plum);
-  color: var(--on-plum);
+  background: var(--brand);
+  color: var(--on-brand);
   border-radius: var(--radius);
 }
 .skip-link:focus {
@@ -203,7 +206,7 @@ h2[tabindex='-1']:focus-visible {
   gap: 1rem;
   padding: 0.75rem clamp(1rem, 4vw, 2.5rem);
   background: var(--surface);
-  border-top: 4px solid var(--marigold);
+  border-top: 4px solid var(--leaf);
   border-bottom: 1px solid var(--rule);
 }
 .brand {
@@ -215,17 +218,12 @@ h2[tabindex='-1']:focus-visible {
   width: 2.2rem;
   height: 2.2rem;
 }
-.logo-flame {
-  fill: var(--marigold);
+.logo-back,
+.logo-tick {
+  fill: #558303;
 }
-.logo-glow {
-  fill: var(--surface);
-}
-.logo-bowl {
-  fill: var(--plum);
-}
-.logo-rim {
-  fill: var(--accent);
+.logo-tag {
+  fill: #ffdbcd;
 }
 .brand-name {
   font-size: 1.4rem;
@@ -273,15 +271,15 @@ main {
   gap: 0.4rem;
   min-height: 2.75rem;
   padding: 0.5rem 1rem;
-  border: 2px solid var(--plum);
+  border: 2px solid var(--brand);
   border-radius: var(--radius);
   background: var(--surface);
-  color: var(--plum);
+  color: var(--brand);
   font-weight: 600;
 }
 .button.primary {
-  background: var(--plum);
-  color: var(--on-plum);
+  background: var(--brand);
+  color: var(--on-brand);
 }
 .button.ghost {
   border-color: transparent;
@@ -350,7 +348,7 @@ main {
   color: var(--ink);
 }
 .chip:hover {
-  border-color: var(--plum);
+  border-color: var(--brand);
 }
 .copy {
   display: inline-flex;
@@ -474,8 +472,8 @@ fieldset {
   width: 1.8rem;
   height: 1.8rem;
   border-radius: 50%;
-  background: var(--marigold);
-  color: var(--on-marigold);
+  background: var(--blush);
+  color: var(--on-blush);
   font-size: 0.95rem;
 }
 .group {
@@ -536,7 +534,7 @@ input[type='radio'] {
   width: 1.25rem;
   height: 1.25rem;
   margin: 0;
-  accent-color: var(--plum);
+  accent-color: var(--brand);
   flex: none;
 }
 .choice-cards {
@@ -555,7 +553,7 @@ input[type='radio'] {
   cursor: pointer;
 }
 .choice-card:has(input:checked) {
-  border: 2px solid var(--plum);
+  border: 2px solid var(--brand);
   background: var(--surface-2);
 }
 .choice-title {
@@ -585,7 +583,7 @@ input[type='radio'] {
   border-radius: 999px;
 }
 .chip-choice:has(input:checked) {
-  border-color: var(--plum);
+  border-color: var(--brand);
   background: var(--surface-2);
 }
 .chip-choice:has(input:disabled) {
@@ -694,7 +692,7 @@ input[type='radio'] {
   cursor: pointer;
 }
 [role='tab'][aria-selected='true'] {
-  border-bottom-color: var(--plum);
+  border-bottom-color: var(--brand);
   background: var(--surface-2);
   color: var(--ink);
 }
@@ -909,7 +907,7 @@ tfoot td {
 .invitation {
   margin: 0;
   padding: 0.75rem 1rem;
-  border-left: 4px solid var(--marigold);
+  border-left: 4px solid var(--leaf);
   background: var(--surface-2);
   white-space: pre-wrap;
 }
@@ -942,7 +940,7 @@ tfoot td {
 .proposal {
   margin: 0 0 1rem;
   padding: 0.75rem;
-  border: 2px solid var(--plum);
+  border: 2px solid var(--brand);
   border-radius: var(--radius);
 }
 .chat-form > label {
@@ -1002,12 +1000,11 @@ tfoot td {
   }
   .bar-label,
   .bar-value,
-  .logo-flame,
-  .logo-bowl,
-  .logo-rim {
+  .logo-back,
+  .logo-tick {
     fill: CanvasText;
   }
-  .logo-glow {
+  .logo-tag {
     fill: Canvas;
   }
   .icon {
@@ -1031,7 +1028,8 @@ tfoot td {
     --ink-muted: #333;
     --accent: #000;
     --rule: #999;
-    --plum: #000;
+    --brand: #000;
+    --leaf: #000;
     --bar: #555;
     --bar-reserve: #999;
     --ok: #000;

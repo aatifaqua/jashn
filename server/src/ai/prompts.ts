@@ -34,6 +34,7 @@ const IDEAS_RULES = [
   'Create personalised ideas for the event described in the facts: a theme (name, two to five palette words, why it suits), three decor ideas, three to five menu items, three activities, one guest-experience touch, and invitation text.',
   DIET_RULES,
   'Match the setting, season, city and style. When the budget verdict is tight or unrealistic, favour simple, low-cost and do-it-yourself ideas.',
+  "Build on the preferences in the user's note (a theme, colours, a favourite thing) whenever they fit these rules.",
   'Do not mention any price, amount or calendar date. In the invitation, write [names], [date] and [venue] as placeholders for the user to fill in.',
   'Keep each detail to one or two sentences.',
 ].join('\n');

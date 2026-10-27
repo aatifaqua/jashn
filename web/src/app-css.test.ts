@@ -23,7 +23,7 @@ describe('print stylesheet', () => {
     expect(tokens).toContain(':root[data-theme]');
     expect(tokens).toContain(":root:not([data-theme='light'])");
     expect(tokens).toContain('color-scheme: light');
-    for (const token of ['--ink: #000', '--ink-muted: #333', '--bg: #fff', '--bar:', '--plum:']) {
+    for (const token of ['--ink: #000', '--ink-muted: #333', '--bg: #fff', '--bar:', '--brand:']) {
       expect(tokens).toContain(token);
     }
     // Later in the file than the dark blocks, so equal specificity resolves to print.
