@@ -33,7 +33,7 @@
       <tbody>
         {#each group.slots as slot, index (index)}
           <tr>
-            <td class="nowrap"><time>{slot.start}</time>–<time>{slot.end}</time></td>
+            <td class="nowrap"><time>{slot.start}</time> to <time>{slot.end}</time></td>
             <th scope="row">{slot.title}</th>
             <td>{slot.owner}</td>
           </tr>

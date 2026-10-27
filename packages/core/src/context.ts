@@ -58,7 +58,7 @@ function spanOf(days: readonly FunctionDay[]): number {
 }
 
 /**
- * Seasons of a calendar month (1–12). Month ranges are inclusive and read straight from design
+ * Seasons of a calendar month (1 to 12). Month ranges are inclusive and read straight from design
  * 6.1; exported so the offline ideas pick seasonal entries by the same definition.
  */
 export function seasonOf(month: number): EventContext['season'] {

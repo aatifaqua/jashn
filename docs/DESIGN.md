@@ -1,4 +1,4 @@
-# Jashn — Design
+# Jashn: Design
 
 Jashn ("celebration") is a planning assistant for weddings, birthdays and
 community events. The user describes the event once; Jashn returns a budget split with a
@@ -16,7 +16,7 @@ never produces a number or a date.
 
 ## 1. Problem, vertical, personas
 
-**Vertical:** Celebration & Event Planner — "a GenAI-powered planning assistant that helps
+**Vertical:** Celebration & Event Planner: "a GenAI-powered planning assistant that helps
 users organize weddings, birthdays, and community events with budgets, timelines, vendor
 checklists, and personalized ideas."
 
@@ -24,9 +24,9 @@ checklists, and personalized ideas."
 
 | Persona          | Event                                                                          | Scale                                             | What hurts today                                                                          |
 | :--------------- | :----------------------------------------------------------------------------- | :------------------------------------------------ | :---------------------------------------------------------------------------------------- |
-| Family organiser | Wedding, often several functions (haldi, mehndi, sangeet, ceremony, reception) | 100–600 guests, months of lead time, 8–12 vendors | No idea if the budget is realistic; venues and photographers book out; payments scattered |
-| Parent or friend | Birthday (kids, milestone, adult)                                              | 10–80 guests, 1–6 weeks                           | Last-minute scramble; forgets return gifts, cake order, entertainer                       |
-| Volunteer        | Community event (festival mela, fundraiser, meetup, clean-up drive)            | 50–2,000 open attendance                          | Permits, safety, volunteers, sanitation, sponsors; walk-in numbers unknown                |
+| Family organiser | Wedding, often several functions (haldi, mehndi, sangeet, ceremony, reception) | 100-600 guests, months of lead time, 8-12 vendors | No idea if the budget is realistic; venues and photographers book out; payments scattered |
+| Parent or friend | Birthday (kids, milestone, adult)                                              | 10-80 guests, 1-6 weeks                           | Last-minute scramble; forgets return gifts, cake order, entertainer                       |
+| Volunteer        | Community event (festival mela, fundraiser, meetup, clean-up drive)            | 50-2,000 open attendance                          | Permits, safety, volunteers, sanitation, sponsors; walk-in numbers unknown                |
 
 **What every persona needs:** is my budget enough, what do I book first, what is already
 late, what do I ask each vendor, what happens on the day, and fresh ideas that respect my
@@ -41,7 +41,7 @@ constraints (diet, faith, accessibility, money).
 2. **Describe the event** in three short fieldsets (section 5). A live summary beside the
    form shows days to go, expected headcount and the budget verdict as the user types.
 3. **Plan view** (lazy-loaded) opens on **Overview**: verdict banner, days to go, headcount,
-   top three actions ("Book the venue — 12 days late"), each with a "Why?" disclosure.
+   top three actions ("Book the venue", 12 days late), each with a "Why?" disclosure.
 4. Tabs: **Budget** (chart + table, trims), **Timeline** (phases, checkboxes, late and
    at-risk flags, calendar export), **Vendors** (status per vendor, questions, payment
    schedule, "Draft enquiry"), **Day of** (run sheet), **Ideas** (generated).
@@ -63,7 +63,7 @@ plan sent by the client.
 
 ```
 jashn/
-├── packages/core/            @jashn/core — pure TypeScript, zero runtime deps, no I/O,
+├── packages/core/            @jashn/core: pure TypeScript, zero runtime deps, no I/O,
 │   └── src/                  "sideEffects": false
 │       ├── types.ts          domain types (section 4)
 │       ├── days.ts           calendar dates as integer day numbers; parse/format helpers
@@ -263,7 +263,7 @@ loops, and removes daylight-saving and time-zone bugs.
 | city        | text                 | ≤ 60 chars, letters/spaces/.-' only; used only to personalise ideas                                                                                        |
 | tier        | select               | metro / tier-2 city / town or village                                                                                                                      |
 | setting     | radio                | indoor / outdoor / mixed                                                                                                                                   |
-| venueBooked | checkbox             | —                                                                                                                                                          |
+| venueBooked | checkbox             | (none)                                                                                                                                                     |
 | invited     | number               | 1 … 5,000                                                                                                                                                  |
 | budget      | number (₹)           | 1,000 … 100,000,000                                                                                                                                        |
 | priorities  | checkboxes           | ≤ 2, from the type's categories                                                                                                                            |
@@ -286,7 +286,7 @@ editorial planning estimates for India, labelled as such in the UI, never presen
 ### 6.1 Context (`context.ts`)
 
 `deriveContext(input, today, profile)` computes once: `daysToGo`, weekday/weekend, season
-(peak wedding season Nov–Feb, monsoon Jun–Sep, summer Apr–Jun), multi-day span (wedding
+(peak wedding season Nov-Feb, monsoon Jun-Sep, summer Apr-Jun), multi-day span (wedding
 functions), and boolean flags (`outdoor`, `largeCrowd` ≥ 200 expected, `publicGathering`
 community ≥ 500 or outdoor, `shortNotice` below the type's minimum lead time).
 
@@ -298,10 +298,10 @@ that triggered it. Initial set:
 
 | Rule                      | When                                 | Effect (with reason shown to the user)                                                                      |
 | :------------------------ | :----------------------------------- | :---------------------------------------------------------------------------------------------------------- |
-| peak-season               | wedding, date in Nov–Feb             | venue/caterer/photographer lead times ×1.25; notice that prices run higher                                  |
-| monsoon-outdoor           | Jun–Sep and outdoor/mixed            | "Book rain cover or a backup hall" task; infrastructure share +4 pts                                        |
-| summer-outdoor            | Apr–Jun, outdoor, start before 17:00 | shade + water station task; run-sheet hydration slot                                                        |
-| weekday                   | Mon–Thu                              | notice: venues often cheaper on weekdays (no extra spend)                                                   |
+| peak-season               | wedding, date in Nov-Feb             | venue/caterer/photographer lead times ×1.25; notice that prices run higher                                  |
+| monsoon-outdoor           | Jun-Sep and outdoor/mixed            | "Book rain cover or a backup hall" task; infrastructure share +4 pts                                        |
+| summer-outdoor            | Apr-Jun, outdoor, start before 17:00 | shade + water station task; run-sheet hydration slot                                                        |
+| weekday                   | Mon-Thu                              | notice: venues often cheaper on weekdays (no extra spend)                                                   |
 | short-notice              | daysToGo below type minimum          | compression mode (6.5); top action "Lock the venue today"                                                   |
 | step-free                 | constraint                           | venue questions (ramp, lift, accessible toilet), seating task, run-sheet "accessibility helper at entrance" |
 | jain / vegetarian / halal | constraint                           | caterer questions (no root vegetables / no meat or egg / halal certification); idea guard on menus          |
@@ -363,8 +363,8 @@ Each profile task has `{ id, title, leadDays, after?, vendorId?, appliesWhen? }`
 - Late tasks are spread from today one working day apart in priority order, so "do now"
   never shows twelve tasks on one day; one spread past its last workable day is flagged
   at-risk rather than sitting quietly on the event day.
-- Phases by days before the event: Do now (late), Months out (≥ 60), Weeks out (14–59),
-  Final fortnight (1–13), Day of (0), After (thank-yous, settle balances, return rentals).
+- Phases by days before the event: Do now (late), Months out (≥ 60), Weeks out (14 to 59),
+  Final fortnight (1 to 13), Day of (0), After (thank-yous, settle balances, return rentals).
 - Nothing is dropped: an impossible task stays visible as at-risk with its reason.
 
 `topActions` = the first three of: late tasks, then at-risk, then the next upcoming. The web app
@@ -409,11 +409,11 @@ reasons over, both in Gemini prompts and in the offline fallback.
 Three endpoints, all POST, all stateless, all with a deterministic fallback from
 `core/fallback`. Every response carries `source: "gemini" | "fallback"` and the UI labels it.
 
-| Endpoint      | Purpose                               | Input                                             | Output (validated)                                                                                                                         |
-| :------------ | :------------------------------------ | :------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/ideas`  | Personalised ideas                    | `EventInput`                                      | theme (name, palette words, why), 3 decor ideas, 3–5 menu items respecting diet, 3 activities, one guest-experience touch, invitation text |
-| `/api/assist` | Assistant: answer or propose a change | `EventInput`, message ≤ 500 chars, last ≤ 6 turns | `{ reply, patch? }`                                                                                                                        |
-| `/api/draft`  | Vendor enquiry message                | `EventInput`, vendor id                           | short message listing event facts and that vendor's questions                                                                              |
+| Endpoint      | Purpose                               | Input                                             | Output (validated)                                                                                                                            |
+| :------------ | :------------------------------------ | :------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/ideas`  | Personalised ideas                    | `EventInput`                                      | theme (name, palette words, why), 3 decor ideas, 3 to 5 menu items respecting diet, 3 activities, one guest-experience touch, invitation text |
+| `/api/assist` | Assistant: answer or propose a change | `EventInput`, message ≤ 500 chars, last ≤ 6 turns | `{ reply, patch? }`                                                                                                                           |
+| `/api/draft`  | Vendor enquiry message                | `EventInput`, vendor id                           | short message listing event facts and that vendor's questions                                                                                 |
 
 **Assistant tool use.** Gemini receives one function declaration, `update_event(patch)`,
 whose parameters mirror `PlanPatch`. When the user asks for a change, Gemini returns a

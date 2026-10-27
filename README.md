@@ -81,10 +81,10 @@ the UI shows that reason next to the item it changed.
 
 | Rule                      | When                                 | Effect                                                                                         |
 | :------------------------ | :----------------------------------- | :--------------------------------------------------------------------------------------------- |
-| peak-season               | wedding, Nov–Feb                     | venue, caterer and photographer lead times ×1.25; notice that prices run higher                |
-| monsoon-outdoor           | Jun–Sep and outdoor or mixed         | rain cover or backup hall task; infrastructure share +4 points                                 |
-| summer-outdoor            | Apr–Jun, outdoor, start before 17:00 | shade and water station task; hydration slot on the run sheet                                  |
-| weekday                   | Mon–Thu                              | notice that venues are often cheaper on weekdays                                               |
+| peak-season               | wedding, Nov-Feb                     | venue, caterer and photographer lead times ×1.25; notice that prices run higher                |
+| monsoon-outdoor           | Jun-Sep and outdoor or mixed         | rain cover or backup hall task; infrastructure share +4 points                                 |
+| summer-outdoor            | Apr-Jun, outdoor, start before 17:00 | shade and water station task; hydration slot on the run sheet                                  |
+| weekday                   | Mon-Thu                              | notice that venues are often cheaper on weekdays                                               |
 | short-notice              | days to go below the type's minimum  | compressed timeline; top action "Lock the venue today"                                         |
 | step-free                 | need declared                        | ramp, lift and accessible-toilet questions; seating task; accessibility helper at the entrance |
 | jain / vegetarian / halal | need declared                        | caterer questions; dietary guard on every generated menu                                       |
