@@ -1,0 +1,15 @@
+# Security updates only: a limit of 0 turns off routine version-bump pull requests but keeps
+# Dependabot security updates, so the repository stays on one branch and dependencies stay
+# exact-pinned until a fix is needed.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0

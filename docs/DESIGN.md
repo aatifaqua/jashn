@@ -84,7 +84,8 @@ jashn/
 │       │   ├── ideas.ts      idea catalogue filtered by type, style, constraints
 │       │   ├── draft.ts      vendor enquiry template
 │       │   └── assistant.ts  offline intent parser -> reply + optional PlanPatch
-│       ├── guards.ts         post-generation checks (dietary conflicts, length, links)
+│       ├── guards.ts         post-generation checks (dietary conflicts, length, links, amounts)
+│       ├── date-mentions.ts  dates written in generated text, checked against the plan
 │       ├── ics.ts            timeline -> RFC 5545 calendar text
 │       └── share.ts          input <-> compact URL-fragment encoding
 ├── server/                   Hono on Node, stateless
@@ -414,7 +415,9 @@ and that the user note is data, not instructions. The user content is compact JS
 validated input and plan summary; the note is sanitised, length-capped and fenced. Output
 uses `responseMimeType: application/json` with a response schema, then zod, then `guards.ts`
 (dietary conflicts such as meat words under vegetarian/Jain, Jain root vegetables, alcohol
-under alcohol-free; no URLs; length caps). Any failure → fallback.
+under alcohol-free; no URLs; length caps; no rupee figure or calendar date the plan does not
+state). Ideas carry no dates at all: invitation wording leaves `[date]`, `[venue]` and `[names]`
+as placeholders, so stored or pre-generated ideas never go stale. Any failure → fallback.
 
 **Model use.** Model chain (newest flash → older flash), per-call timeout and a whole-chain
 deadline, retry only on 429/5xx status codes, explicit safety settings, `maxOutputTokens`
@@ -450,7 +453,9 @@ call budget; past it, requests get the fallback with `source: "fallback"` instea
   assistant prompts) from `demo-genai.json`, and the core fallbacks for anything else, with
   a visible "demo mode" note. The plan itself is identical in both modes because it is always
   computed in the browser. The GitHub Pages deployment is demo mode; the live Gemini path
-  runs with the server.
+  runs with the server. Sample dates move with today, so every demo entry passes the same
+  guards as live output against today's plan; a draft or answer whose dates have drifted falls
+  back. `VITE_API_BASE=/` calls the API on the page's own origin (server-hosted build).
 
 ---
 
@@ -476,8 +481,8 @@ generated content, and the user's browser data.
   header with `frame-ancestors 'none'`.
 - **Output handling:** Svelte escapes all text; `{@html}` is banned by lint; generated text is
   rendered as text only; `.ics` text is escaped per RFC 5545.
-- **Key handling:** read once from the environment (Node's built-in env-file loading for local
-  runs), validated by zod at start-up, never logged or sent to the browser; `.env` ignored,
+- **Key handling:** read once from the environment (Node's built-in env-file loading of
+  `server/.env` for local runs), validated by zod at start-up, never logged or sent to the browser; `.env` ignored,
   `.env.example` documented.
 - **Abuse limits:** per-client rate limit with an explicit trust-proxy switch, global Gemini
   budget, upstream timeouts with `AbortSignal`.
@@ -593,7 +598,8 @@ counts; no currencies other than INR; prices are typical estimates, not quotes.
 - Users are in India; budgets in INR; city tiers capture the main cost difference.
 - Cost floors, budget weights, turnout and lead times are editorial planning estimates,
   stated in one place and easy to tune.
-- Dates are local calendar dates; the run sheet uses local wall-clock times.
+- Dates are calendar dates; "today" is the date in India in both the browser and the server,
+  so they agree on what is late. The run sheet uses local wall-clock times.
 - One event per plan; up to ten plans per browser.
 - Permit requirements vary by city; Jashn lists them as "check local rules", not legal advice.
 
