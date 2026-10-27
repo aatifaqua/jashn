@@ -29,6 +29,7 @@
     type FormState,
   } from '../lib/form.ts';
   import type { PlanStore } from '../lib/plans.svelte.ts';
+  import { planDay } from '../lib/storage.ts';
 
   /** The start screen and the edit form: samples, saved plans and the three-step form. */
   interface Props {
@@ -61,13 +62,23 @@
 
   const fieldErrors = $derived(errorsByField(errors));
 
+  /**
+   * The day the form validates against: today, or for an event that has already been held, its
+   * own day, so its budget or headcount can still be corrected without moving the date.
+   */
+  function validDay(): number {
+    const input = editing ? store.input : null;
+    return input === null ? store.today : planDay(input, store.today);
+  }
+
   /** Validates the form and refreshes the live summary (and, after a failed submit, the errors). */
   const recompute = debounce((raw: Record<string, unknown>) => {
-    const result = validateInput(raw, store.today);
+    const day = validDay();
+    const result = validateInput(raw, day);
     if (attempted) errors = result.ok ? [] : result.errors;
     summary =
       result.ok && profile?.type === result.value.type
-        ? buildPlan(result.value, store.today, profile)
+        ? buildPlan(result.value, day, profile)
         : null;
   }, SUMMARY_DELAY_MS);
 
@@ -103,7 +114,7 @@
   async function submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     attempted = true;
-    const result = validateInput(formToRaw(form), store.today);
+    const result = validateInput(formToRaw(form), validDay());
     if (!result.ok) {
       errors = result.errors;
       await tick();
@@ -129,6 +140,13 @@
   async function openPlan(id: string): Promise<void> {
     if (await store.open(id)) ondone();
   }
+
+  /** Repeats what failed: opening, creating or saving a plan, else loading the form's type. */
+  async function tryAgain(): Promise<void> {
+    const retried = await store.retry();
+    if (retried === null) await useType(form.type);
+    else if (retried) ondone();
+  }
 </script>
 
 <div class="intake">
@@ -147,6 +165,7 @@
     <SampleChips onpick={(id: SampleId) => void pickSample(id)} disabled={busy} />
     <MyPlans
       plans={store.plans}
+      today={store.today}
       onopen={(id: string) => void openPlan(id)}
       ondelete={(id: string) => {
         store.remove(id);
@@ -160,7 +179,7 @@
   {#if store.error !== null}
     <div class="notice notice-bad" role="alert">
       <p>{store.error}</p>
-      <button type="button" class="button small" onclick={() => void useType(form.type)}>
+      <button type="button" class="button small" onclick={() => void tryAgain()}>
         Try again
       </button>
     </div>

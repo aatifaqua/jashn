@@ -1,15 +1,25 @@
 <script lang="ts">
-  import type { Plan } from '@jashn/core';
+  import { remainingActions, type Plan } from '@jashn/core';
   import { count, daysToGoText, rupees } from '../lib/format.ts';
   import Icon from './Icon.svelte';
   import TopActions from './TopActions.svelte';
   import VerdictBanner from './VerdictBanner.svelte';
 
-  /** The Overview tab: verdict, key figures, what to do first and the plan's notices. */
+  /**
+   * The Overview tab: verdict, key figures, what to do first and the plan's notices. Ticked
+   * tasks leave "Do these first", and the countdown uses the real today, so a past event reads
+   * "Held N days ago" rather than "Today".
+   */
   interface Props {
     plan: Plan;
+    /** Task ids the user has ticked off. */
+    checks: ReadonlySet<string>;
+    /** The real calendar day, which is later than plan.today once the event has passed. */
+    today: number;
   }
-  let { plan }: Props = $props();
+  let { plan, checks, today }: Props = $props();
+
+  const actions = $derived(remainingActions(plan, checks));
 </script>
 
 <VerdictBanner feasibility={plan.feasibility} />
@@ -17,7 +27,7 @@
 <dl class="figures">
   <div>
     <dt>Countdown</dt>
-    <dd>{daysToGoText(plan.daysToGo)}</dd>
+    <dd>{daysToGoText(plan.today + plan.daysToGo - today)}</dd>
   </div>
   <div>
     <dt>Expected guests</dt>
@@ -35,7 +45,7 @@
   {/if}
 </dl>
 
-<TopActions actions={plan.topActions} today={plan.today} />
+<TopActions {actions} today={plan.today} />
 
 {#if plan.notices.length > 0}
   <section aria-labelledby="notices-title">

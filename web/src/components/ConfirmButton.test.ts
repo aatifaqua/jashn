@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { axe } from 'vitest-axe';
 import { describe, expect, it, vi } from 'vitest';
 import ConfirmButton from './ConfirmButton.svelte';
@@ -37,5 +37,11 @@ describe('ConfirmButton', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onconfirm).not.toHaveBeenCalled();
     expect(screen.queryByRole('group')).toBeNull();
+    // Focus returns to the button that asked, not to the page.
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: 'Delete the Pune party' }),
+      );
+    });
   });
 });

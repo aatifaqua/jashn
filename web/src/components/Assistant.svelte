@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import {
     SUGGESTED_PROMPTS,
     buildPlan,
     diffPlans,
     validatePatch,
     type AssistTurn,
+    type Language,
     type Plan,
     type PlanPatch,
     type Profile,
@@ -32,6 +34,8 @@
   interface Entry extends AssistTurn {
     readonly id: number;
     readonly source?: Source;
+    /** The language generated text was asked for when this reply was made. */
+    readonly language?: Language;
   }
   interface Proposal {
     /** The plan the preview was computed against; a proposal for an older plan is not shown. */
@@ -45,6 +49,8 @@
   let busy = $state(false);
   let proposal = $state.raw<Proposal | null>(null);
   let nextId = 0;
+  let input = $state<HTMLInputElement>();
+  let proposalTitle = $state<HTMLElement>();
 
   const current = $derived(proposal?.base === plan ? proposal : null);
 
@@ -72,16 +78,29 @@
     message = '';
     proposal = null;
     busy = true;
+    const { language } = plan.input;
     const answer = await genai.assist(plan, clean, history);
     busy = false;
-    say({ role: 'assistant', text: answer.reply, source: answer.source });
+    say({ role: 'assistant', text: answer.reply, source: answer.source, language });
     if (answer.patch !== undefined) proposal = propose(answer.patch);
+    // A preview needs a decision, so focus moves to it and it is announced by its heading.
+    if (proposal !== null) {
+      await tick();
+      proposalTitle?.focus();
+    }
+  }
+
+  /** Apply and Dismiss remove themselves, so focus returns to the message field. */
+  async function settle(): Promise<void> {
+    proposal = null;
+    await tick();
+    input?.focus();
   }
 
   function apply(chosen: Proposal): void {
     onapply(chosen.patch);
-    proposal = null;
     say({ role: 'assistant', text: 'Done. The plan now includes that change.' });
+    void settle();
   }
 </script>
 
@@ -95,7 +114,14 @@
     {#each log as entry (entry.id)}
       <li class="chat-{entry.role}">
         <span class="chat-who">{entry.role === 'user' ? 'You' : 'Jashn'}</span>
-        <p lang={entry.source === undefined ? 'en' : textLang(entry.source, plan.input.language)}>
+        <!-- User text inherits the page language; a reply keeps the language it was made in. -->
+        <p
+          lang={entry.role === 'user'
+            ? undefined
+            : entry.source === undefined
+              ? 'en'
+              : textLang(entry.source, entry.language ?? 'en')}
+        >
           {entry.text}
         </p>
         {#if entry.source !== undefined}<SourceBadge source={entry.source} />{/if}
@@ -111,7 +137,7 @@
 
   {#if current !== null}
     <div class="proposal" role="group" aria-labelledby="proposal-title">
-      <h3 id="proposal-title">Proposed change</h3>
+      <h3 id="proposal-title" tabindex="-1" bind:this={proposalTitle}>Proposed change</h3>
       <table>
         <caption class="visually-hidden">Before and after the proposed change</caption>
         <thead>
@@ -131,13 +157,7 @@
             apply(current);
           }}>Apply change</button
         >
-        <button
-          type="button"
-          class="button ghost"
-          onclick={() => {
-            proposal = null;
-          }}>Dismiss</button
-        >
+        <button type="button" class="button ghost" onclick={() => void settle()}>Dismiss</button>
       </div>
     </div>
   {/if}
@@ -145,7 +165,7 @@
   <ul class="chip-list" aria-label="Suggested questions">
     {#each SUGGESTED_PROMPTS as prompt (prompt)}
       <li>
-        <button type="button" class="chip" disabled={busy} onclick={() => void send(prompt)}>
+        <button type="button" class="chip" aria-disabled={busy} onclick={() => void send(prompt)}>
           {prompt}
         </button>
       </li>
@@ -167,9 +187,11 @@
         maxlength={MESSAGE_MAX}
         autocomplete="off"
         bind:value={message}
+        bind:this={input}
         aria-describedby="assistant-hint"
       />
-      <button type="submit" class="button primary" disabled={busy}>
+      <!-- aria-disabled keeps focus on the button while busy; send() ignores a press then. -->
+      <button type="submit" class="button primary" aria-disabled={busy}>
         <Icon name="send" /> Send
       </button>
     </div>

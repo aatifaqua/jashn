@@ -130,9 +130,10 @@ function offlineDraft(plan: Plan, vendor: VendorItem): Sourced<Draft> {
 }
 
 /**
- * The shipped demo file, loaded on first use as its own chunk: it holds every sample's
- * generated text in two languages, which the plan view should not have to download up front.
- * A failed load serves the offline content instead.
+ * The shipped demo file, loaded on first use as its own chunk: it holds whatever Gemini text
+ * has been pre-generated for the samples (it may cover only some samples, languages, drafts
+ * and answers), which the plan view should not have to download up front. Anything missing,
+ * and everything after a failed load, is served from the offline content instead.
  */
 function loadShippedDemo(): Promise<DemoContent> {
   return import('./demo-genai.json').then(

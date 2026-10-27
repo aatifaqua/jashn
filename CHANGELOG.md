@@ -25,6 +25,7 @@ All notable changes to this project are documented here. The format follows
 - Web: Svelte 5 app with intake and live summary, lazy plan view with overview, budget,
   timeline, vendors, day-of and ideas tabs, an assistant with change preview, saved plans,
   share links, calendar export, print stylesheet, light and dark themes, and demo mode with
-  pre-generated Gemini content.
+  pre-generated Gemini content where available (so far ideas for one sample) and offline
+  content elsewhere.
 - Repository: CI, CodeQL, GitHub Pages and Dependabot workflows; first-screen size budget;
   Dockerfile; design document and decision records; security policy.

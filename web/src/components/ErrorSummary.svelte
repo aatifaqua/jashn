@@ -26,6 +26,7 @@
     class="error-summary"
     tabindex="-1"
     bind:this={element}
+    role="group"
     aria-labelledby="error-summary-title"
   >
     <h2 id="error-summary-title">

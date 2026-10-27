@@ -1,4 +1,4 @@
-import { toIso } from '@jashn/core';
+import { getProfile, toIso } from '@jashn/core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { axe } from 'vitest-axe';
 import { describe, expect, it, vi } from 'vitest';
@@ -135,6 +135,59 @@ describe('Intake', () => {
     store.error = 'Could not load the planner for this event type.';
     setup(store);
     expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load/);
+  });
+
+  it('retries the plan that failed to open, not just the form type', async () => {
+    const storage = new MemoryStorage();
+    writePlans(storage, [savedPlan()]);
+    let online = false;
+    const store = new PlanStore({
+      storage,
+      today: TODAY,
+      loadProfile: (type) =>
+        online ? Promise.resolve(getProfile(type)) : Promise.reject(new Error('offline')),
+    });
+    const { ondone } = setup(store);
+    await fireEvent.click(screen.getByRole('button', { name: 'Traditional wedding in Lucknow' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load/);
+    online = true;
+    await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(ondone).toHaveBeenCalledOnce();
+    });
+    expect(store.currentId).toBe(savedPlan().id);
+  });
+
+  it('retries loading the form type when nothing else failed', async () => {
+    let online = false;
+    const store = new PlanStore({
+      storage: null,
+      today: TODAY,
+      loadProfile: (type) =>
+        online ? Promise.resolve(getProfile(type)) : Promise.reject(new Error('offline')),
+    });
+    const { ondone } = setup(store);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load/);
+    online = true;
+    await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByRole('radio', { name: 'Traditional' });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(ondone).not.toHaveBeenCalled();
+  });
+
+  it('lets a held event be edited without moving its date', async () => {
+    const store = makeStore();
+    await store.create(sampleInput());
+    const eventDay = (store.plan?.today ?? 0) + (store.plan?.daysToGo ?? 0);
+    store.setToday(eventDay + 10);
+    const { ondone } = setup(store, true);
+    await screen.findByRole('radio', { name: 'Traditional' });
+    await type('Guests invited', '280');
+    await fireEvent.click(screen.getByRole('button', { name: 'Update my plan' }));
+    await waitFor(() => {
+      expect(ondone).toHaveBeenCalledOnce();
+    });
+    expect(store.current?.input.invited).toBe(280);
   });
 
   it('stays put when a plan cannot be made or opened', async () => {

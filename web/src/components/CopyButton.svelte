@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { copyText } from '../lib/clipboard.ts';
   import Icon from './Icon.svelte';
   import type { IconName } from '../lib/icons.ts';
@@ -14,8 +15,12 @@
 
   let message = $state('');
 
+  /** The status is cleared first, so a second copy is announced again. */
   async function copy(): Promise<void> {
-    message = (await copyText(text())) ? done : 'Copying is blocked here; select the text instead.';
+    message = '';
+    const copied = await copyText(text());
+    await tick();
+    message = copied ? done : 'Copying is blocked here; select the text instead.';
   }
 </script>
 

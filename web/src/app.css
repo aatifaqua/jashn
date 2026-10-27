@@ -305,7 +305,9 @@ main {
   color: var(--bad);
 }
 .button:disabled,
-.chip:disabled {
+.button[aria-disabled='true'],
+.chip:disabled,
+.chip[aria-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -1014,9 +1016,15 @@ tfoot td {
   }
 }
 
-/* Print: the whole plan, black on white, without controls. */
+/*
+ * Print: the whole plan, black on white, without controls. The selectors match the dark-theme
+ * ones (and come later), so a plan printed with the dark theme on is still black on white.
+ */
 @media print {
-  :root {
+  :root,
+  :root[data-theme],
+  :root:not([data-theme='light']) {
+    color-scheme: light;
     --bg: #fff;
     --surface: #fff;
     --surface-2: #fff;
@@ -1024,6 +1032,12 @@ tfoot td {
     --ink-muted: #333;
     --accent: #000;
     --rule: #999;
+    --plum: #000;
+    --bar: #555;
+    --bar-reserve: #999;
+    --ok: #000;
+    --warn: #000;
+    --bad: #000;
   }
   body {
     font-size: 11pt;

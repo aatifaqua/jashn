@@ -90,7 +90,7 @@ export const VERDICTS: Readonly<Record<Verdict, { word: string; icon: IconName; 
   unrealistic: {
     word: 'Unrealistic',
     icon: 'stop',
-    text: 'The budget is below a modest cost for this headcount; see the savings below.',
+    text: 'The budget is below a modest cost for this headcount; see Ways to save on the Budget tab.',
   },
 };
 

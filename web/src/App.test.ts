@@ -1,4 +1,4 @@
-import { encodeShare } from '@jashn/core';
+import { encodeShare, indiaDay } from '@jashn/core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { axe } from 'vitest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -112,6 +112,34 @@ describe('App', () => {
     window.dispatchEvent(new Event('pagehide'));
     expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull();
     localStorage.clear();
+  });
+
+  it('moves to the new day when the page is shown again', () => {
+    const { store } = setup();
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2031, 0, 1, 6, 0));
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const before = store.today;
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(store.today).toBeGreaterThan(before);
+    window.dispatchEvent(new Event('pageshow'));
+    expect(store.today).toBe(indiaDay(Date.UTC(2031, 0, 1, 6, 0)));
+  });
+
+  it('reloads plans another tab saved, and ignores other keys', async () => {
+    const { store, storage } = setup();
+    const reload = vi.spyOn(store, 'reload');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'jashn.theme' }));
+    expect(reload).not.toHaveBeenCalled();
+    const other = makeStore(storage);
+    await other.create(sampleInput('kids-birthday'));
+    other.flush();
+    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
+    expect(reload).toHaveBeenCalledOnce();
+    expect(store.plans).toHaveLength(1);
+    window.dispatchEvent(new StorageEvent('storage', { key: null }));
+    expect(reload).toHaveBeenCalledTimes(2);
   });
 
   it('warns when the browser will not keep plans', async () => {

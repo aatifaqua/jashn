@@ -89,6 +89,7 @@ the UI shows that reason next to the item it changed.
 | step-free                 | need declared                        | ramp, lift and accessible-toilet questions; seating task; accessibility helper at the entrance |
 | jain / vegetarian / halal | need declared                        | caterer questions; dietary guard on every generated menu                                       |
 | alcohol-free              | need declared                        | bar line and bartender removed; mocktail notice                                                |
+| halal-no-bar              | halal declared (not alcohol-free)    | the same bar removal and notice, since alcohol is not halal                                    |
 | kid-friendly              | need declared                        | kids' corner task; entertainment +2 points                                                     |
 | eco-friendly              | need declared                        | e-invites (invitations −80 %, moved to decor); no single-use plastic; waste segregation        |
 | budget-strict             | need declared                        | contingency 15 % instead of 10 %; trims shown even when comfortable                            |
@@ -138,9 +139,10 @@ it.
 whole-chain deadline, moving on only after a 429 or 5xx. Any failure (no key, timeout, quota,
 schema or guard) serves the deterministic fallback instead of an error, and every result carries
 `source: "gemini" | "fallback"`, which the UI labels. The GitHub Pages demo has no server: it
-serves Gemini output pre-generated for the three samples
+serves the Gemini output pre-generated so far
 ([demo-genai.json](web/src/lib/demo-genai.json), written by
-[pregenerate.ts](server/scripts/pregenerate.ts)) and the fallbacks for everything else. Because
+[pregenerate.ts](server/scripts/pregenerate.ts); today ideas for the Lucknow wedding in English)
+and the labelled offline fallbacks for everything else. Because
 the sample dates move with today, the same guards drop any pre-generated draft or answer whose
 dates no longer match the plan, and ideas never state a date.
 
@@ -186,7 +188,8 @@ the pre-generated sample content or the offline fallbacks, labelled as such.
 
 **Server environment** (all optional, validated at start-up): `GEMINI_API_KEY`, `PORT` (8787),
 `CORS_ORIGINS`, `TRUST_PROXY`, `GEMINI_MODELS`, `RATE_LIMIT_MAX` (20), `RATE_LIMIT_WINDOW_MS`
-(60000), `GEMINI_HOURLY_BUDGET` (600), `STATIC_DIR`. See [.env.example](.env.example).
+(60000), `GEMINI_HOURLY_BUDGET` (600), `GEMINI_CLIENT_HOURLY` (30), `STATIC_DIR` (read from the
+repository root and checked at start-up). See [.env.example](.env.example).
 
 ## Architecture
 
@@ -211,7 +214,7 @@ the main decisions in [docs/decisions.md](docs/decisions.md).
 
 | Focus area    | What we did                                                                                                                                                                                                                                                                                        | Where                                                                                                                                                                                                                                     |
 | :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Code quality  | Strict TypeScript (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), typescript-eslint strict type-checked with budgets (complexity 10, 60 lines per function, 250 per file, depth 3, 4 params), Prettier, JSDoc on every export, one shared core with no duplicated logic                | [tsconfig.base.json](tsconfig.base.json), [eslint.config.js](eslint.config.js), [packages/core/src/index.ts](packages/core/src/index.ts)                                                                                                  |
+| Code quality  | Strict TypeScript (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), typescript-eslint strict type-checked with budgets (complexity 10, 60 lines per function, 250 per file, depth 3, 4 params), Prettier, JSDoc on every export, one shared core for all planning logic                  | [tsconfig.base.json](tsconfig.base.json), [eslint.config.js](eslint.config.js), [packages/core/src/index.ts](packages/core/src/index.ts)                                                                                                  |
 | Security      | Strict zod schemas then the core validator, JSON only, 16 KB body limit, generic errors with a request id, secure headers and API CSP, CORS allow-list, SPA CSP without `unsafe-inline`, rate limit and hourly Gemini budget, fenced note, guarded output, key only on the server                  | [SECURITY.md](SECURITY.md), [middleware/security.ts](server/src/middleware/security.ts), [middleware/rateLimit.ts](server/src/middleware/rateLimit.ts), [routes/common.ts](server/src/routes/common.ts), [web/index.html](web/index.html) |
 | Efficiency    | Plan computed in the browser; integer day numbers; memoised `buildPlan`; per-type profile chunks, lazy plan view, calendar export and demo content; no UI, chart or date library; first-screen gzip budget in CI; server cache with in-flight coalescing, `compress()`, immutable hashed assets    | [plan.ts](packages/core/src/plan.ts), [days.ts](packages/core/src/days.ts), [cache.ts](server/src/cache.ts), [static.ts](server/src/static.ts), [scripts/size-budget.mjs](scripts/size-budget.mjs)                                        |
 | Testing       | Vitest in every workspace with coverage thresholds (core 100 %); fast-check property tests for budget, timeline, patches, share links and `.ics`; scenario tests pinning the samples; every route with Gemini mocked; every component with an axe check                                            | [plan.property.test.ts](packages/core/src/plan.property.test.ts), [samples.test.ts](packages/core/src/samples.test.ts), [app.test.ts](server/src/app.test.ts), [Assistant.test.ts](web/src/components/Assistant.test.ts)                  |

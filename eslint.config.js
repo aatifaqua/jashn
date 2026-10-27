@@ -42,6 +42,25 @@ export default defineConfig(
     languageOptions: { parserOptions: { parser: tseslint.parser } },
   },
   {
+    // getProfile pulls every event type into the importing chunk; the web app loads one lazily.
+    files: ['web/src/**/*.ts', 'web/src/**/*.svelte'],
+    ignores: ['**/*.test.ts', 'web/src/test-fixtures.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@jashn/core',
+              importNames: ['getProfile'],
+              message: 'Use loadProfile so each event type stays in its own chunk.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.test.ts', '**/vitest.setup.ts'],
     rules: {
       'max-lines-per-function': 'off',

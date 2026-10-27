@@ -7,6 +7,7 @@
 import {
   applyPatch,
   buildPlan,
+  canonicalKey,
   guardIdeas,
   loadProfile,
   type EventInput,
@@ -42,10 +43,28 @@ export interface StoreOptions {
 const LOAD_ERROR =
   'Could not load the planner for this event type. Check your connection and try again.';
 
+/** Shown when every saved plan has progress, so none can make way for a new one. */
+const FULL_ERROR = `All ${String(MAX_PLANS)} saved plans have progress. Delete one you no longer need to make room.`;
+
+/** Plans with ticked tasks or vendor progress are never dropped to make room. */
+function hasProgress(entry: SavedPlan): boolean {
+  return entry.checks.length > 0 || Object.keys(entry.vendors).length > 0;
+}
+
+/**
+ * The list with room for one more plan: as it is when below the limit, otherwise without its
+ * oldest plan that has no progress; null when every plan has progress.
+ */
+function withRoom(plans: readonly SavedPlan[]): readonly SavedPlan[] | null {
+  if (plans.length < MAX_PLANS) return plans;
+  const index = plans.map(hasProgress).lastIndexOf(false);
+  return index === -1 ? null : plans.filter((_, at) => at !== index);
+}
+
 /** Holds and persists every plan in this browser. */
 export class PlanStore {
-  /** The local calendar day the plans are computed for. */
-  readonly today: number;
+  /** The calendar day in India; App refreshes it when the page is shown again. */
+  today = $state.raw(0);
   plans = $state.raw<readonly SavedPlan[]>([]);
   currentId = $state.raw<string | null>(null);
   profile = $state.raw<Profile | null>(null);
@@ -61,13 +80,17 @@ export class PlanStore {
     return buildPlan(input, planDay(input, this.today), profile);
   });
   readonly #writer: PlanWriter;
+  readonly #storage: Storage | null;
   readonly #now: () => number;
   readonly #newId: () => string;
   readonly #load: (type: EventType) => Promise<Profile>;
   #loading = 0;
+  /** Repeats the open, create or edit that last failed to load its planner. */
+  #retry: (() => Promise<boolean>) | null = null;
 
   constructor(options: StoreOptions) {
     this.today = options.today;
+    this.#storage = options.storage;
     this.#now = options.now ?? Date.now;
     this.#newId = options.newId ?? (() => crypto.randomUUID());
     this.persisted = options.storage !== null;
@@ -86,8 +109,10 @@ export class PlanStore {
     try {
       const profile = await this.#load(type);
       this.error = null;
+      this.#retry = null;
       return profile;
     } catch {
+      this.#retry = null;
       this.error = LOAD_ERROR;
       return null;
     }
@@ -122,9 +147,25 @@ export class PlanStore {
     this.#save([next, ...this.plans.filter((candidate) => candidate.id !== entry.id)]);
   }
 
-  /** Saves a new plan for a validated input and opens it; the oldest plan beyond ten is dropped. */
+  /**
+   * Saves a new plan for a validated input and opens it. The same event (a sample picked again,
+   * a share link opened twice) opens its existing plan instead of adding a copy. At the limit,
+   * the oldest plan without progress makes way; when every plan has progress, nothing is
+   * dropped and `error` says why.
+   */
   async create(input: EventInput): Promise<string | null> {
-    if (!(await this.#useProfile(input.type))) return null;
+    const key = canonicalKey(input);
+    const same = this.plans.find((entry) => canonicalKey(entry.input) === key);
+    if (same !== undefined) return (await this.open(same.id)) ? same.id : null;
+    const room = withRoom(this.plans);
+    if (room === null) {
+      this.error = FULL_ERROR;
+      return null;
+    }
+    if (!(await this.#useProfile(input.type))) {
+      this.#retry = async () => (await this.create(input)) !== null;
+      return null;
+    }
     const entry: SavedPlan = {
       id: this.#newId(),
       input,
@@ -133,7 +174,7 @@ export class PlanStore {
       ideas: null,
       updated: this.#now(),
     };
-    this.#save([entry, ...this.plans].slice(0, MAX_PLANS));
+    this.#save([entry, ...room]);
     this.currentId = entry.id;
     return entry.id;
   }
@@ -141,9 +182,39 @@ export class PlanStore {
   /** Opens a saved plan once its type's profile is loaded. */
   async open(id: string): Promise<boolean> {
     const entry = this.plans.find((candidate) => candidate.id === id);
-    if (entry === undefined || !(await this.#useProfile(entry.input.type))) return false;
+    if (entry === undefined) return false;
+    if (!(await this.#useProfile(entry.input.type))) {
+      this.#retry = () => this.open(id);
+      return false;
+    }
     this.currentId = id;
     return true;
+  }
+
+  /**
+   * Repeats the open, create or edit whose planner failed to load, so "Try again" retries what
+   * the user asked for; null when the last failure was not one of those.
+   */
+  async retry(): Promise<boolean | null> {
+    const again = this.#retry;
+    this.#retry = null;
+    return again === null ? null : again();
+  }
+
+  /** Moves to a new day (the page was left open past midnight); every plan follows. */
+  setToday(day: number): void {
+    if (day !== this.today) this.today = day;
+  }
+
+  /**
+   * Re-reads the plans another tab saved, so this tab never writes a stale copy over them. A
+   * pending write from this tab is dropped (the other tab's newer save wins), and the open
+   * plan closes only if the other tab deleted it.
+   */
+  reload(): void {
+    this.#writer.cancel();
+    this.plans = readPlans(this.#storage, this.today);
+    if (!this.plans.some((entry) => entry.id === this.currentId)) this.currentId = null;
   }
 
   /** Back to the start screen. */
@@ -157,7 +228,11 @@ export class PlanStore {
    */
   async edit(input: EventInput): Promise<boolean> {
     const current = this.current;
-    if (current === null || !(await this.#useProfile(input.type))) return false;
+    if (current === null) return false;
+    if (!(await this.#useProfile(input.type))) {
+      this.#retry = () => this.edit(input);
+      return false;
+    }
     const sameType = current.input.type === input.type;
     this.#updateCurrent((entry) => ({
       ...entry,

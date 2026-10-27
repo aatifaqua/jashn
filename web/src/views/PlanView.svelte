@@ -138,7 +138,7 @@
         >
           <h2 id="panel-title-{tab.id}" tabindex="-1">{tab.label}</h2>
           {#if tab.id === 'overview'}
-            <Overview {plan} />
+            <Overview {plan} {checks} today={store.today} />
           {:else if tab.id === 'budget'}
             <BudgetChart
               lines={plan.budget}

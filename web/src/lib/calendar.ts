@@ -6,14 +6,23 @@ import { toIcs, type Plan } from '@jashn/core';
 
 const REVOKE_DELAY_MS = 1000;
 
-/** Builds the .ics text for a plan; the plan id keeps UIDs stable across re-exports. */
-export function calendarText(plan: Plan, planId: string, now: number): string {
-  return toIcs(plan, { stampMs: now, planId });
+/**
+ * Builds the .ics text for a plan; the plan id keeps UIDs stable across re-exports. Tasks the
+ * user has ticked off are left out, like the ones the plan already counts as done.
+ */
+export function calendarText(
+  plan: Plan,
+  planId: string,
+  now: number,
+  ticked: ReadonlySet<string> = new Set(),
+): string {
+  const open = { ...plan, tasks: plan.tasks.filter((task) => !ticked.has(task.id)) };
+  return toIcs(open, { stampMs: now, planId });
 }
 
-/** Downloads the plan's timeline as an .ics file through a temporary object URL. */
-export function downloadCalendar(plan: Plan, planId: string): void {
-  const blob = new Blob([calendarText(plan, planId, Date.now())], {
+/** Downloads the plan's open tasks as an .ics file through a temporary object URL. */
+export function downloadCalendar(plan: Plan, planId: string, ticked: ReadonlySet<string>): void {
+  const blob = new Blob([calendarText(plan, planId, Date.now(), ticked)], {
     type: 'text/calendar;charset=utf-8',
   });
   const url = URL.createObjectURL(blob);

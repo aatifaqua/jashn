@@ -19,6 +19,8 @@
   let { plan, saved, genai, onideas, onlanguage }: Props = $props();
 
   let busy = $state(false);
+  /** Said once new ideas arrive; empty for ideas that were already saved. */
+  let announced = $state('');
 
   /** The list sections in reading order; the theme and invitation have their own markup. */
   const groups: readonly { id: string; title: string; items: readonly IdeaItem[] }[] = $derived(
@@ -33,10 +35,13 @@
   );
 
   async function generate(): Promise<void> {
+    // The button stays focusable while busy (aria-disabled), so a second press lands here.
+    if (busy) return;
     busy = true;
     const { input } = plan;
     const { source, ...ideas } = await genai.ideas(plan);
     busy = false;
+    announced = 'Ideas ready below.';
     onideas({ ideas, source, language: input.language }, input);
   }
 </script>
@@ -61,7 +66,7 @@
     type="button"
     class="button primary"
     aria-busy={busy}
-    disabled={busy}
+    aria-disabled={busy}
     onclick={() => void generate()}
   >
     <Icon name="spark" />
@@ -69,13 +74,16 @@
   </button>
 </div>
 
-<div aria-live="polite" aria-busy={busy}>
-  {#if busy}
-    <p class="muted">Thinking up ideas…</p>
-  {:else if saved === null}
-    <p class="muted">
-      Ideas for a theme, decor, menu, activities and the invitation, shaped by your needs.
-    </p>
+<!-- Only this short line is live; the ideas are read when the user moves into them. -->
+<p class="muted" role="status">{busy ? 'Thinking up ideas…' : announced}</p>
+
+<div aria-busy={busy}>
+  {#if saved === null}
+    {#if !busy}
+      <p class="muted">
+        Ideas for a theme, decor, menu, activities and the invitation, shaped by your needs.
+      </p>
+    {/if}
   {:else}
     {@const ideas = saved.ideas}
     {@const lang = textLang(saved.source, saved.language)}

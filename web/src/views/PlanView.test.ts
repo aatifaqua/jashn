@@ -105,6 +105,21 @@ describe('PlanView', () => {
     expect(store.current?.input.language).toBe('hi');
   });
 
+  it('keeps ticked tasks off the overview list and hides their late badge', async () => {
+    const { store, rerender } = await setup();
+    const [first] = store.plan?.topActions ?? [];
+    if (first === undefined) throw new Error('fixture has no top actions');
+    await fireEvent.click(tab('Timeline'));
+    await fireEvent.click(screen.getByRole('checkbox', { name: first.title }));
+    // App passes the store's current entry; here the test hands it over after the change.
+    if (store.current !== null) await rerender({ entry: store.current });
+    const task = screen.getByRole('checkbox', { name: first.title }).closest('li');
+    expect(task?.querySelector('.badge')).toBeNull();
+    await fireEvent.click(tab('Overview'));
+    const actions = screen.getByRole('heading', { name: 'Do these first' }).parentElement;
+    expect(actions?.textContent).not.toContain(first.title);
+  });
+
   it('applies an assistant change to the store only after confirmation', async () => {
     const { store } = await setup(
       fakeGenAi(() => ({ reply: 'Proposed change: guests 40 → 30.', patch: { invited: 30 } })),

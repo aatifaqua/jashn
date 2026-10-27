@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { PHASES, type Plan, type Task } from '@jashn/core';
   import { isoDay, shortDay } from '../lib/format.ts';
   import { PHASE_LABELS } from '../lib/labels.ts';
@@ -32,11 +33,18 @@
   async function exportCalendar(): Promise<void> {
     try {
       const { downloadCalendar } = await import('../lib/calendar.ts');
-      downloadCalendar(plan, planId);
-      exportMessage = 'Calendar file downloaded: jashn-timeline.ics.';
+      downloadCalendar(plan, planId, checks);
+      await say('Calendar file downloaded: jashn-timeline.ics.');
     } catch {
-      exportMessage = 'Could not create the calendar file. Please try again.';
+      await say('Could not create the calendar file. Please try again.');
     }
+  }
+
+  /** Clears the status first, so the same message twice is announced twice. */
+  async function say(text: string): Promise<void> {
+    exportMessage = '';
+    await tick();
+    exportMessage = text;
   }
 </script>
 
@@ -65,8 +73,10 @@
             <span>{task.title}</span>
           </label>
           <p class="task-meta">
-            Due <time datetime={isoDay(task.due)}>{shortDay(task.due)}</time>
-            <TaskBadge status={task.status} idealDue={task.idealDue} today={plan.today} />
+            Due <time datetime={isoDay(task.due)}>{shortDay(task.due, plan.today)}</time>
+            {#if !isDone(task)}
+              <TaskBadge status={task.status} idealDue={task.idealDue} today={plan.today} />
+            {/if}
           </p>
           <Why reasons={task.reasons} />
         </li>

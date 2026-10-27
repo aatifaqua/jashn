@@ -9,7 +9,7 @@
   import type { GenAi } from './lib/genai.ts';
   import { PlanStore } from './lib/plans.svelte.ts';
   import { clearFragment, readFragment } from './lib/share.ts';
-  import { browserStorage } from './lib/storage.ts';
+  import { STORAGE_KEY, browserStorage } from './lib/storage.ts';
 
   /** The shell: skip link, header, the current view and the footer notes. */
   interface Props {
@@ -81,11 +81,25 @@
     const onHide = (): void => {
       store.flush();
     };
+    // A tab left open past midnight moves to the new day when it is shown again.
+    const onShow = (): void => {
+      if (document.visibilityState === 'visible') store.setToday(indiaDay(Date.now()));
+    };
+    // Another tab saved its plans: read them, so this tab never writes a stale copy over them.
+    const onStorage = (event: StorageEvent): void => {
+      if (event.key === STORAGE_KEY || event.key === null) store.reload();
+    };
     addEventListener('hashchange', onHash);
     addEventListener('pagehide', onHide);
+    addEventListener('pageshow', onShow);
+    addEventListener('storage', onStorage);
+    document.addEventListener('visibilitychange', onShow);
     return () => {
       removeEventListener('hashchange', onHash);
       removeEventListener('pagehide', onHide);
+      removeEventListener('pageshow', onShow);
+      removeEventListener('storage', onStorage);
+      document.removeEventListener('visibilitychange', onShow);
     };
   });
 

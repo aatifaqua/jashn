@@ -18,11 +18,19 @@
 
   let asking = $state(false);
   let confirm = $state<HTMLButtonElement>();
+  let trigger = $state<HTMLButtonElement>();
 
   async function ask(): Promise<void> {
     asking = true;
     await tick();
     confirm?.focus();
+  }
+
+  /** Cancel removes the focused button, so focus goes back to the button that asked. */
+  async function cancel(): Promise<void> {
+    asking = false;
+    await tick();
+    trigger?.focus();
   }
 </script>
 
@@ -38,19 +46,14 @@
         onconfirm();
       }}>{confirmLabel}</button
     >
-    <button
-      type="button"
-      class="button ghost small"
-      onclick={() => {
-        asking = false;
-      }}>Cancel</button
-    >
+    <button type="button" class="button ghost small" onclick={() => void cancel()}>Cancel</button>
   </span>
 {:else}
   <button
     type="button"
     class="button ghost small danger-text"
     aria-label={name}
+    bind:this={trigger}
     onclick={() => void ask()}
   >
     <Icon name="trash" />

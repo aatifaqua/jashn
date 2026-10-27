@@ -1,7 +1,10 @@
 name: Pages
 
+# Deploys only after CI passes on main, so a commit that fails verification never goes live.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -15,12 +18,22 @@ concurrency:
 jobs:
   build:
     name: Build demo
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      # configure-pages reads the site's settings (its base path) through the Pages API.
+      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # The commit CI verified, not whatever main points at by now.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           persist-credentials: false
 
       - name: Set up Node
@@ -30,6 +43,7 @@ jobs:
           cache: npm
 
       - name: Configure Pages
+        id: pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Install
@@ -39,7 +53,8 @@ jobs:
       - name: Build web
         run: npm run build -w web
         env:
-          VITE_BASE: /jashn/
+          # The site's own path ("/jashn" for a project site, "" on a custom domain).
+          VITE_BASE: ${{ steps.pages.outputs.base_path }}/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

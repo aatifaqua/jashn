@@ -41,5 +41,7 @@ describe('ErrorSummary', () => {
       props: { errors: [{ field: 'date', code: 'past', message: 'Date cannot be in the past.' }] },
     });
     expect(screen.getByRole('heading', { name: /fix this/ })).toBeInTheDocument();
+    // A named group, so the heading is announced as the summary's name when focus lands on it.
+    expect(screen.getByRole('group', { name: /fix this before planning/ })).toBeInTheDocument();
   });
 });

@@ -103,9 +103,109 @@ describe('PlanStore', () => {
 
   it('keeps at most ten plans, newest first', async () => {
     const store = makeStore();
-    for (let i = 0; i < MAX_PLANS + 2; i += 1) await store.create(sampleInput());
+    for (let i = 0; i < MAX_PLANS + 2; i += 1) {
+      await store.create({ ...sampleInput(), invited: 100 + i });
+    }
     expect(store.plans).toHaveLength(MAX_PLANS);
     expect(store.plans[0]?.id).toBe(`plan-${String(MAX_PLANS + 2)}`);
+  });
+
+  it('opens the existing plan when the same event is created again', async () => {
+    const store = makeStore();
+    const first = await store.create(sampleInput());
+    await store.create(sampleInput('kids-birthday'));
+    expect(await store.create(sampleInput())).toBe(first);
+    expect(store.plans).toHaveLength(2);
+    expect(store.currentId).toBe(first);
+  });
+
+  it('makes room by dropping the oldest plan without progress, never one with progress', async () => {
+    const store = makeStore();
+    const ids: (string | null)[] = [];
+    for (let i = 0; i < MAX_PLANS; i += 1) {
+      ids.push(await store.create({ ...sampleInput(), invited: 100 + i }));
+      store.setTask('book-venue', true);
+    }
+    // Every plan has a ticked task: nothing is dropped, and the user is told why.
+    expect(await store.create({ ...sampleInput(), invited: 999 })).toBeNull();
+    expect(store.plans).toHaveLength(MAX_PLANS);
+    expect(store.error).toMatch(/have progress/);
+    // The oldest plan loses its progress, so it is the one that makes way.
+    const oldest = ids[0] ?? '';
+    await store.open(oldest);
+    store.setTask('book-venue', false);
+    const created = await store.create({ ...sampleInput(), invited: 998 });
+    expect(created).not.toBeNull();
+    expect(store.plans.map((plan) => plan.id)).not.toContain(oldest);
+    expect(store.plans).toHaveLength(MAX_PLANS);
+  });
+
+  it('moves to a new day and re-reads plans another tab saved', async () => {
+    const storage = new MemoryStorage();
+    const store = makeStore(storage);
+    const id = await store.create(sampleInput());
+    store.setToday(TODAY);
+    store.setToday(TODAY + 1);
+    expect(store.today).toBe(TODAY + 1);
+    expect(store.plan?.today).toBe(TODAY + 1);
+    store.flush();
+    // Another tab adds a plan; this tab's pending tick is dropped in favour of its save.
+    const other = new PlanStore({ storage, today: TODAY, newId: () => 'other', writeDelayMs: 0 });
+    await other.create(sampleInput('kids-birthday'));
+    other.flush();
+    store.setTask('book-venue', true);
+    store.reload();
+    store.flush();
+    expect(
+      readPlans(storage, TODAY)
+        .map((plan) => plan.input.type)
+        .sort(),
+    ).toEqual(['birthday', 'wedding']);
+    expect(store.currentId).toBe(id);
+    other.clearAll();
+    store.reload();
+    expect(store.currentId).toBeNull();
+  });
+
+  it('retries the open that failed, not the form type', async () => {
+    const storage = new MemoryStorage();
+    const seed = makeStore(storage);
+    const id = await seed.create(sampleInput('kids-birthday'));
+    seed.flush();
+    let online = false;
+    const store = new PlanStore({
+      storage,
+      today: TODAY,
+      loadProfile: (type) =>
+        online ? Promise.resolve(getProfile(type)) : Promise.reject(new Error('offline')),
+    });
+    expect(await store.retry()).toBeNull();
+    expect(await store.open(id ?? '')).toBe(false);
+    expect(store.error).not.toBeNull();
+    online = true;
+    expect(await store.retry()).toBe(true);
+    expect(store.currentId).toBe(id);
+    expect(store.error).toBeNull();
+  });
+
+  it('retries a failed create and a failed edit', async () => {
+    let online = false;
+    const store = new PlanStore({
+      storage: null,
+      today: TODAY,
+      newId: () => 'plan-x',
+      loadProfile: (type) =>
+        online ? Promise.resolve(getProfile(type)) : Promise.reject(new Error('offline')),
+    });
+    expect(await store.create(sampleInput())).toBeNull();
+    online = true;
+    expect(await store.retry()).toBe(true);
+    expect(store.currentId).toBe('plan-x');
+    online = false;
+    expect(await store.edit(sampleInput('kids-birthday'))).toBe(false);
+    online = true;
+    expect(await store.retry()).toBe(true);
+    expect(store.input?.type).toBe('birthday');
   });
 
   it('deletes one plan or everything, writing at once', async () => {

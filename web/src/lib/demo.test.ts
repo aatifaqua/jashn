@@ -70,6 +70,7 @@ describe('createDemo', () => {
       samples: Partial<Record<SampleId, Partial<Record<Language, { ideas?: unknown }>>>>;
     };
     const demo = createDemo(demoFile);
+    let served = 0;
     for (const id of SAMPLE_IDS) {
       for (const language of LANGUAGES) {
         if (shipped.samples[id]?.[language]?.ideas === undefined) continue;
@@ -77,7 +78,10 @@ describe('createDemo', () => {
           demo.ideas({ ...sampleInput(id), language }, TODAY),
           `${id} ${language}`,
         ).not.toBeNull();
+        served += 1;
       }
     }
+    // The file may be partial (the docs say so), but never empty.
+    expect(served).toBeGreaterThan(0);
   });
 });

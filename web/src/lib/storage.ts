@@ -137,6 +137,8 @@ export function writePlans(storage: Storage | null, plans: readonly SavedPlan[])
 export interface PlanWriter {
   schedule(plans: readonly SavedPlan[]): void;
   flush(): boolean;
+  /** Drops a pending write without writing it. */
+  cancel(): void;
 }
 
 /** Creates a debounced writer for one storage area; `onResult` hears whether each write stuck. */
@@ -164,5 +166,10 @@ export function createWriter(
       timer = setTimeout(flush, delayMs);
     },
     flush,
+    cancel() {
+      clearTimeout(timer);
+      timer = undefined;
+      pending = null;
+    },
   };
 }

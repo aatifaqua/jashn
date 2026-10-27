@@ -19,6 +19,15 @@ describe('calendar export', () => {
     );
   });
 
+  it('leaves out tasks the user ticked off', () => {
+    const [task] = plan.tasks;
+    if (task === undefined) throw new Error('expected a task');
+    const all = calendarText(plan, 'plan-1', 0);
+    const open = calendarText(plan, 'plan-1', 0, new Set([task.id]));
+    expect(all).toContain(`SUMMARY:${task.title}`);
+    expect(open).not.toContain(`SUMMARY:${task.title}`);
+  });
+
   it('downloads through a temporary object URL and revokes it', () => {
     vi.useFakeTimers();
     const create = vi.fn(() => 'blob:jashn');
@@ -27,7 +36,7 @@ describe('calendar export', () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(() => undefined);
-    downloadCalendar(plan, 'plan-1');
+    downloadCalendar(plan, 'plan-1', new Set());
     expect(create).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
     expect(revoke).not.toHaveBeenCalled();

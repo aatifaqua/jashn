@@ -2,6 +2,7 @@
   import {
     EVENT_TYPES,
     INPUT_LIMITS,
+    addYears,
     toIso,
     type EventType,
     type Profile,
@@ -23,7 +24,7 @@
   let { form = $bindable(blankForm()), profile, errors, today, onType, onStyle }: Props = $props();
 
   const minDate = $derived(toIso(today));
-  const maxDate = $derived(toIso(today + INPUT_LIMITS.maxLeadDays));
+  const maxDate = $derived(toIso(addYears(today, INPUT_LIMITS.maxLeadYears)));
 </script>
 
 <fieldset class="step">

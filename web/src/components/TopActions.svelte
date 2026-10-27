@@ -22,7 +22,7 @@
         <li class="action">
           <p class="action-title">{task.title}</p>
           <p class="action-meta">
-            Due <time datetime={isoDay(task.due)}>{shortDay(task.due)}</time>
+            Due <time datetime={isoDay(task.due)}>{shortDay(task.due, today)}</time>
             <TaskBadge status={task.status} idealDue={task.idealDue} {today} />
           </p>
           <Why reasons={task.reasons} />

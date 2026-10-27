@@ -45,19 +45,39 @@ describe('Assistant', () => {
     expect(within(preview).getByText('Expected guests')).toBeInTheDocument();
     expect(onapply).not.toHaveBeenCalled();
     expect(await axe(container)).toHaveNoViolations();
+    // The preview takes focus, so a screen-reader user hears that a decision is waiting.
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Proposed change' }));
+    });
     await fireEvent.click(screen.getByRole('button', { name: 'Apply change' }));
     expect(onapply).toHaveBeenCalledWith({ invited: 330 });
     expect(screen.queryByRole('group', { name: 'Proposed change' })).toBeNull();
     expect(screen.getByText(/plan now includes that change/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
+    });
   });
 
-  it('drops a proposal on Dismiss', async () => {
+  it('drops a proposal on Dismiss and returns focus to the message field', async () => {
     const { onapply } = setup();
     await ask('Cut the budget by 10%');
     await screen.findByRole('group', { name: 'Proposed change' });
     await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(screen.queryByRole('group', { name: 'Proposed change' })).toBeNull();
     expect(onapply).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
+    });
+  });
+
+  it('keeps each reply in the language it was written in, and user text unlabelled', async () => {
+    const genai = fakeGenAi(() => ({ reply: 'Reply.', source: 'gemini' }));
+    const view = setup(genai);
+    await ask('Hello');
+    await screen.findByText('Reply.');
+    await view.rerender({ plan: planFor({ ...plan.input, language: 'hi' }) });
+    expect(screen.getByText('Reply.')).toHaveAttribute('lang', 'en');
+    expect(screen.getByText('Hello', { selector: 'p' })).not.toHaveAttribute('lang');
   });
 
   it('ignores blank messages and never previews an invalid patch', async () => {
@@ -86,7 +106,12 @@ describe('Assistant', () => {
     const { container } = setup(genai);
     await ask('First question');
     expect(container.querySelector('.chat-log')).toHaveAttribute('aria-busy', 'true');
-    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+    // Busy, yet still focusable: aria-disabled instead of disabled, and a press does nothing.
+    const send = screen.getByRole('button', { name: 'Send' });
+    expect(send).toHaveAttribute('aria-disabled', 'true');
+    expect(send).not.toBeDisabled();
+    await fireEvent.click(send);
+    expect(assist).toHaveBeenCalledOnce();
     release?.();
     await screen.findByText('Done thinking.');
     await ask('Second question');

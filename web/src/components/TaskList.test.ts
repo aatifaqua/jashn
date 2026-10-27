@@ -51,7 +51,20 @@ describe('TaskList', () => {
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/downloaded/);
     });
-    expect(downloadCalendar).toHaveBeenCalledWith(plan, 'plan-1');
+    expect(downloadCalendar).toHaveBeenCalledWith(plan, 'plan-1', new Set<string>());
+    // The same outcome twice is announced twice: the status empties before it is set again.
+    const seen: string[] = [];
+    const status = screen.getByRole('status');
+    new MutationObserver(() => seen.push(status.textContent)).observe(status, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    await fireEvent.click(button);
+    await waitFor(() => {
+      expect(seen.at(-1)).toMatch(/downloaded/);
+    });
+    expect(seen).toContain('');
     downloadCalendar.mockImplementationOnce(() => {
       throw new Error('blocked');
     });

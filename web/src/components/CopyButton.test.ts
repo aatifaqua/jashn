@@ -24,6 +24,27 @@ describe('CopyButton', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  it('announces a second copy again by clearing the status first', async () => {
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(() => Promise.resolve()) } });
+    render(CopyButton, { props: { text: () => 'x', label: 'Copy', done: 'Copied.' } });
+    const status = screen.getByRole('status');
+    await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await waitFor(() => {
+      expect(status).toHaveTextContent('Copied.');
+    });
+    const seen: string[] = [];
+    new MutationObserver(() => seen.push(status.textContent)).observe(status, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await waitFor(() => {
+      expect(seen.at(-1)).toBe('Copied.');
+    });
+    expect(seen).toContain('');
+  });
+
   it('says when copying is blocked', async () => {
     vi.stubGlobal('navigator', {});
     render(CopyButton, { props: { text: () => 'x', label: 'Copy', done: 'Done.', icon: 'link' } });

@@ -28,6 +28,38 @@ describe('IdeasPanel', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  it('keeps focus on the busy button and announces only a short status, not the ideas', async () => {
+    let release: (() => void) | undefined;
+    const base = fakeGenAi();
+    const ideas = vi.fn(
+      (current: Parameters<typeof base.ideas>[0]) =>
+        new Promise<Awaited<ReturnType<typeof base.ideas>>>((resolve) => {
+          release = () => void base.ideas(current).then(resolve);
+        }),
+    );
+    const onideas = vi.fn();
+    const { rerender } = render(IdeasPanel, {
+      props: { plan, saved: null, genai: { ...base, ideas }, onideas, onlanguage: vi.fn() },
+    });
+    const button = screen.getByRole('button', { name: 'Generate ideas' });
+    button.focus();
+    await fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(document.activeElement).toBe(button);
+    await fireEvent.click(button);
+    expect(ideas).toHaveBeenCalledOnce();
+    expect(screen.getByRole('status')).toHaveTextContent('Thinking up ideas…');
+    release?.();
+    await waitFor(() => {
+      expect(onideas).toHaveBeenCalledOnce();
+    });
+    await rerender({ saved: onideas.mock.calls[0]?.[0] as SavedIdeas });
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent('Ideas ready below.');
+    expect(status.querySelector('h3')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Decor' }).closest('[aria-live]')).toBeNull();
+  });
+
   it('shows saved ideas with lang="hi" on Gemini Hindi text only', async () => {
     const ideas = ideasOffline(plan.input);
     const saved: SavedIdeas = { ideas, source: 'gemini', language: 'hi' };

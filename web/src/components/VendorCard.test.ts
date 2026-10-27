@@ -25,6 +25,65 @@ describe('VendorCard', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  it('shows payments as settled once the vendor is marked paid', () => {
+    const { container } = render(VendorCard, {
+      props: { vendor: caterer, plan, status: 'paid', genai: fakeGenAi(), onstatus: vi.fn() },
+    });
+    const payments = container.querySelector('.payments');
+    expect(payments?.querySelectorAll('.badge')).toHaveLength(2);
+    expect(payments?.querySelector('time')).toBeNull();
+  });
+
+  it('says a booked vendor is already booked instead of a book-by date', () => {
+    const booked = planFor({ ...sampleInput(), venueBooked: true });
+    const venue = booked.vendors.find((item) => item.id === 'venue');
+    if (venue === undefined) throw new Error('fixture has no venue');
+    const { container } = render(VendorCard, {
+      props: {
+        vendor: venue,
+        plan: booked,
+        status: 'booked',
+        genai: fakeGenAi(),
+        onstatus: vi.fn(),
+      },
+    });
+    expect(container.querySelector('.vendor-head')).toHaveTextContent('Already booked');
+  });
+
+  it('keeps focus on the draft button while busy and announces only a short status', async () => {
+    let release: (() => void) | undefined;
+    const base = fakeGenAi();
+    const draft = vi.fn(
+      (current: Parameters<typeof base.draft>[0], vendor: Parameters<typeof base.draft>[1]) =>
+        new Promise<Awaited<ReturnType<typeof base.draft>>>((resolve) => {
+          release = () => void base.draft(current, vendor).then(resolve);
+        }),
+    );
+    const { container } = render(VendorCard, {
+      props: {
+        vendor: caterer,
+        plan,
+        status: 'quoted',
+        genai: { ...base, draft },
+        onstatus: vi.fn(),
+      },
+    });
+    const status = (): Element | null => container.querySelector('.button-row [role="status"]');
+    const button = screen.getByRole('button', { name: 'Draft enquiry' });
+    button.focus();
+    await fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(document.activeElement).toBe(button);
+    await fireEvent.click(button);
+    expect(draft).toHaveBeenCalledOnce();
+    expect(status()).toHaveTextContent('Drafting…');
+    release?.();
+    await waitFor(() => {
+      expect(status()).toHaveTextContent('Draft ready below.');
+    });
+    expect(status()).not.toHaveTextContent(`Hello ${caterer.label}`);
+  });
+
   it('drafts an enquiry, labels its source and language, and offers to copy it', async () => {
     const genai = fakeGenAi();
     const hindi = planFor({ ...sampleInput(), language: 'hi' });

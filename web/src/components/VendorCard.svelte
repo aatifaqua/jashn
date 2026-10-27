@@ -37,7 +37,12 @@
   );
   const statusId = $derived(`vendor-status-${vendor.id}`);
 
+  /** A paid vendor's deposit and balance are settled, so they are shown as paid, not due. */
+  const settled = $derived(status === 'paid');
+
   async function makeDraft(): Promise<void> {
+    // The button stays focusable while busy (aria-disabled), so a second press lands here.
+    if (busy) return;
     busy = true;
     const base = plan;
     drafted = { plan: base, draft: await genai.draft(base, vendor) };
@@ -52,7 +57,7 @@
       {#if vendor.booked}
         <Icon name="check" /> Already booked
       {:else}
-        Book by <time datetime={isoDay(vendor.bookBy)}>{shortDay(vendor.bookBy)}</time>
+        Book by <time datetime={isoDay(vendor.bookBy)}>{shortDay(vendor.bookBy, plan.today)}</time>
       {/if}
     </p>
   </header>
@@ -86,8 +91,12 @@
       {#each payments as payment (payment.kind)}
         <li>
           {payment.kind === 'deposit' ? 'Deposit' : 'Balance'}
-          {rupees(payment.amount)} by
-          <time datetime={isoDay(payment.due)}>{shortDay(payment.due)}</time>
+          {rupees(payment.amount)}
+          {#if settled}
+            <span class="badge badge-done"><Icon name="check" /> Paid</span>
+          {:else}
+            by <time datetime={isoDay(payment.due)}>{shortDay(payment.due, plan.today)}</time>
+          {/if}
         </li>
       {/each}
     </ul>
@@ -99,21 +108,23 @@
       type="button"
       class="button"
       aria-busy={busy}
-      disabled={busy}
+      aria-disabled={busy}
       onclick={() => void makeDraft()}
     >
       <Icon name="spark" />
       {draft === null ? 'Draft enquiry' : 'Draft again'}
     </button>
+    <!-- Only this short line is live; the draft itself is read when the user moves to it. -->
+    <p class="muted" role="status">
+      {busy ? 'Drafting…' : draft === null ? '' : 'Draft ready below.'}
+    </p>
   </div>
-  <div aria-live="polite">
-    {#if draft !== null}
-      {@const text = draft.text}
-      <div class="draft">
-        <SourceBadge source={draft.source} />
-        <p class="draft-text" lang={textLang(draft.source, plan.input.language)}>{text}</p>
-        <CopyButton text={() => text} label="Copy message" done="Message copied." />
-      </div>
-    {/if}
-  </div>
+  {#if draft !== null}
+    {@const text = draft.text}
+    <div class="draft">
+      <SourceBadge source={draft.source} />
+      <p class="draft-text" lang={textLang(draft.source, plan.input.language)}>{text}</p>
+      <CopyButton text={() => text} label="Copy message" done="Message copied." />
+    </div>
+  {/if}
 </article>

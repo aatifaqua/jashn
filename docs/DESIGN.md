@@ -74,12 +74,16 @@ jashn/
 │       │   └── community.ts
 │       ├── context.ts        derives EventContext (season, weekday, lead time, tier, flags)
 │       ├── rules.ts          contextual rules table -> adjustments with reasons
-│       ├── budget.ts         allocation, rounding, feasibility, trims
+│       ├── budget.ts         allocation and rounding
+│       ├── feasibility.ts    cost floor and verdict
+│       ├── trims.ts          ranked savings
 │       ├── attendance.ts     invited -> expected headcount; volunteers; safety thresholds
 │       ├── timeline.ts       back-scheduling, compression, phases
 │       ├── vendors.ts        vendor checklist, questions, payment schedule
 │       ├── runsheet.ts       day-of schedule (per day for multi-function weddings)
 │       ├── plan.ts           buildPlan(input, today, profile) -> Plan; diffPlans(a, b)
+│       ├── summary.ts        the plan facts generated text may use
+│       ├── samples.ts        the three sample events, dated from today
 │       ├── fallback/         deterministic stand-ins for every generative feature
 │       │   ├── ideas.ts      idea catalogue filtered by type, style, constraints
 │       │   ├── draft.ts      vendor enquiry template
@@ -92,7 +96,8 @@ jashn/
 │   └── src/
 │       ├── config.ts         zod-validated environment
 │       ├── app.ts            createApp(deps): middleware + routes (no listen)
-│       ├── index.ts          listen; optional static hosting of web/dist
+│       ├── static.ts         optional static hosting of web/dist, mounted by app.ts
+│       ├── index.ts          listen
 │       ├── middleware/       security.ts, rateLimit.ts, quota.ts, errors.ts, logger.ts
 │       ├── routes/           health.ts, ideas.ts, assist.ts, draft.ts
 │       ├── ai/               gemini.ts (client, model chain, timeouts), prompts.ts,
@@ -183,7 +188,7 @@ interface Task {
   due: number;
   idealDue: number;
   phase: Phase;
-  status: 'upcoming' | 'late' | 'at-risk';
+  status: 'upcoming' | 'late' | 'at-risk' | 'done';
   vendorId?: string;
   reasons: Reason[];
 }
@@ -303,6 +308,7 @@ that triggered it. Initial set:
 | step-free                 | constraint                           | venue questions (ramp, lift, accessible toilet), seating task, run-sheet "accessibility helper at entrance" |
 | jain / vegetarian / halal | constraint                           | caterer questions (no root vegetables / no meat or egg / halal certification); idea guard on menus          |
 | alcohol-free              | constraint                           | removes bar line and bartender vendor; notice for mocktail counter                                          |
+| halal-no-bar              | halal, without alcohol-free          | the same bar removal and notice, with its own reason (alcohol is not halal)                                 |
 | kid-friendly              | constraint                           | kids' corner task; entertainment line +2 pts                                                                |
 | eco-friendly              | constraint                           | e-invites (invitations share −80 %, moved to decor), no single-use plastic question, waste-segregation task |
 | budget-strict             | constraint                           | contingency 15 % instead of 10 %; trims shown even when comfortable                                         |
@@ -343,8 +349,9 @@ birthday 800 / 500 / 300; community 150 / 100 / 60. Verdict: ≥ 1.5 × floor co
 **Trims** (computed when tight or unrealistic, or always when budget-strict), each with the
 amount saved, ranked by saving: invite fewer guests (the largest invited count that reaches
 the floor), weekday date (venue −10 %), lunch instead of dinner (catering −15 %), merge two
-functions (wedding), e-invites (invitations −80 %), sponsorship target equal to the shortfall
-(community). Trims never apply themselves; the assistant or the user does.
+pre-ceremony functions (haldi, mehndi, sangeet; never the reception), e-invites (invitations
+−80 %), sponsorship target equal to the shortfall (community). The weekday trim is not offered
+once the venue is booked. Trims never apply themselves; the assistant or the user does.
 
 ### 6.5 Timeline (`timeline.ts`)
 
@@ -352,15 +359,18 @@ Each profile task has `{ id, title, leadDays, after?, vendorId?, appliesWhen? }`
 `idealDue = eventDay − leadDays × seasonFactor`. Then one pass in dependency order:
 
 - `due = max(idealDue, today, due(after) + 1)`.
-- `status = late` when `idealDue < today`; `at-risk` when `due > eventDay − minLead`
-  (the latest day the task can still realistically happen); otherwise `upcoming`.
+- `status = at-risk` when the earliest workable day is after `eventDay − minLead` (the latest
+  day the task can still realistically happen); otherwise `late` when `idealDue < today`;
+  otherwise `upcoming`. A late task that cannot fit is at-risk and carries both reasons.
 - Late tasks are spread from today one working day apart in priority order, so "do now"
-  never shows twelve tasks on one day.
+  never shows twelve tasks on one day; one spread past its last workable day is flagged
+  at-risk rather than sitting quietly on the event day.
 - Phases by days before the event: Do now (late), Months out (≥ 60), Weeks out (14–59),
   Final fortnight (1–13), Day of (0), After (thank-yous, settle balances, return rentals).
 - Nothing is dropped: an impossible task stays visible as at-risk with its reason.
 
-`topActions` = the first three of: late tasks, then at-risk, then the next upcoming.
+`topActions` = the first three of: late tasks, then at-risk, then the next upcoming. The web app
+drops tasks the user has ticked and moves the next ones up (`remainingActions`).
 
 ### 6.6 Vendors and payments (`vendors.ts`)
 
@@ -368,14 +378,20 @@ Vendor list derives from type, style, functions and constraints (e.g. mehndi art
 a mehndi function; bartender never with alcohol-free). Each vendor: book-by date (its timeline
 task), typical deposit share (venue 30 %, caterer 25 %, photographer 30 %, decorator 30 %,
 others 20 %), base questions plus constraint questions. Payments: deposit on the book-by date,
-balance seven days before the event, amounts from the matching budget line. Status per vendor
-(to contact → quoted → booked → paid) is user state, stored in the browser.
+balance seven days before the event. A vendor's amount is its share of the matching budget
+line: a line that also buys goods pays a vendor only its `lineShare` (make-up artist 35 % and
+mehndi artist 15 % of attire, officiant 30 % of gifts, baker 15 % of food), and vendors without
+one split the rest evenly. A booked vendor's deposit counts as paid, so only the balance after
+it is listed. Status per vendor (to contact → quoted → booked → paid) is user state, stored in
+the browser; a paid vendor's payments show as settled.
 
 ### 6.7 Run sheet (`runsheet.ts`)
 
 Templates per style as `{ offsetMin, durationMin, title, owner }`, anchored to `startTime`.
 Multi-function weddings get one block per function on consecutive days ending with the
-ceremony (reception may follow on the same or next day). Community events add set-up three
+ceremony, each anchored to its function's customary hour (haldi 11:00, mehndi 16:00, sangeet
+18:00, reception 19:30) rather than the ceremony's start time. The reception follows the next
+day, or the same evening for an intimate wedding that starts by 15:00. Community events add set-up three
 hours before, volunteer briefing, opening, programme, close and clean-up. Rules add slots
 (accessibility helper, hydration, rain check).
 
@@ -448,14 +464,17 @@ call budget; past it, requests get the fallback with `source: "fallback"` instea
 - **Exports.** Print stylesheet for the whole plan; `.ics` with all-day tasks and the event
   (RFC 5545 escaping and line folding, stable UIDs); plain-text checklist to clipboard;
   share link with the input encoded in the URL fragment (validated on open).
-- **Demo mode.** Without `VITE_API_BASE`, `genai.ts` serves pre-generated Gemini output for
-  the three samples (ideas in both languages, a draft per vendor, answers to the suggested
-  assistant prompts) from `demo-genai.json`, and the core fallbacks for anything else, with
+- **Demo mode.** Without `VITE_API_BASE`, `genai.ts` serves the pre-generated Gemini output
+  in `demo-genai.json` and the core fallbacks for anything else, with
   a visible "demo mode" note. The plan itself is identical in both modes because it is always
   computed in the browser. The GitHub Pages deployment is demo mode; the live Gemini path
   runs with the server. Sample dates move with today, so every demo entry passes the same
   guards as live output against today's plan; a draft or answer whose dates have drifted falls
-  back. `VITE_API_BASE=/` calls the API on the page's own origin (server-hosted build).
+  back. The file holds whatever the last `pregenerate` run produced: the script aims for ideas
+  in both languages, a draft per vendor and answers to the suggested prompts for all three
+  samples, but a run cut short by a quota leaves gaps (today it holds ideas for the Lucknow
+  wedding in English only), and the offline content fills them, labelled as such.
+  `VITE_API_BASE=/` calls the API on the page's own origin (server-hosted build).
 
 ---
 
@@ -467,7 +486,9 @@ generated content, and the user's browser data.
 
 - **Stateless server:** no database, no files, no ids; requests are processed and forgotten.
 - **No personal data collected:** no names, phone numbers or emails anywhere; the note field
-  warns against personal details; logs record route, status, latency and source only.
+  warns against personal details; logs record the request id, route, status, latency and
+  source, plus why Gemini fell back or a request failed (error name and status; for a 500 the
+  message and stack), never a body or the key.
 - **Boundaries validated:** strict zod schemas (unknown keys rejected, enums, bounds) then
   the core validator; JSON-only (`415` otherwise); body limit 16 KB; generic error bodies with
   a request id, no stack traces.
@@ -517,13 +538,16 @@ generated content, and the user's browser data.
 
 ## 11. Accessibility and inclusive design
 
-- Skip link, landmarks (`header`, `nav`, `main`, `footer`), one `h1` per view, logical
+- Skip link, landmarks (`header`, `main`, `footer`; the plan tabs are an ARIA tablist, not
+  site navigation), one `h1` per view, logical
   heading order, `lang` set and switched to `hi` on Hindi generated text.
 - Form: `fieldset` + `legend` per step, visible labels, `aria-describedby` hints, inline
   errors plus a focusable error summary, no placeholder-only labels.
 - Tabs: ARIA tablist with roving tabindex and arrow keys; focus moves to the panel heading.
 - Live regions: polite for the live summary and assistant replies, `role="alert"` for
-  errors, `aria-busy` while generating.
+  errors, `aria-busy` while generating; long generated text (ideas, drafts) is announced by a
+  short status line, not read out whole. Busy buttons use `aria-disabled` so focus stays on
+  them, and a control that removes itself (Cancel, Apply, Dismiss, Delete) hands focus on.
 - Status never by colour alone (icon + word for verdicts, late, at-risk); WCAG AA contrast
   documented on every colour token in light and dark themes; `forced-colors` support.
 - Chart is SVG with `role="img"` + label and a full `<table>` equivalent with `<caption>`.
@@ -557,7 +581,8 @@ Vitest in every package, coverage enforced by thresholds in config.
 
 ## 13. Code quality conventions
 
-- Three workspaces only; core shared by server and web, no duplicated logic.
+- Three workspaces only; core shared by server and web, so planning logic and shared helpers
+  (day arithmetic, counted nouns) have one definition.
 - TypeScript strict with `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
   `verbatimModuleSyntax`; no `any`, no non-null assertions.
 - ESLint (typescript-eslint strict + stylistic type-checked, eslint-plugin-svelte) with
@@ -575,7 +600,7 @@ Root: `README.md`, `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG
 `.editorconfig`, `.gitattributes`, `.gitignore`, `.env.example`, `Dockerfile` (multi-stage,
 non-root; serves API and built app from one origin), `.dockerignore`, `docs/DESIGN.md`,
 `docs/decisions.md` (short decision records).
-`.github/`: `ci.yml` (verify), `codeql.yml`, `pages.yml` (demo build to GitHub Pages),
+`.github/`: `ci.yml` (verify), `codeql.yml`, `pages.yml` (demo build to GitHub Pages once CI passes on main),
 `dependabot.yml` (security updates only). One branch, `main`. Repository well under 10 MB.
 
 **README order:** title and one-line promise with the live demo link and the estimates note;
