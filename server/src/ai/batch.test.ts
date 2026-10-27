@@ -30,6 +30,13 @@ const BATCH = {
   ],
 };
 
+/** A batch every check accepts in full, so each sample it fills is complete. */
+const FULL = {
+  ideas: GOOD_IDEAS,
+  drafts: VENDOR_IDS.map((vendorId) => ({ vendorId, text: ENQUIRY })),
+  answers: SUGGESTED_PROMPTS.map((message) => ({ message, reply: 'Start with the venue.' })),
+};
+
 function run(script: readonly Scripted[], previous?: unknown) {
   const fake = fakeGenerate(script);
   const gemini = createGeminiClientFrom(fake.generate, {
@@ -89,7 +96,7 @@ describe('pregenerate', () => {
   });
 
   it('skips samples whose stored content is complete and still valid', async () => {
-    const first = await run([{ text: JSON.stringify(BATCH) }]).done;
+    const first = await run([{ text: JSON.stringify(FULL) }]).done;
     const second = run([apiError(500)], JSON.parse(JSON.stringify(first)));
     expect(await second.done).toEqual(first);
     expect(second.calls).toHaveLength(0);
@@ -97,11 +104,11 @@ describe('pregenerate', () => {
   });
 
   it('regenerates a sample with a stale item, and every sample of an older file', async () => {
-    const first = await run([{ text: JSON.stringify(BATCH) }]).done;
+    const first = await run([{ text: JSON.stringify(FULL) }]).done;
     const stale = JSON.parse(JSON.stringify(first)) as DemoFile;
     const wedding = stale.samples['lucknow-wedding'];
     if (wedding) wedding.drafts.venue = 'Please confirm by 1 January 2020.';
-    const again = run([{ text: JSON.stringify(BATCH) }], stale);
+    const again = run([{ text: JSON.stringify(FULL) }], stale);
     expect((await again.done).samples['lucknow-wedding']?.drafts.venue).toBe(ENQUIRY);
     expect(again.calls).toHaveLength(1);
     const older = run([{ text: JSON.stringify(BATCH) }], { ...first, version: 1 });
@@ -110,7 +117,7 @@ describe('pregenerate', () => {
   });
 
   it('keeps what still holds when a call fails or returns no JSON, and carries on', async () => {
-    const first = await run([{ text: JSON.stringify(BATCH) }]).done;
+    const first = await run([{ text: JSON.stringify(FULL) }]).done;
     const withoutIdeas = JSON.parse(JSON.stringify(first)) as DemoFile;
     delete withoutIdeas.samples['kids-birthday']?.ideas;
     const failed = run([apiError(400), { text: 'not json' }], withoutIdeas);
@@ -140,12 +147,23 @@ describe('readBatch', () => {
 describe('keepStored', () => {
   const plan = samplePlan('lucknow-wedding', TODAY);
 
+  const drafts = Object.fromEntries(plan.vendors.map((vendor) => [vendor.id, ENQUIRY]));
+  const answers = Object.fromEntries(
+    SUGGESTED_PROMPTS.map((message) => [message, { reply: 'Venue first.' }]),
+  );
+
+  it('is complete only with ideas, every draft and every answer', () => {
+    expect(keepStored({ ideas: GOOD_IDEAS, drafts, answers }, plan, true).complete).toBe(true);
+    expect(keepStored({ ideas: GOOD_IDEAS, drafts: {}, answers: {} }, plan, true).complete).toBe(
+      false,
+    );
+  });
+
   it('drops ideas written in another season and reports the sample incomplete', () => {
-    const stored = { ideas: GOOD_IDEAS, drafts: { venue: ENQUIRY }, answers: {} };
-    expect(keepStored(stored, plan, true).complete).toBe(true);
-    const moved = keepStored(stored, plan, false);
+    const moved = keepStored({ ideas: GOOD_IDEAS, drafts, answers }, plan, false);
     expect(moved.complete).toBe(false);
-    expect(moved.content).toEqual({ drafts: { venue: ENQUIRY }, answers: {} });
+    expect(moved.content.ideas).toBeUndefined();
+    expect(moved.content.drafts).toEqual(drafts);
   });
 
   it('re-checks stored answers like new ones', () => {

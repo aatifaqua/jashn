@@ -159,8 +159,9 @@ function count(content: SampleContent): number {
 
 /**
  * What still holds of a stored sample, and whether it is complete: it has ideas written in the
- * season the sample now falls in, and every stored draft and answer still passes its checks
- * against today's plan (dates move with today, so an old draft can go stale).
+ * season the sample now falls in, a valid draft for every vendor and a valid answer for every
+ * suggested prompt, all checked against today's plan (dates move with today, so an old draft
+ * can go stale). Anything missing makes the sample worth one more request.
  */
 export function keepStored(
   stored: unknown,
@@ -169,8 +170,8 @@ export function keepStored(
 ): { readonly content: SampleContent; readonly complete: boolean } {
   const batch = asBatch(stored);
   const content = readBatch(sameSeason ? batch : { ...(batch as object), ideas: undefined }, plan);
-  const before = list(field(batch, 'drafts')).length + list(field(batch, 'answers')).length;
-  return { content, complete: content.ideas !== undefined && count(content) === before };
+  const expected = plan.vendors.length + SUGGESTED_PROMPTS.length;
+  return { content, complete: content.ideas !== undefined && count(content) === expected };
 }
 
 /** One Gemini request for one sample, every item checked by readBatch. */
@@ -188,6 +189,12 @@ export async function generateSample(gemini: GeminiClient, plan: Plan): Promise<
 function seasonOn(id: SampleId, day: number): string {
   const eventDay = fromIso(sampleEvent(id, day).date) ?? day;
   return JSON.stringify(seasonOf(month(eventDay)));
+}
+
+/** An error and its cause in one line, so a failed sample says why the last model failed. */
+function describe(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  return error.cause === undefined ? error.message : `${error.message}: ${describe(error.cause)}`;
 }
 
 /** What a run needs from the outside: the client, the day, the old file and a save hook. */
@@ -233,7 +240,7 @@ export async function pregenerate(deps: PregenerateDeps): Promise<DemoFile> {
       deps.log(`${id}: generated, ${String(count(fresh))} drafts and answers`);
     } catch (error) {
       samples[id] = kept.content;
-      deps.log(`${id}: failed (${error instanceof Error ? error.message : String(error)})`);
+      deps.log(`${id}: failed (${describe(error)})`);
     }
     await deps.save(file());
   }
