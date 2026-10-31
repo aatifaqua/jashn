@@ -79,7 +79,7 @@ describe.each(PROFILES)('$type profile', (profile) => {
 });
 
 describe('wedding functions', () => {
-  it('defines every function with the design guest shares', () => {
+  it('defines every function with its expected guest share', () => {
     const wedding = getProfile('wedding');
     expect(wedding.functions.map((def) => [def.id, def.guestShare])).toEqual([
       ['haldi', 0.4],

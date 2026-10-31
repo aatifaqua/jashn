@@ -13,7 +13,8 @@ interface Entry<V> {
   readonly expires: number;
 }
 
-interface KeyParts {
+/** What a cached response depends on; cacheKey hashes exactly these parts. */
+export interface KeyParts {
   readonly endpoint: 'ideas' | 'draft';
   readonly input: EventInput;
   /** Drafts only: their book-by dates move with today, while ideas hold no dates. */

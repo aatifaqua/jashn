@@ -5,7 +5,7 @@ import { INPUT_FIELDS, INPUT_LIMITS } from './fields.ts';
 import { CATEGORY_IDS, CONSTRAINTS, STYLE_IDS } from './ids.ts';
 import { applyPatch, canonicalKey, normaliseInput, validateInput, validatePatch } from './input.ts';
 import { TODAY, maxLead, sampleInput } from './test-fixtures.ts';
-import type { EventInput, FieldError, PlanPatch } from './types.ts';
+import type { EventInput, FieldError, FunctionId, PlanPatch } from './types.ts';
 
 function errorsOf(raw: unknown): readonly FieldError[] {
   const result = validateInput(raw, TODAY);
@@ -117,7 +117,7 @@ describe('validateInput', () => {
     expect(codes({ ...sampleInput({ style: 'kids' }), type: 'party' })).toEqual(['type:invalid']);
   });
 
-  it.each<[Partial<EventInput>, string]>([
+  it.each<[Partial<Record<keyof EventInput, unknown>>, string]>([
     [{ style: 'kids' }, 'style:invalid'],
     [{ functions: ['ceremony', 'baraat'] }, 'functions:invalid'],
     [{ functions: ['mehndi'] }, 'functions:required'],
@@ -136,7 +136,7 @@ describe('validateInput', () => {
     [{ priorities: ['infrastructure'] }, 'priorities:invalid'],
     [{ note: 'x'.repeat(301) }, 'note:too-long'],
   ])('rejects %j with %s', (override, expected) => {
-    expect(codes(sampleInput(override))).toEqual([expected]);
+    expect(codes({ ...sampleInput(), ...override })).toEqual([expected]);
   });
 
   it('accepts accented letters, dots, hyphens and apostrophes in a city', () => {
@@ -217,8 +217,8 @@ const validPatch: fc.Arbitrary<PlanPatch> = fc.record(
     setting: fc.constantFrom('indoor', 'outdoor', 'mixed'),
     tier: fc.constantFrom('metro', 'tier2', 'town'),
     functions: fc
-      .subarray(['haldi', 'mehndi', 'sangeet', 'reception'])
-      .map((list) => ['ceremony', ...list]),
+      .subarray<FunctionId>(['haldi', 'mehndi', 'sangeet', 'reception'])
+      .map((list): FunctionId[] => ['ceremony', ...list]),
     style: fc.constantFrom(...STYLE_IDS.wedding),
   },
   { requiredKeys: [] },

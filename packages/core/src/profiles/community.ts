@@ -4,7 +4,7 @@ import { COMMUNITY_TASKS, COMMUNITY_VENDORS } from './community-catalogue.ts';
 import { deepFreeze } from '../freeze.ts';
 import { slot } from '../templates.ts';
 
-/** Every run sheet keeps the design's frame: set-up 3 h before, briefing, open, close, clean-up. */
+/** Every run sheet keeps one frame: set-up 3 h before, briefing, open, close, clean-up. */
 export const COMMUNITY: Profile = deepFreeze<Profile>({
   type: 'community',
   label: 'Community event',

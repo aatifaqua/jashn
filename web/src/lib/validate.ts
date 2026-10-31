@@ -39,7 +39,7 @@ export function isSource(value: unknown): value is Source {
 
 /** One of the vendor progress states. */
 export function isVendorStatus(value: unknown): value is VendorStatus {
-  return (VENDOR_STATUSES as readonly unknown[]).includes(value);
+  return VENDOR_STATUSES.some((status) => status === value);
 }
 
 function isText(value: unknown): value is string {
@@ -65,7 +65,7 @@ function isTheme(value: unknown): value is Ideas['theme'] {
   );
 }
 
-/** The shape of personalised ideas (design section 7), with the counts the API promises. */
+/** The shape of personalised ideas, with the counts the API promises. */
 export function isIdeas(value: unknown): value is Ideas {
   return (
     isRecord(value) &&

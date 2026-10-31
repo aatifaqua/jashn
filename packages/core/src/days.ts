@@ -61,7 +61,7 @@ export function toCivil(dayNumber: number): CivilDate {
 export function fromIso(iso: string): number | null {
   const match = ISO_DATE.exec(iso);
   if (match === null) return null;
-  const [, y, m, d] = match.map(Number) as [number, number, number, number];
+  const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
   if (m < 1 || m > 12 || d < 1 || d > daysInMonth(y, m)) return null;
   return fromCivil(y, m, d);
 }

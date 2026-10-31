@@ -1,5 +1,5 @@
 /**
- * Community catalogues (design 6.5, 6.6). Permission tasks come from the public-gathering rule.
+ * Community catalogues. Permission tasks come from the public-gathering rule.
  * `after` only names tasks that always apply; each vendor's `appliesWhen` mirrors its task's.
  */
 import type { StyleId, TaskTemplate, VendorTemplate } from '../types.ts';

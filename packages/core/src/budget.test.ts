@@ -19,10 +19,9 @@ import {
   WEDDING_FUNCTIONS,
 } from './ids.ts';
 import { getProfile } from './profiles/all.ts';
-import { fireRules } from './rules.ts';
-import type { FiredRule } from './rules.ts';
+import { fireRules, type FiredRule } from './rules.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';
-import type { EventInput } from './types.ts';
+import type { CategoryId, EventInput, StyleId } from './types.ts';
 
 function run(input: EventInput) {
   const profile = getProfile(input.type);
@@ -182,7 +181,7 @@ describe('allocateBudget', () => {
     const profile = getProfile('community');
     const input = sampleInput({
       type: 'community',
-      style: 'unknown',
+      style: 'unknown' as StyleId,
       functions: [],
       priorities: ['catering'],
       constraints: ['eco-friendly'],
@@ -192,6 +191,28 @@ describe('allocateBudget', () => {
     expect(result.lines.map((line) => line.reasons.map((reason) => reason.code))).toEqual(
       Array.from({ length: 8 }, () => ['base']),
     );
+  });
+
+  it('adds add-first points only to the first listed category the profile has', () => {
+    const input = sampleInput({
+      type: 'community',
+      style: 'meetup',
+      functions: [],
+      priorities: [],
+    });
+    const profile = getProfile('community');
+    const reason = { code: 'test', text: 'Test.' };
+    const lines = (categories: readonly CategoryId[]) =>
+      allocateBudget(input, profile, [
+        { id: 'test', reason, effects: { budget: [{ kind: 'add-first', categories, points: 4 }] } },
+      ]).lines;
+    const tagged = (categories: readonly CategoryId[]) =>
+      lines(categories)
+        .filter((line) => line.reasons.includes(reason))
+        .map((line) => line.category);
+    expect(tagged(['decor', 'sanitation', 'safety'])).toEqual(['sanitation']);
+    expect(tagged(['decor', 'attire'])).toEqual([]);
+    expect(lines(['decor', 'attire'])).toEqual(lines([]));
   });
 });
 

@@ -1,4 +1,4 @@
-import { getProfile } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { axe } from 'vitest-axe';
 import { describe, expect, it, vi } from 'vitest';

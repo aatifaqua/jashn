@@ -1,11 +1,10 @@
-/** Budget allocation (design 6.4), rounded to ₹100 so lines plus contingency equal the budget. */
+/** Budget allocation, rounded to ₹100 so lines plus contingency equal the budget. */
 import { assessFeasibility } from './feasibility.ts';
 import { ROUNDING_UNIT } from './money.ts';
 import type { FiredRule } from './rules.ts';
+import type { BudgetEffect, EventContext } from './engine-types.ts';
 import type {
-  BudgetEffect,
   BudgetLine,
-  EventContext,
   EventInput,
   Feasibility,
   FunctionAmount,
@@ -86,6 +85,11 @@ function adjust(
 function applyEffect(table: Map<string, Weight>, effect: BudgetEffect, reason: Reason): void {
   if (effect.kind === 'add') {
     adjust(table, effect.category, effect.points, reason);
+    return;
+  }
+  if (effect.kind === 'add-first') {
+    const category = effect.categories.find((id) => table.has(id));
+    if (category !== undefined) adjust(table, category, effect.points, reason);
     return;
   }
   if (effect.kind === 'remove') {

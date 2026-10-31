@@ -1,5 +1,5 @@
 /**
- * Wedding tasks (design 6.5); lead days are editorial estimates for a busy season. `after` only
+ * Wedding tasks; lead days are editorial estimates for a busy season. `after` only
  * names a task that always applies, so a dependency never points at a missing task.
  */
 import type { TaskTemplate } from '../types.ts';

@@ -1,8 +1,9 @@
-/** Derives the facts every later stage needs, once per plan (design section 6.1). */
+/** Derives the facts every later stage needs, once per plan. */
 import { SAFETY_THRESHOLDS, expectedHeadcount } from './attendance.ts';
 import { fromIso, parseTime, toCivil, weekday as weekdayOf } from './days.ts';
 import { WEDDING_FUNCTIONS } from './ids.ts';
-import type { EventContext, EventInput, FunctionId, Profile } from './types.ts';
+import type { EventContext } from './engine-types.ts';
+import type { EventInput, FunctionId, Profile } from './types.ts';
 
 interface FunctionDay {
   readonly functionId: FunctionId;
@@ -49,7 +50,7 @@ function spanOf(days: readonly FunctionDay[]): number {
   return last - first + 1;
 }
 
-/** Seasons of a month (1 to 12), inclusive ranges from design 6.1. */
+/** Seasons of a month (1 to 12), as inclusive month ranges. */
 export function seasonOf(month: number): EventContext['season'] {
   return {
     peakWedding: month >= 11 || month <= 2,

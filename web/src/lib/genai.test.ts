@@ -103,6 +103,11 @@ describe('live mode', () => {
     expect((await client.ideas(plan)).source).toBe('fallback');
   });
 
+  it('falls back when a successful response is not JSON', async () => {
+    const { client } = live(() => Promise.resolve(new Response('{not json', { status: 200 })));
+    expect((await client.ideas(plan)).source).toBe('fallback');
+  });
+
   it('falls back when the response has no valid source label', async () => {
     const ideas = ideasOffline(plan.input);
     const { client } = live((url) =>

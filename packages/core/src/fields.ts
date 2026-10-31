@@ -1,8 +1,8 @@
 /** Field labels, limits, messages and the reader that types untrusted JSON as an input. */
 import { CITY_TIERS, CONSTRAINTS, EVENT_TYPES, SETTINGS } from './ids.ts';
-import type { ErrorCode, EventInput, FieldError, InputField } from './types.ts';
+import type { DraftInput, ErrorCode, FieldError, InputField } from './types.ts';
 
-/** Bounds from design section 5, exported so the form can mirror them as HTML attributes. */
+/** Input bounds, exported so the form can mirror them as HTML attributes. */
 export const INPUT_LIMITS = {
   invited: { min: 1, max: 5000 },
   budget: { min: 1000, max: 100_000_000 },
@@ -40,8 +40,13 @@ export const FIELD_LABELS: Readonly<Record<InputField, string>> = {
   note: 'Note',
 };
 
+/** Whether a key names an input field. */
+export function isInputField(key: string): key is InputField {
+  return Object.hasOwn(FIELD_LABELS, key);
+}
+
 /** Every input field in form order; errors are reported in this order. */
-export const INPUT_FIELDS = Object.keys(FIELD_LABELS) as readonly InputField[];
+export const INPUT_FIELDS: readonly InputField[] = Object.keys(FIELD_LABELS).filter(isInputField);
 
 const LIMIT_TEXT: Partial<Record<InputField, string>> = {
   invited: 'between 1 and 5,000',
@@ -83,10 +88,11 @@ export function fieldError(field: InputField, code: ErrorCode): FieldError {
 
 /** Type guard for membership of a closed id list. */
 export function isOneOf<T extends string>(list: readonly T[], value: unknown): value is T {
-  return typeof value === 'string' && (list as readonly string[]).includes(value);
+  return typeof value === 'string' && list.some((item) => item === value);
 }
 
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+/** A plain object: not null, not an array. */
+export function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -95,7 +101,7 @@ function isStringList(value: unknown): value is readonly string[] {
 }
 
 interface Shape {
-  readonly input: EventInput;
+  readonly input: DraftInput;
   readonly errors: readonly FieldError[];
 }
 
@@ -113,7 +119,7 @@ export function readShape(raw: unknown): Shape {
   const number = (value: unknown): value is number =>
     typeof value === 'number' && Number.isFinite(value);
   const flag = (value: unknown): value is boolean => typeof value === 'boolean';
-  const input: EventInput = {
+  const input: DraftInput = {
     type: take('type', (v) => isOneOf(EVENT_TYPES, v), 'wedding'),
     style: take('style', text, ''),
     functions: take('functions', isStringList, []),
@@ -128,7 +134,7 @@ export function readShape(raw: unknown): Shape {
     priorities: take('priorities', isStringList, []),
     constraints: take(
       'constraints',
-      (v): v is EventInput['constraints'] =>
+      (v): v is DraftInput['constraints'] =>
         Array.isArray(v) && v.every((item) => isOneOf(CONSTRAINTS, item)),
       [],
     ),

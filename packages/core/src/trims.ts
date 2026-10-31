@@ -1,17 +1,10 @@
-/** Suggested savings (design 6.4); trims never apply themselves, the user or assistant does. */
+/** Suggested savings; trims never apply themselves, the user or assistant does. */
 import { attendanceBasisPoints, expectedFor, maxInvitedFor } from './attendance.ts';
 import { functionDays } from './context.ts';
 import { ROUNDING_UNIT, roundRupees } from './money.ts';
 import { formatCount, formatDay, formatRupees, weekdayName } from './text.ts';
-import type {
-  BudgetLine,
-  CityTier,
-  EventContext,
-  EventInput,
-  Profile,
-  Trim,
-  Verdict,
-} from './types.ts';
+import type { EventContext } from './engine-types.ts';
+import type { BudgetLine, CityTier, EventInput, Profile, Trim, Verdict } from './types.ts';
 
 interface TrimContext {
   readonly input: EventInput;

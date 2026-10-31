@@ -1,4 +1,4 @@
-/** The rupee rounding shared by budget lines, trims and payments. */
+// The rupee rounding shared by budget lines, trims and payments.
 
 /** Lines, trims and payments are whole multiples of this many rupees. */
 export const ROUNDING_UNIT = 100;

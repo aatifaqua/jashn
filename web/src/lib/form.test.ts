@@ -1,4 +1,5 @@
-import { getProfile, validateInput } from '@jashn/core';
+import { validateInput } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { describe, expect, it } from 'vitest';
 import { TODAY, sampleInput } from '../test-fixtures.ts';
 import {

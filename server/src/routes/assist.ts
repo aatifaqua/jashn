@@ -8,13 +8,13 @@ import {
   countWord,
   diffPlans,
   formatCount,
-  getProfile,
   guardReply,
   validatePatch,
   type AssistReply,
   type Plan,
   type PlanDiff,
 } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import type { FunctionCall } from '@google/genai';
 import type { Handler } from 'hono';
 import type { GeminiClient } from '../ai/gemini.ts';

@@ -34,8 +34,8 @@ the build and the first-screen size budget. CI runs the same command.
 - **JSDoc on every export**: what it is for and, where the choice is not obvious (security,
   efficiency, accessibility), why in one line.
 - **No `any`, no non-null assertions, no TODOs, no dead code.**
-- **The web app must never import `getProfile`**: use `loadProfile`, so each event type stays in
-  its own chunk.
+- **The web app must never import `@jashn/core/server`** (its `getProfile` loads every event
+  type): use `loadProfile`, so each event type stays in its own chunk.
 - **Accessibility is tested.** Every component test includes an axe check; try the change with
   the keyboard alone once.
 - **Never commit `server/.env` or any key.** `.gitignore` covers it; do not work around it.

@@ -1,4 +1,4 @@
-/** Plan assembly and diff (design 6.8): a plan is a pure function of input, day and profile. */
+/** Plan assembly and diff: a plan is a pure function of input, day and profile. */
 import { volunteersNeeded } from './attendance.ts';
 import { planBudget } from './budget.ts';
 import { deriveContext } from './context.ts';

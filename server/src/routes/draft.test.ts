@@ -1,4 +1,5 @@
-import { buildPlan, draftEnquiry, getProfile } from '@jashn/core';
+import { buildPlan, draftEnquiry } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { describe, expect, it } from 'vitest';
 import { fakeGenerate, post, sample, testApp, TODAY } from '../testing.ts';
 

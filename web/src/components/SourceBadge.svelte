@@ -2,7 +2,7 @@
   import type { Source } from '@jashn/core';
   import Icon from './Icon.svelte';
 
-  /** Labels generated content with where it came from (design section 7). */
+  /** Labels generated content with where it came from. */
   interface Props {
     source: Source;
   }

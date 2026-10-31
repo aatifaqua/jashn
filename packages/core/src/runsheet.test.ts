@@ -3,8 +3,8 @@ import { buildRunSheet } from './runsheet.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';
 import type { FiredRule } from './rules.ts';
 import type { StageInput } from './timeline.ts';
+import type { EventContext } from './engine-types.ts';
 import type {
-  EventContext,
   EventInput,
   FunctionDef,
   FunctionId,

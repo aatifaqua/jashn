@@ -1,5 +1,5 @@
 /**
- * Wedding vendors (design 6.6). `appliesWhen` mirrors the booking task's. Deposits: venue,
+ * Wedding vendors. `appliesWhen` mirrors the booking task's. Deposits: venue,
  * photographer and decorator 30 %, caterer 25 %, others 20 %.
  */
 import type { VendorTemplate } from '../types.ts';

@@ -4,9 +4,9 @@ import type { Handler } from 'hono';
 import type { GeminiClient } from '../ai/gemini.ts';
 import { IDEAS_SYSTEM, ideasContent } from '../ai/prompts.ts';
 import { IDEAS_RESPONSE_SCHEMA, ideasRequestSchema, ideasSchema } from '../ai/schemas.ts';
-import { cacheKey, type ResponseCache } from '../cache.ts';
+import type { ResponseCache } from '../cache.ts';
 import type { AppEnv } from '../env.ts';
-import { assertClean, readEvent, sendSourced, sourced, type RouteDeps } from './common.ts';
+import { assertClean, cachedRoute, type RouteDeps } from './common.ts';
 
 /** Asks Gemini for ideas, then re-checks them with zod and the guards; throws on failure. */
 export async function liveIdeas(gemini: GeminiClient, plan: Plan): Promise<Ideas> {
@@ -25,19 +25,9 @@ export async function liveIdeas(gemini: GeminiClient, plan: Plan): Promise<Ideas
 export function ideasHandler(
   deps: RouteDeps & { readonly cache: ResponseCache<Sourced<Ideas>> },
 ): Handler<AppEnv> {
-  return async (c) => {
-    const request = await readEvent(c, ideasRequestSchema, deps.today());
-    if (!request.ok) return request.response;
-    const { plan } = request;
-    const key = cacheKey({ endpoint: 'ideas', input: plan.input });
-    const result = await deps.cache.run(key, () =>
-      sourced(
-        c,
-        deps.gemini,
-        (gemini) => liveIdeas(gemini, plan),
-        () => ideasOffline(plan.input, plan.budget),
-      ),
-    );
-    return sendSourced(c, result);
-  };
+  return cachedRoute(deps, ideasRequestSchema, (_c, { plan }) => ({
+    key: { endpoint: 'ideas', input: plan.input },
+    live: (gemini) => liveIdeas(gemini, plan),
+    fallback: () => ideasOffline(plan.input, plan.budget),
+  }));
 }

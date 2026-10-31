@@ -19,7 +19,7 @@ function assess(overrides: Partial<EventInput>, alwaysTrim = false) {
 
 describe('costFloor', () => {
   it('uses the tier floor of each type', () => {
-    const one = { functions: ['ceremony'] };
+    const one = { functions: ['ceremony'] } as const;
     expect(costFloor(sampleInput({ ...one, tier: 'metro' }), getProfile('wedding'))).toBe(3000);
     expect(costFloor(sampleInput({ ...one, tier: 'town' }), getProfile('wedding'))).toBe(1200);
     const party = sampleInput({ type: 'birthday', functions: [], tier: 'tier2' });
@@ -32,7 +32,7 @@ describe('costFloor', () => {
     const wedding = getProfile('wedding');
     expect(costFloor(sampleInput({ functions: ['ceremony', 'haldi'] }), wedding)).toBe(2700);
     expect(costFloor(sampleInput(), wedding)).toBe(3400);
-    const all = ['haldi', 'mehndi', 'sangeet', 'ceremony', 'reception'];
+    const all = ['haldi', 'mehndi', 'sangeet', 'ceremony', 'reception'] as const;
     expect(costFloor(sampleInput({ functions: all, tier: 'metro' }), wedding)).toBe(7200);
   });
 });

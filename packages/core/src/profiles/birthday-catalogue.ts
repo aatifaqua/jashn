@@ -1,5 +1,5 @@
 /**
- * Birthday catalogues (design 6.5, 6.6), for parties planned one to six weeks ahead. `after` only
+ * Birthday catalogues, for parties planned one to six weeks ahead. `after` only
  * names tasks that always apply; each vendor's `appliesWhen` mirrors its booking task's.
  */
 import type { TaskTemplate, VendorTemplate } from '../types.ts';

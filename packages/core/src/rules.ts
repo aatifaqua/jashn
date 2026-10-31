@@ -1,10 +1,11 @@
-/** Contextual rules (design 6.2); each carries a reason naming the input that triggered it. */
+/** Contextual rules; each carries a reason naming the input that triggered it. */
 import { SAFETY_THRESHOLDS } from './attendance.ts';
 import { deepFreeze } from './freeze.ts';
 import { slot } from './templates.ts';
 import { NEED_RULES } from './rules-needs.ts';
 import { countWord, formatCount, formatDay, weekdayName } from './text.ts';
-import type { EventContext, EventInput, Reason, Rule, RuleEffects } from './types.ts';
+import type { EventContext, Rule, RuleEffects } from './engine-types.ts';
+import type { EventInput, Reason } from './types.ts';
 
 /** A rule that fired for one plan, with its reason already worded for this input. */
 export interface FiredRule {
@@ -20,7 +21,7 @@ const CHECK_LOCAL = '(check local rules)';
 
 const on = (ctx: EventContext): string => formatDay(ctx.eventDay);
 
-/** Rules on season, calendar and lead time, in the order of the design's rules table. */
+/** Rules on season, calendar and lead time. */
 const CALENDAR_RULES: readonly Rule[] = [
   {
     id: 'peak-season',
@@ -50,12 +51,8 @@ const CALENDAR_RULES: readonly Rule[] = [
       tasks: [
         { id: 'rain-cover', title: 'Book rain cover or a backup hall', leadDays: 30, minLead: 3 },
       ],
-      // Community events pay for cover from infrastructure, the others from decor; no profile
-      // has both categories, so exactly one line gains the four points.
-      budget: [
-        { kind: 'add', category: 'infrastructure', points: 4 },
-        { kind: 'add', category: 'decor', points: 4 },
-      ],
+      // Community events pay for cover from infrastructure, the others from decor.
+      budget: [{ kind: 'add-first', categories: ['infrastructure', 'decor'], points: 4 }],
       slots: [slot(-240, 15, 'Rain check: confirm cover or move to the backup hall', 'Organiser')],
     },
   },

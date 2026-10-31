@@ -1,10 +1,10 @@
-/** Back-scheduling of profile and rule tasks into a dated timeline (design 6.5). */
+/** Back-scheduling of profile and rule tasks into a dated timeline. */
 import { applies } from './applies.ts';
 import { weekday } from './days.ts';
 import { countWord, formatDay } from './text.ts';
 import type { FiredRule } from './rules.ts';
+import type { EventContext } from './engine-types.ts';
 import type {
-  EventContext,
   EventInput,
   Phase,
   Profile,

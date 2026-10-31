@@ -1,4 +1,5 @@
-import { getProfile, indiaDay } from '@jashn/core';
+import { indiaDay } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { axe } from 'vitest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';

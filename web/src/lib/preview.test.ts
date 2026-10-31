@@ -1,4 +1,5 @@
-import { diffPlans, getProfile } from '@jashn/core';
+import { diffPlans } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { describe, expect, it } from 'vitest';
 import { planFor, sampleInput } from '../test-fixtures.ts';
 import { diffRows, patchRows } from './preview.ts';
@@ -46,6 +47,13 @@ describe('patchRows', () => {
     expect(rows[5]).toEqual({ label: 'Start time', before: '19:00', after: '18:30' });
     expect(rows[6]?.after).toBe('none');
     expect(rows[7]?.after).toBe('13 Mar 2027');
+  });
+
+  it('words wedding functions through the supplied labels', () => {
+    const rows = patchRows(input, { functions: ['ceremony'] }, labelOf);
+    expect(rows).toEqual([
+      { label: 'Functions', before: 'ceremony, mehndi, reception, sangeet', after: 'ceremony' },
+    ]);
   });
 
   it('shows an unparsable date as written', () => {

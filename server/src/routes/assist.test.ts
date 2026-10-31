@@ -1,4 +1,5 @@
-import { assistOffline, buildPlan, diffPlans, getProfile, type PlanDiff } from '@jashn/core';
+import { assistOffline, buildPlan, diffPlans, type PlanDiff } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import type { FunctionCall } from '@google/genai';
 import { describe, expect, it } from 'vitest';
 import { fenceNote } from '../ai/prompts.ts';

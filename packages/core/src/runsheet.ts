@@ -1,5 +1,5 @@
 /**
- * Day-of run sheet (design 6.7). Slots sit on an absolute minute line so one past midnight
+ * Day-of run sheet. Slots sit on an absolute minute line so one past midnight
  * lands on the right day and sorting is one integer compare.
  */
 import { functionDays } from './context.ts';

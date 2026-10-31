@@ -1,10 +1,11 @@
 /**
- * Offline assistant (design 7): answers questions from the plan's data. It never changes the
+ * Offline assistant: answers questions from the plan's data. It never changes the
  * plan, so a bare change request is pointed to the form.
  */
 import { ASSIST_LIMITS } from '../fields.ts';
 import { planSummary, type PlanSummary } from '../summary.ts';
-import type { AssistReply, Plan } from '../types.ts';
+import type { AssistReply } from '../engine-types.ts';
+import type { Plan } from '../types.ts';
 import {
   budgetAnswer,
   firstAnswer,

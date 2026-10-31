@@ -32,6 +32,8 @@ export default defineConfig(
     },
     rules: {
       ...budgets,
+      // One import statement per module, values and types together.
+      'no-duplicate-imports': 'error',
       // Generated text must only ever reach the page as escaped text nodes.
       'svelte/no-at-html-tags': 'error',
     },
@@ -42,20 +44,15 @@ export default defineConfig(
     languageOptions: { parserOptions: { parser: tseslint.parser } },
   },
   {
-    // getProfile pulls every event type into the importing chunk; the web app loads one lazily.
+    // The server entry pulls every event type into the importing chunk; the web app loads one lazily.
     files: ['web/src/**/*.ts', 'web/src/**/*.svelte'],
     ignores: ['**/*.test.ts', 'web/src/test-fixtures.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          paths: [
-            {
-              name: '@jashn/core',
-              importNames: ['getProfile'],
-              message: 'Use loadProfile so each event type stays in its own chunk.',
-            },
-          ],
+          name: '@jashn/core/server',
+          message: 'Use loadProfile so each event type stays in its own chunk.',
         },
       ],
     },

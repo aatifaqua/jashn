@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { TODAY, sampleInput } from './test-fixtures.ts';
 import type { FiredRule } from './rules.ts';
 import type { StageInput } from './timeline.ts';
-import type { BudgetLine, EventContext, Profile, RuleEffects, Task, VendorItem } from './types.ts';
+import type { EventContext, RuleEffects } from './engine-types.ts';
+import type { BudgetLine, FunctionId, Profile, Task, VendorItem } from './types.ts';
 import { buildPayments, buildVendors } from './vendors.ts';
 
 const EVENT = TODAY + 100;
@@ -77,7 +78,7 @@ function rule(id: string, effects: RuleEffects): FiredRule {
 
 function stage(
   fired: readonly FiredRule[],
-  functions: readonly string[] = ['ceremony', 'mehndi'],
+  functions: readonly FunctionId[] = ['ceremony', 'mehndi'],
 ): StageInput {
   return {
     profile: PROFILE,

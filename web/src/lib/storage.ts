@@ -16,8 +16,6 @@ import { isId, isRecord, isSource, isVendorStatus, readIdeas } from './validate.
 
 /** Versioned, so a future format change can ignore older data instead of misreading it. */
 export const STORAGE_KEY = 'jashn.plan.v1';
-/** The list of plans earlier versions kept; read once into the single plan, then removed. */
-export const LEGACY_KEY = 'jashn.plans.v1';
 /** Upper bound on stored checks, far above any timeline, so a tampered entry stays cheap to read. */
 const MAX_CHECKS = 400;
 /** Long enough to coalesce a burst of clicks, short enough that closing the tab rarely loses one. */
@@ -56,9 +54,12 @@ function readChecks(value: unknown): readonly string[] | null {
 
 function readVendors(value: unknown): Record<string, VendorStatus> | null {
   if (!isRecord(value)) return null;
-  const entries = Object.entries(value);
-  const ok = entries.every(([id, status]) => isId(id) && isVendorStatus(status));
-  return ok ? (Object.fromEntries(entries) as Record<string, VendorStatus>) : null;
+  const vendors: Record<string, VendorStatus> = {};
+  for (const [id, status] of Object.entries(value)) {
+    if (!isId(id) || !isVendorStatus(status)) return null;
+    vendors[id] = status;
+  }
+  return vendors;
 }
 
 function readSavedIdeas(value: unknown, input: EventInput): SavedIdeas | null {
@@ -95,49 +96,9 @@ export function readPlan(value: unknown, today: number): SavedPlan | null {
   return { id: value.id, input: result.value, checks, vendors, ideas };
 }
 
-/** When a legacy entry was last changed, so the newest one is migrated; 0 when unreadable. */
-function updatedOf(entry: unknown): number {
-  const updated = isRecord(entry) ? entry.updated : undefined;
-  return typeof updated === 'number' && Number.isFinite(updated) ? updated : 0;
-}
-
-/** The most recently updated valid plan in a legacy `{ version: 1, plans }` list. */
-function newestLegacy(raw: string, today: number): SavedPlan | null {
-  let data: unknown;
-  try {
-    data = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (!isRecord(data) || data.version !== 1 || !Array.isArray(data.plans)) return null;
-  const newestFirst = [...(data.plans as unknown[])].sort((a, b) => updatedOf(b) - updatedOf(a));
-  for (const entry of newestFirst) {
-    const plan = readPlan(entry, today);
-    if (plan !== null) return plan;
-  }
-  return null;
-}
-
-/**
- * Moves the newest valid plan from the legacy list to the current key when that key is empty,
- * then removes the legacy list even if nothing in it was valid, so old data is never orphaned.
- */
-function migrateLegacy(storage: Storage, today: number): void {
-  try {
-    const raw = storage.getItem(LEGACY_KEY);
-    if (raw === null) return;
-    const plan = storage.getItem(STORAGE_KEY) === null ? newestLegacy(raw, today) : null;
-    if (plan !== null) storage.setItem(STORAGE_KEY, JSON.stringify(plan));
-    storage.removeItem(LEGACY_KEY);
-  } catch {
-    // Storage refused the write; the legacy list stays for the next load to try again.
-  }
-}
-
-/** The saved plan (migrating a legacy list first), or null when there is none or it is invalid. */
+/** The saved plan, or null when there is none or it is invalid. */
 export function loadPlan(storage: Storage | null, today: number): SavedPlan | null {
   if (storage === null) return null;
-  migrateLegacy(storage, today);
   try {
     return readPlan(JSON.parse(storage.getItem(STORAGE_KEY) ?? 'null'), today);
   } catch {

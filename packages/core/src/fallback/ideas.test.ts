@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { guardIdeas } from '../guards.ts';
 import { CONSTRAINTS, EVENT_TYPES, SETTINGS, STYLE_IDS } from '../ids.ts';
 import { sampleInput } from '../test-fixtures.ts';
-import type { BudgetLine, Constraint, EventInput } from '../types.ts';
+import type { BudgetLine, Constraint, EventInput, StyleId } from '../types.ts';
 import { ideasOffline } from './ideas.ts';
 
 const DIETS: readonly (readonly Constraint[])[] = [
@@ -106,7 +106,7 @@ describe('ideasOffline', () => {
 
   it('leaves the city out when there is none', () => {
     const ideas = ideasOffline(
-      sampleInput({ type: 'community', style: 'unknown', city: '', functions: [] }),
+      sampleInput({ type: 'community', style: 'unknown' as StyleId, city: '', functions: [] }),
     );
     expect(ideas.theme.why).toMatch(/Chosen for a community event\.$/);
     expect(ideas.invitation).toMatch(

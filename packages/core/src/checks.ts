@@ -1,13 +1,22 @@
-/** Value rules for a structurally sound, normalised EventInput (design section 5). */
+/** Value rules for a structurally sound, normalised draft input. */
 import { addYears, fromIso, parseTime } from './days.ts';
 import { INPUT_FIELDS, INPUT_LIMITS, fieldError, isOneOf } from './fields.ts';
 import { CATEGORY_IDS, STYLE_IDS, WEDDING_FUNCTIONS } from './ids.ts';
-import type { ErrorCode, EventInput, FieldError, InputField } from './types.ts';
+import type {
+  CategoryId,
+  DraftInput,
+  ErrorCode,
+  EventInput,
+  FieldError,
+  FunctionId,
+  InputField,
+  StyleId,
+} from './types.ts';
 
 /** Letters in any script plus spaces, dots, hyphens and apostrophes. */
 const CITY_PATTERN = /^[\p{L}\p{M} .'-]*$/u;
 
-type Check = (input: EventInput, today: number) => ErrorCode | null;
+type Check = (input: DraftInput, today: number) => ErrorCode | null;
 
 function wholeInRange(value: number, range: { min: number; max: number }): ErrorCode | null {
   if (!Number.isInteger(value)) return 'not-whole';
@@ -15,33 +24,53 @@ function wholeInRange(value: number, range: { min: number; max: number }): Error
   return value > range.max ? 'too-large' : null;
 }
 
-function checkDate(input: EventInput, today: number): ErrorCode | null {
+function checkDate(input: DraftInput, today: number): ErrorCode | null {
   const day = fromIso(input.date);
   if (day === null) return 'format';
   if (day < today) return 'past';
   return day > addYears(today, INPUT_LIMITS.maxLeadYears) ? 'too-far' : null;
 }
 
-function checkFunctions(input: EventInput): ErrorCode | null {
+function isStyle(input: DraftInput, id: string): id is StyleId {
+  return isOneOf(STYLE_IDS[input.type], id);
+}
+
+function isFunction(id: string): id is FunctionId {
+  return isOneOf(WEDDING_FUNCTIONS, id);
+}
+
+function isCategory(input: DraftInput, id: string): id is CategoryId {
+  return isOneOf(CATEGORY_IDS[input.type], id);
+}
+
+/** Whether every choice field holds an id of the input's event type, as EventInput requires. */
+export function hasValidChoices(input: DraftInput): input is EventInput {
+  return (
+    isStyle(input, input.style) &&
+    input.functions.every(isFunction) &&
+    input.priorities.every((id) => isCategory(input, id))
+  );
+}
+
+function checkFunctions(input: DraftInput): ErrorCode | null {
   if (input.type !== 'wedding') return null;
-  if (!input.functions.every((id) => isOneOf(WEDDING_FUNCTIONS, id))) return 'invalid';
+  if (!input.functions.every(isFunction)) return 'invalid';
   return input.functions.includes('ceremony') ? null : 'required';
 }
 
-function checkPriorities(input: EventInput): ErrorCode | null {
+function checkPriorities(input: DraftInput): ErrorCode | null {
   if (input.priorities.length > INPUT_LIMITS.maxPriorities) return 'too-many';
-  const allowed = CATEGORY_IDS[input.type];
-  return input.priorities.every((id) => isOneOf(allowed, id)) ? null : 'invalid';
+  return input.priorities.every((id) => isCategory(input, id)) ? null : 'invalid';
 }
 
-function checkCity(input: EventInput): ErrorCode | null {
+function checkCity(input: DraftInput): ErrorCode | null {
   if (input.city.length > INPUT_LIMITS.cityMax) return 'too-long';
   return CITY_PATTERN.test(input.city) ? null : 'invalid';
 }
 
 /** Fields not listed here (enums, the flag, constraints) are fully checked by readShape. */
 const CHECKS: Partial<Record<InputField, Check>> = {
-  style: (input) => (isOneOf(STYLE_IDS[input.type], input.style) ? null : 'invalid'),
+  style: (input) => (isStyle(input, input.style) ? null : 'invalid'),
   functions: checkFunctions,
   date: checkDate,
   startTime: (input) => (parseTime(input.startTime) === null ? 'format' : null),
@@ -54,7 +83,7 @@ const CHECKS: Partial<Record<InputField, Check>> = {
 
 /** Value rules for fields not in `skip`, in form order so the error summary reads top down. */
 export function checkInput(
-  input: EventInput,
+  input: DraftInput,
   today: number,
   skip: ReadonlySet<string>,
 ): FieldError[] {

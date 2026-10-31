@@ -1,4 +1,4 @@
-/** Headcount, volunteers and crowd-safety thresholds (design section 6.3). */
+/** Headcount, volunteers and crowd-safety thresholds. */
 import type { EventInput, EventType, Profile } from './types.ts';
 
 /** Crowd sizes that change the plan; one table for the context, rules and UI copy. */
@@ -24,7 +24,7 @@ export function expectedFor(invited: number, basisPoints: number): number {
   return Math.ceil((invited * basisPoints) / 10_000);
 }
 
-/** Expected headcount (design 6.3); catering and per-guest figures use it, not invited. */
+/** Expected headcount; catering and per-guest figures use it, not invited. */
 export function expectedHeadcount(input: EventInput, profile: Profile): number {
   return expectedFor(input.invited, attendanceBasisPoints(profile, input.style));
 }

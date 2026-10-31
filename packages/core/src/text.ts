@@ -84,6 +84,6 @@ export function withArticle(phrase: string): string {
 
 /** The event in a few words, e.g. "traditional wedding". */
 export function occasion(input: Pick<EventInput, 'type' | 'style'>): string {
-  const named = (OCCASIONS as Readonly<Record<string, string | undefined>>)[input.style];
-  return named ?? (input.type === 'community' ? 'community event' : input.type);
+  if (Object.hasOwn(OCCASIONS, input.style)) return OCCASIONS[input.style];
+  return input.type === 'community' ? 'community event' : input.type;
 }

@@ -1,6 +1,7 @@
-/** Contextual rules driven by declared needs (design 6.2); each reason names the need. */
+/** Contextual rules driven by declared needs; each reason names the need. */
 import { slot } from './templates.ts';
-import type { Constraint, EventInput, Reason, Rule, RuleEffects } from './types.ts';
+import type { Rule, RuleEffects } from './engine-types.ts';
+import type { Constraint, EventInput, Reason } from './types.ts';
 
 const has =
   (need: Constraint) =>
@@ -18,7 +19,7 @@ const NO_BAR = Object.freeze<RuleEffects>({
   ],
 });
 
-/** Rules for declared needs, in the order of the design's rules table. */
+/** Rules for declared needs. */
 export const NEED_RULES: readonly Rule[] = [
   {
     id: 'step-free',

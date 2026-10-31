@@ -5,7 +5,6 @@
 import {
   buildPlan,
   fromCivil,
-  getProfile,
   ideasOffline,
   sampleEvent,
   type AssistReply,
@@ -14,6 +13,7 @@ import {
   type Profile,
   type SampleId,
 } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import type { GenAi } from './lib/genai.ts';
 import { PlanStore } from './lib/plans.svelte.ts';
 import type { SavedPlan } from './lib/storage.ts';

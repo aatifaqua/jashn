@@ -10,7 +10,8 @@ import {
   inventedAmounts,
   planAmounts,
 } from './guards.ts';
-import type { Constraint, Ideas } from './types.ts';
+import type { Ideas } from './engine-types.ts';
+import type { Constraint } from './types.ts';
 
 /** Text, the declared constraint, and whether the guard must flag it. */
 const DIET_TABLE: readonly [string, Constraint, boolean][] = [

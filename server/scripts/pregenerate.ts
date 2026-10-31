@@ -13,13 +13,13 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { format, resolveConfig } from 'prettier';
 import {
   buildPlan,
-  getProfile,
   indiaDay,
   sampleEvent,
   SAMPLE_IDS,
   SUGGESTED_PROMPTS,
   toIso,
 } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import {
   createGeminiClientFrom,
   DEFAULT_TIMINGS,
@@ -57,10 +57,12 @@ interface Sample {
   answers: Items;
 }
 
+function isItems(value: unknown): value is Items {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function record(value: unknown): Items {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as Items)
-    : {};
+  return isItems(value) ? value : {};
 }
 
 const old = record(existsSync(OUTPUT) ? JSON.parse(readFileSync(OUTPUT, 'utf8')) : null);

@@ -11,10 +11,10 @@ import type { Handler } from 'hono';
 import type { GeminiClient } from '../ai/gemini.ts';
 import { DRAFT_SYSTEM, draftContent } from '../ai/prompts.ts';
 import { DRAFT_RESPONSE_SCHEMA, draftRequestSchema, draftTextSchema } from '../ai/schemas.ts';
-import { cacheKey, type ResponseCache } from '../cache.ts';
+import type { ResponseCache } from '../cache.ts';
 import type { AppEnv } from '../env.ts';
 import { invalidRequest } from '../middleware/errors.ts';
-import { assertClean, readEvent, sendSourced, sourced, type RouteDeps } from './common.ts';
+import { assertClean, cachedRoute, type RouteDeps } from './common.ts';
 
 /** Asks Gemini for the enquiry, then re-checks its shape and guards; throws on failure. */
 export async function liveDraft(
@@ -37,11 +37,7 @@ export async function liveDraft(
 export function draftHandler(
   deps: RouteDeps & { readonly cache: ResponseCache<Sourced<Draft>> },
 ): Handler<AppEnv> {
-  return async (c) => {
-    const today = deps.today();
-    const request = await readEvent(c, draftRequestSchema, today);
-    if (!request.ok) return request.response;
-    const { plan, body } = request;
+  return cachedRoute(deps, draftRequestSchema, (c, { body, plan, today }) => {
     const vendor = plan.vendors.find((item) => item.id === body.vendorId);
     if (vendor === undefined) {
       return invalidRequest(c, [
@@ -50,15 +46,10 @@ export function draftHandler(
     }
     // The prompt leaves the note out, so the key does too: inputs differing only there share one.
     const input = { ...plan.input, note: '' };
-    const key = cacheKey({ endpoint: 'draft', input, today, vendorId: vendor.id });
-    const result = await deps.cache.run(key, () =>
-      sourced(
-        c,
-        deps.gemini,
-        (gemini) => liveDraft(gemini, plan, vendor),
-        () => draftEnquiry(plan, vendor),
-      ),
-    );
-    return sendSourced(c, result);
-  };
+    return {
+      key: { endpoint: 'draft', input, today, vendorId: vendor.id },
+      live: (gemini) => liveDraft(gemini, plan, vendor),
+      fallback: () => draftEnquiry(plan, vendor),
+    };
+  });
 }

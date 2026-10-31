@@ -10,7 +10,8 @@ import {
   topActions,
   type StageInput,
 } from './timeline.ts';
-import type { EventContext, Profile, RuleEffects, Task, TaskTemplate } from './types.ts';
+import type { EventContext, RuleEffects } from './engine-types.ts';
+import type { Profile, Task, TaskTemplate } from './types.ts';
 
 const EVENT = TODAY + 100;
 

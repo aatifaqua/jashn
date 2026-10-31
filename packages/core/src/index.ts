@@ -1,13 +1,13 @@
 /**
- * Public API of @jashn/core. Side-effect free; the browser uses loadProfile (one lazy chunk per
- * type), never getProfile, which pulls all three profiles into the importing chunk.
+ * Public API of @jashn/core. Side-effect free; profiles load lazily through loadProfile, one
+ * chunk per event type. The eager getProfile lives in the `@jashn/core/server` entry.
  */
 export type * from './types.ts';
+export type * from './engine-types.ts';
 export * from './ids.ts';
 export * from './days.ts';
 export { ASSIST_LIMITS, FIELD_LABELS, INPUT_LIMITS } from './fields.ts';
-export { applyPatch, canonicalKey, validateInput, validatePatch } from './input.ts';
-export { getProfile } from './profiles/all.ts';
+export { applyPatch, canonicalKey, isPatchField, validateInput, validatePatch } from './input.ts';
 export { loadProfile } from './profiles/index.ts';
 export { seasonOf } from './context.ts';
 export { buildPlan, diffPlans } from './plan.ts';

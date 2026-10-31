@@ -1,13 +1,7 @@
-/** Budget feasibility: cost floor per guest, verdict and when to offer trims (design 6.4). */
+/** Budget feasibility: cost floor per guest, verdict and when to offer trims. */
 import { rankTrims } from './trims.ts';
-import type {
-  BudgetLine,
-  EventContext,
-  EventInput,
-  Feasibility,
-  Profile,
-  Verdict,
-} from './types.ts';
+import type { EventContext } from './engine-types.ts';
+import type { BudgetLine, EventInput, Feasibility, Profile, Verdict } from './types.ts';
 
 /** Each wedding function beyond the first raises the floor by this share, in percent. */
 const FUNCTION_UPLIFT_PERCENT = 35;

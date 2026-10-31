@@ -1,8 +1,17 @@
-/** Types for the engine's context and rules (design 6.1, 6.2) and generated content (7). */
-import type { CategoryPoints, SlotTemplate, TaskTemplate } from './types.ts';
-import type { EventInput, PlanPatch, Reason, Source, VendorId } from './types.ts';
+/** Types for the engine's context and rules, and for generated content. */
+import type {
+  CategoryId,
+  CategoryPoints,
+  EventInput,
+  PlanPatch,
+  Reason,
+  SlotTemplate,
+  Source,
+  TaskTemplate,
+  VendorId,
+} from './types.ts';
 
-/** Facts derived once per plan from the input and today (design 6.1). */
+/** Facts derived once per plan from the input and today. */
 export interface EventContext {
   readonly today: number;
   readonly eventDay: number;
@@ -37,13 +46,19 @@ export interface EventContext {
 export type BudgetEffect =
   | ({ readonly kind: 'add' } & CategoryPoints)
   | {
+      /** Adds the points to the first of `categories` the profile has, and to no other. */
+      readonly kind: 'add-first';
+      readonly categories: readonly CategoryId[];
+      readonly points: number;
+    }
+  | {
       readonly kind: 'move';
-      readonly from: CategoryPoints['category'];
-      readonly to: CategoryPoints['category'];
+      readonly from: CategoryId;
+      readonly to: CategoryId;
       /** Fraction of the source line moved, 0..1. */
       readonly fraction: number;
     }
-  | { readonly kind: 'remove'; readonly category: CategoryPoints['category'] };
+  | { readonly kind: 'remove'; readonly category: CategoryId };
 
 interface VendorQuestion {
   readonly vendorId: VendorId;
@@ -67,7 +82,7 @@ export interface RuleEffects {
   readonly alwaysTrim?: boolean;
 }
 
-/** A contextual rule: when it applies, why, and what it changes (design 6.2). */
+/** A contextual rule: when it applies, why, and what it changes. */
 export interface Rule {
   readonly id: string;
   readonly when: (ctx: EventContext, input: EventInput) => boolean;

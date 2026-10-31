@@ -18,9 +18,9 @@ import {
   type VendorItem,
 } from '@jashn/core';
 import { createDemo, type DemoContent } from './demo.ts';
-import { isSource, readDraft, readIdeas, readReply } from './validate.ts';
+import { isRecord, isSource, readDraft, readIdeas, readReply } from './validate.ts';
 
-/** Turns of history sent with an assistant message (design section 7), as the API accepts. */
+/** Turns of history sent with an assistant message: as many as the API accepts. */
 export const HISTORY_TURNS = ASSIST_LIMITS.history;
 /** Longest assistant message, the same limit the API and the offline assistant apply. */
 export const MESSAGE_MAX = ASSIST_LIMITS.message;
@@ -52,11 +52,25 @@ interface GenAiOptions {
   readonly demo?: DemoContent;
 }
 
-type Post = (path: string, body: unknown) => Promise<unknown>;
+/** Why a call produced no usable body; every reason leads to the same offline fallback. */
+type PostFailure = 'timeout' | 'network' | 'status' | 'malformed';
+
+/** A POST's parsed JSON body, or the reason there is none. */
+type Posted =
+  | { readonly ok: true; readonly data: unknown }
+  | { readonly ok: false; readonly reason: PostFailure };
+
+type Post = (path: string, body: unknown) => Promise<Posted>;
+
+/** Names a thrown failure: the timeout's abort, a body that is not JSON, or the network. */
+function failureOf(error: unknown, signal: AbortSignal): PostFailure {
+  if (signal.aborted) return 'timeout';
+  return error instanceof SyntaxError ? 'malformed' : 'network';
+}
 
 /**
- * POSTs JSON and returns the parsed body, or undefined on any failure. An AbortController
- * bounds each call, so a hung connection cannot leave the UI busy forever.
+ * POSTs JSON and returns the parsed body or a named failure; it never rejects. An
+ * AbortController bounds each call, so a hung connection cannot leave the UI busy forever.
  */
 function poster(apiBase: string, fetchImpl: typeof fetch, timeoutMs: number): Post {
   const base = apiBase.replace(/\/+$/, '');
@@ -73,46 +87,54 @@ function poster(apiBase: string, fetchImpl: typeof fetch, timeoutMs: number): Po
         credentials: 'omit',
         signal: controller.signal,
       });
-      return response.ok ? ((await response.json()) as unknown) : undefined;
-    } catch {
-      return undefined;
+      if (!response.ok) return { ok: false, reason: 'status' };
+      const data: unknown = await response.json();
+      return { ok: true, data };
+    } catch (error) {
+      return { ok: false, reason: failureOf(error, controller.signal) };
     } finally {
       clearTimeout(timer);
     }
   };
 }
 
-function sourceOf(value: unknown): unknown {
-  return typeof value === 'object' && value !== null
-    ? (value as { source?: unknown }).source
-    : null;
+/**
+ * A server answer read and checked by `read`, labelled with the source the server gave it; any
+ * failed call, rejected body or missing source falls back to the offline answer.
+ */
+async function fromServer<T extends object>(
+  posted: Promise<Posted>,
+  read: (data: unknown) => T | null,
+  fallback: () => Sourced<T>,
+): Promise<Sourced<T>> {
+  const result = await posted;
+  if (!result.ok) return fallback();
+  const value = read(result.data);
+  const source = isRecord(result.data) ? result.data.source : null;
+  return value === null || !isSource(source) ? fallback() : { ...value, source };
 }
 
 function liveClient(post: Post): GenAi {
   return {
     mode: 'live',
-    async ideas(plan) {
-      const data = await post('/api/ideas', { input: plan.input });
-      const ideas = readIdeas(data, plan.input.constraints);
-      const source = sourceOf(data);
-      if (ideas === null || !isSource(source)) return offlineIdeas(plan);
-      return { ...ideas, source };
-    },
-    async assist(plan, message, history) {
-      const turns = history.slice(-HISTORY_TURNS);
-      const data = await post('/api/assist', { input: plan.input, message, history: turns });
-      const reply = readReply(data, plan);
-      const source = sourceOf(data);
-      if (reply === null || !isSource(source)) return offlineReply(plan, message);
-      return { ...reply, source };
-    },
-    async draft(plan, vendor) {
-      const data = await post('/api/draft', { input: plan.input, vendorId: vendor.id });
-      const draft = readDraft(data, plan, vendor.id);
-      const source = sourceOf(data);
-      if (draft === null || !isSource(source)) return offlineDraft(plan, vendor);
-      return { ...draft, source };
-    },
+    ideas: (plan) =>
+      fromServer(
+        post('/api/ideas', { input: plan.input }),
+        (data) => readIdeas(data, plan.input.constraints),
+        () => offlineIdeas(plan),
+      ),
+    assist: (plan, message, history) =>
+      fromServer(
+        post('/api/assist', { input: plan.input, message, history: history.slice(-HISTORY_TURNS) }),
+        (data) => readReply(data, plan),
+        () => offlineReply(plan, message),
+      ),
+    draft: (plan, vendor) =>
+      fromServer(
+        post('/api/draft', { input: plan.input, vendorId: vendor.id }),
+        (data) => readDraft(data, plan, vendor.id),
+        () => offlineDraft(plan, vendor),
+      ),
   };
 }
 
@@ -141,24 +163,23 @@ function loadShippedDemo(): Promise<DemoContent> {
   );
 }
 
+/** A pre-generated demo answer, labelled as Gemini output, or the offline answer when there is none. */
+function fromDemo<T extends object>(found: T | null, fallback: () => Sourced<T>): Sourced<T> {
+  return found === null ? fallback() : { ...found, source: 'gemini' };
+}
+
 /** Demo entries are real Gemini output generated ahead of time, so they keep that label. */
 function demoClient(load: () => Promise<DemoContent>): GenAi {
   let loaded: Promise<DemoContent> | undefined;
   const demo = (): Promise<DemoContent> => (loaded ??= load());
   return {
     mode: 'demo',
-    async ideas(plan) {
-      const ideas = (await demo()).ideas(plan.input, plan.today);
-      return ideas === null ? offlineIdeas(plan) : { ...ideas, source: 'gemini' };
-    },
-    async assist(plan, message) {
-      const reply = (await demo()).answer(plan, message);
-      return reply === null ? offlineReply(plan, message) : { ...reply, source: 'gemini' };
-    },
-    async draft(plan, vendor) {
-      const draft = (await demo()).draft(plan, vendor.id);
-      return draft === null ? offlineDraft(plan, vendor) : { ...draft, source: 'gemini' };
-    },
+    ideas: async (plan) =>
+      fromDemo((await demo()).ideas(plan.input, plan.today), () => offlineIdeas(plan)),
+    assist: async (plan, message) =>
+      fromDemo((await demo()).answer(plan, message), () => offlineReply(plan, message)),
+    draft: async (plan, vendor) =>
+      fromDemo((await demo()).draft(plan, vendor.id), () => offlineDraft(plan, vendor)),
   };
 }
 

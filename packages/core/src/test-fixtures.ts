@@ -11,7 +11,7 @@ import {
   STYLE_IDS,
   WEDDING_FUNCTIONS,
 } from './ids.ts';
-import type { EventInput, EventType } from './types.ts';
+import type { EventInput, EventType, FunctionId } from './types.ts';
 
 /** A fixed "today" (2026-10-27) so tests never depend on the clock. */
 export const TODAY = 20_753;
@@ -72,7 +72,7 @@ function typed(
     style: fc.constantFrom(...STYLE_IDS[type]),
     functions:
       type === 'wedding'
-        ? fc.subarray(others).map((ids): string[] => ['ceremony', ...ids])
+        ? fc.subarray(others).map((ids): FunctionId[] => ['ceremony', ...ids])
         : fc.constant([]),
     priorities: fc.subarray([...CATEGORY_IDS[type]], { maxLength: 2 }),
   });

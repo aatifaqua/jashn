@@ -1,4 +1,5 @@
-import { buildPlan, getProfile, toIso } from '@jashn/core';
+import { buildPlan, toIso } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { describe, expect, it } from 'vitest';
 import { sample, TODAY } from '../testing.ts';
 import {

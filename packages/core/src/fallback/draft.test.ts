@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { guardDraft } from '../guards.ts';
 import { TODAY } from '../test-fixtures.ts';
-import type { VendorItem } from '../types.ts';
+import type { StyleId, VendorItem } from '../types.ts';
 import { draftEnquiry } from './draft.ts';
 import { samplePlan } from './plan.fixture.ts';
 
@@ -70,7 +70,7 @@ describe('draftEnquiry', () => {
   });
 
   it('names an event of an unknown style by its type', () => {
-    const plan = samplePlan({}, { type: 'community', style: 'other', functions: [] });
+    const plan = samplePlan({}, { type: 'community', style: 'other' as StyleId, functions: [] });
     expect(draftEnquiry(plan, DJ).text).toContain('We are planning a community event in Lucknow');
   });
 

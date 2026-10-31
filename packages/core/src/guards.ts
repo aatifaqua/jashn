@@ -1,7 +1,8 @@
-/** Post-generation guards (design 7, 9): any issue makes the server serve the fallback. */
+/** Post-generation guards: any issue makes the server serve the fallback. */
 import { inventedDates, planDays } from './date-mentions.ts';
 import { ASSIST_LIMITS } from './fields.ts';
-import type { Constraint, Ideas, Plan, PlanPatch } from './types.ts';
+import type { Ideas } from './engine-types.ts';
+import type { Constraint, Plan, PlanPatch } from './types.ts';
 
 /** Upper bounds, in characters, for each kind of generated text. */
 export const GUARD_LIMITS = Object.freeze({
@@ -60,16 +61,16 @@ const LINK =
 /** A rupee figure: a currency mark before it, or a unit or the word rupees after it. */
 const AMOUNT =
   /(₹|\brs\.?|\binr)?\s*(\d[\d,]*(?:\.\d+)?)\s*(lakhs?|lacs?|lks?|l|crores?|cr|k|thousand)?(?![\p{L}\p{M}])\s*(rupees)?/giu;
-const UNITS = Object.freeze({
-  lakh: 1e5,
-  lac: 1e5,
-  l: 1e5,
-  lk: 1e5,
-  crore: 1e7,
-  cr: 1e7,
-  k: 1e3,
-  thousand: 1e3,
-});
+const UNITS: ReadonlyMap<string, number> = new Map([
+  ['lakh', 1e5],
+  ['lac', 1e5],
+  ['l', 1e5],
+  ['lk', 1e5],
+  ['crore', 1e7],
+  ['cr', 1e7],
+  ['k', 1e3],
+  ['thousand', 1e3],
+]);
 
 interface DietConflict {
   readonly constraint: Constraint;
@@ -133,9 +134,10 @@ export function planAmounts(plan: Plan, patch?: PlanPatch): ReadonlySet<number> 
   return amounts;
 }
 
+/** The multiplier of a unit word the AMOUNT pattern matched; a bare figure counts in rupees. */
 function unitOf(word: string | undefined): number {
-  if (word === undefined) return 1;
-  return UNITS[word.toLowerCase().replace(/s$/, '') as keyof typeof UNITS];
+  const unit = word === undefined ? undefined : UNITS.get(word.toLowerCase().replace(/s$/, ''));
+  return unit ?? 1;
 }
 
 function matches(value: number, tolerance: number, allowed: ReadonlySet<number>): boolean {

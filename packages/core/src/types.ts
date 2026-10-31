@@ -25,7 +25,8 @@ export type Constraint = (typeof CONSTRAINTS)[number];
 export type FunctionId = (typeof WEDDING_FUNCTIONS)[number];
 /** Any style id of any event type. */
 export type StyleId = (typeof STYLE_IDS)[EventType][number];
-type CategoryId = (typeof CATEGORY_IDS)[EventType][number];
+/** A budget category id of any event type. */
+export type CategoryId = (typeof CATEGORY_IDS)[EventType][number];
 /** A vendor id known to the profiles and rules. */
 export type VendorId = (typeof VENDOR_IDS)[number];
 /** Timeline phase, in display order. */
@@ -39,11 +40,13 @@ export type TaskStatus = 'upcoming' | 'late' | 'at-risk' | 'done';
 /** Where a generated result came from; the UI labels every generated item with it. */
 export type Source = 'gemini' | 'fallback';
 
-/** Everything the user tells Jashn about the event (design 5). */
+/** Everything the user tells Jashn about the event. */
 export interface EventInput {
   readonly type: EventType;
-  readonly style: string;
-  readonly functions: readonly string[];
+  /** A style of this event type. */
+  readonly style: StyleId;
+  /** Weddings only; always includes the ceremony. */
+  readonly functions: readonly FunctionId[];
   /** ISO calendar date, YYYY-MM-DD. */
   readonly date: string;
   readonly startTime: string;
@@ -53,12 +56,22 @@ export interface EventInput {
   readonly venueBooked: boolean;
   readonly invited: number;
   readonly budget: number;
-  /** At most two budget category ids. */
-  readonly priorities: readonly string[];
+  /** At most two budget categories of this event type. */
+  readonly priorities: readonly CategoryId[];
   readonly constraints: readonly Constraint[];
   /** Free text, at most 300 characters; treated as data, never as instructions. */
   readonly note: string;
 }
+
+/**
+ * An input read from untrusted data before its value rules run: the choice fields are still
+ * free text, which validateInput checks against the event type's ids.
+ */
+export type DraftInput = Omit<EventInput, 'style' | 'functions' | 'priorities'> & {
+  readonly style: string;
+  readonly functions: readonly string[];
+  readonly priorities: readonly string[];
+};
 
 /** A field of EventInput. */
 export type InputField = keyof EventInput;
@@ -211,8 +224,6 @@ export interface PlanDiff {
   readonly budget: readonly (Change<number> & { readonly category: string })[];
   readonly newlyLate: readonly Task[];
 }
-
-export type * from './engine-types.ts';
 
 /** Catalogue entry condition: every listed key must match, an absent key matches anything. */
 export interface Applicability {

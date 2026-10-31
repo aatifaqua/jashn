@@ -9,6 +9,7 @@ import {
 } from './attendance.ts';
 import { getProfile } from './profiles/all.ts';
 import { sampleInput } from './test-fixtures.ts';
+import type { StyleId } from './types.ts';
 
 const wedding = getProfile('wedding');
 const community = getProfile('community');
@@ -33,7 +34,7 @@ describe('expectedHeadcount', () => {
     const base = sampleInput({ type: 'community', functions: [], invited: 1000 });
     const expected = { festival: 1500, fundraiser: 1200, meetup: 1100, 'clean-up': 1000 };
     for (const [style, count] of Object.entries(expected)) {
-      expect(expectedHeadcount({ ...base, style }, community)).toBe(count);
+      expect(expectedHeadcount({ ...base, style: style as StyleId }, community)).toBe(count);
     }
   });
 

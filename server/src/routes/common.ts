@@ -2,17 +2,12 @@
  * Shared by the generative routes: body validation (zod, then the core validator), building
  * the plan on the server, and turning any Gemini failure into the labelled fallback.
  */
-import {
-  buildPlan,
-  getProfile,
-  validateInput,
-  type Plan,
-  type Source,
-  type Sourced,
-} from '@jashn/core';
-import type { Context } from 'hono';
+import { buildPlan, validateInput, type Plan, type Source, type Sourced } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
+import type { Context, Handler } from 'hono';
 import type { z } from 'zod';
 import { statusOf, type GeminiClient } from '../ai/gemini.ts';
+import { cacheKey, type KeyParts, type ResponseCache } from '../cache.ts';
 import type { AppEnv } from '../env.ts';
 import { invalidRequest, problem, type FieldIssue } from '../middleware/errors.ts';
 
@@ -105,4 +100,40 @@ export async function sourced<T extends object>(
 export function sendSourced(c: Context<AppEnv>, result: { readonly source: Source }): Response {
   c.set('source', result.source);
   return c.json({ ...result, disclaimer: DISCLAIMER });
+}
+
+/** One cached generation: what its cache key covers, the Gemini path and the fallback. */
+export interface CachedJob<T> {
+  readonly key: KeyParts;
+  readonly live: (gemini: GeminiClient) => Promise<T>;
+  readonly fallback: () => T;
+}
+
+/** A validated request, the plan the server built for it and the day it was built for. */
+export interface PlannedRequest<B> {
+  readonly body: B;
+  readonly plan: Plan;
+  readonly today: number;
+}
+
+/**
+ * A handler for a cached generative route: validate the body and build the plan, let the route
+ * describe the job (or answer with an error response), then serve it through the cache.
+ */
+export function cachedRoute<B extends { readonly input: unknown }, T extends object>(
+  deps: RouteDeps & { readonly cache: ResponseCache<Sourced<T>> },
+  schema: z.ZodType<B>,
+  describe: (c: Context<AppEnv>, request: PlannedRequest<B>) => CachedJob<T> | Response,
+): Handler<AppEnv> {
+  return async (c) => {
+    const today = deps.today();
+    const request = await readEvent(c, schema, today);
+    if (!request.ok) return request.response;
+    const job = describe(c, { body: request.body, plan: request.plan, today });
+    if (job instanceof Response) return job;
+    const result = await deps.cache.run(cacheKey(job.key), () =>
+      sourced(c, deps.gemini, job.live, job.fallback),
+    );
+    return sendSourced(c, result);
+  };
 }

@@ -1,6 +1,5 @@
 /** Evaluates the declarative `appliesWhen` conditions of profile catalogue entries. */
-import type { Applicability } from './types.ts';
-import type { EventInput } from './types.ts';
+import type { Applicability, EventInput } from './types.ts';
 
 function someIn(chosen: readonly string[], listed: readonly string[] | undefined): boolean {
   return listed === undefined || chosen.some((id) => listed.includes(id));

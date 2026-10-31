@@ -2,11 +2,11 @@ import {
   CONSTRAINTS,
   SAMPLE_IDS,
   buildPlan,
-  getProfile,
   ideasOffline,
   sampleEvent,
   type Constraint,
 } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { describe, expect, it } from 'vitest';
 import { TODAY } from '../testing.ts';
 import { ideasSchema } from './schemas.ts';

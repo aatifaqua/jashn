@@ -1,4 +1,4 @@
-/** Closed id lists; types.ts derives its types from them, so the two never drift apart. */
+// Closed id lists; types.ts derives its types from them, so the two never drift apart.
 
 /** The three kinds of event Jashn plans. */
 export const EVENT_TYPES = ['wedding', 'birthday', 'community'] as const;
@@ -85,7 +85,7 @@ export const VENDOR_IDS = [
   'sanitation',
 ] as const;
 
-/** Timeline phases in display order (design 6.5). */
+/** Timeline phases in display order. */
 export const PHASES = [
   'do-now',
   'months-out',

@@ -54,13 +54,16 @@ export function jsonOnly(): MiddlewareHandler<AppEnv> {
   };
 }
 
-/** Refuses oversized bodies from Content-Length or while reading, never after. */
+/**
+ * Refuses oversized bodies from Content-Length or while reading, never after. The limit is set
+ * up per request so its error handler answers through this request's typed context.
+ */
 export function sizeLimit(): MiddlewareHandler<AppEnv> {
-  return bodyLimit({
-    maxSize: BODY_LIMIT_BYTES,
-    onError: (c) =>
-      problem(c as Context<AppEnv>, 413, 'payload-too-large', 'The request is too large.'),
-  });
+  return (c, next) =>
+    bodyLimit({
+      maxSize: BODY_LIMIT_BYTES,
+      onError: () => problem(c, 413, 'payload-too-large', 'The request is too large.'),
+    })(c, next);
 }
 
 /** 404 for unknown routes, in the same error shape as every other failure. */

@@ -1,7 +1,5 @@
-/**
- * Keyboard model of the plan's ARIA tablist (WAI-ARIA Authoring Practices): arrows move to the
- * previous or next tab and wrap, Home and End jump to the ends. Selection follows focus.
- */
+// Keyboard model of the plan's ARIA tablist (WAI-ARIA Authoring Practices): arrows move to the
+// previous or next tab and wrap, Home and End jump to the ends. Selection follows focus.
 
 /** The plan's sections in tab order. */
 export const PLAN_TABS = [

@@ -2,7 +2,6 @@ import { fromIso, ideasOffline } from '@jashn/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryStorage, TODAY, sampleInput, savedPlan } from '../test-fixtures.ts';
 import {
-  LEGACY_KEY,
   STORAGE_KEY,
   browserStorage,
   createWriter,
@@ -50,49 +49,6 @@ describe('loadPlan', () => {
     ['a vendor list', { vendors: ['venue'] }],
   ])('drops a tampered plan with %s', (_, change) => {
     expect(loadPlan(stored({ ...savedPlan(), ...change }), TODAY)).toBeNull();
-  });
-});
-
-describe('legacy migration', () => {
-  function legacy(value: unknown): MemoryStorage {
-    const storage = new MemoryStorage();
-    storage.setItem(LEGACY_KEY, typeof value === 'string' ? value : JSON.stringify(value));
-    return storage;
-  }
-
-  it('moves the newest valid plan of the old list to the new key and removes the list', () => {
-    const older = { ...savedPlan({ id: 'older' }), updated: 1 };
-    const newest = { ...savedPlan({ id: 'newest', checks: ['book-venue'] }), updated: 3 };
-    const broken = { ...savedPlan({ id: 'Bad Id' }), updated: 9 };
-    const storage = legacy({ version: 1, plans: [older, broken, newest] });
-    expect(loadPlan(storage, TODAY)).toEqual(savedPlan({ id: 'newest', checks: ['book-venue'] }));
-    expect(storage.getItem(LEGACY_KEY)).toBeNull();
-    expect(loadPlan(storage, TODAY)?.id).toBe('newest');
-  });
-
-  it.each([
-    ['unparsable', '{not json'],
-    ['an unknown version', { version: 2, plans: [savedPlan()] }],
-    ['no valid entry', { version: 1, plans: [{ id: 'Bad Id' }, 'plan'] }],
-  ])('removes an old list that is %s and loads nothing', (_, value) => {
-    const storage = legacy(value);
-    expect(loadPlan(storage, TODAY)).toBeNull();
-    expect(storage.getItem(LEGACY_KEY)).toBeNull();
-    expect(storage.getItem(STORAGE_KEY)).toBeNull();
-  });
-
-  it('keeps a plan already under the new key and still removes the old list', () => {
-    const storage = legacy({ version: 1, plans: [{ ...savedPlan({ id: 'old' }), updated: 1 }] });
-    writePlan(storage, savedPlan({ id: 'current' }));
-    expect(loadPlan(storage, TODAY)?.id).toBe('current');
-    expect(storage.getItem(LEGACY_KEY)).toBeNull();
-  });
-
-  it('keeps the old list for a later load when storage refuses the write', () => {
-    const storage = legacy({ version: 1, plans: [{ ...savedPlan(), updated: 1 }] });
-    storage.failWrites = true;
-    expect(loadPlan(storage, TODAY)).toBeNull();
-    expect(storage.getItem(LEGACY_KEY)).not.toBeNull();
   });
 });
 

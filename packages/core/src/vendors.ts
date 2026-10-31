@@ -1,4 +1,4 @@
-/** Vendor checklist, questions and payment schedule (design section 6.6). */
+/** Vendor checklist, questions and payment schedule. */
 import { applies } from './applies.ts';
 import { formatDay } from './text.ts';
 import { ROUNDING_UNIT, roundRupees } from './money.ts';

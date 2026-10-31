@@ -1,5 +1,6 @@
-/** Deterministic vendor enquiry (design section 7, /api/draft fallback), in English. */
-import type { Constraint, Draft, Plan, VendorItem } from '../types.ts';
+/** Deterministic vendor enquiry (the /api/draft fallback), in English. */
+import type { Draft } from '../engine-types.ts';
+import type { Constraint, Plan, VendorItem } from '../types.ts';
 import { formatCount, formatLongDay, occasion, withArticle } from '../text.ts';
 
 /** How each need reads in an enquiry; budget-strict is left out on purpose (see draftEnquiry). */

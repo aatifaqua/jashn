@@ -1,10 +1,11 @@
 /**
- * Offline ideas (design 7): one generic set per event type, used when Gemini is unavailable.
+ * Offline ideas: one generic set per event type, used when Gemini is unavailable.
  * It honours the declared needs: Jain and vegetarian filter dishes, halal marks meat as
  * certified, eco-friendly swaps plastic-heavy items, and alcohol appears only when the plan
  * funds a bar.
  */
-import type { BudgetLine, Constraint, EventInput, EventType, IdeaItem, Ideas } from '../types.ts';
+import type { IdeaItem, Ideas } from '../engine-types.ts';
+import type { BudgetLine, Constraint, EventInput, EventType } from '../types.ts';
 import { occasion, withArticle } from '../text.ts';
 
 /** An idea with an optional plastic-free alternative for eco-friendly events. */

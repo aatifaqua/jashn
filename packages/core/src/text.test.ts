@@ -10,6 +10,7 @@ import {
   weekdayName,
   withArticle,
 } from './text.ts';
+import type { StyleId } from './types.ts';
 
 describe('text', () => {
   it('groups numbers the Indian way', () => {
@@ -41,7 +42,7 @@ describe('sentence helpers', () => {
     expect(withArticle(occasion({ type: 'birthday', style: 'milestone' }))).toBe(
       'a milestone birthday',
     );
-    expect(occasion({ type: 'community', style: 'unknown' })).toBe('community event');
-    expect(occasion({ type: 'birthday', style: 'unknown' })).toBe('birthday');
+    expect(occasion({ type: 'community', style: 'unknown' as StyleId })).toBe('community event');
+    expect(occasion({ type: 'birthday', style: 'unknown' as StyleId })).toBe('birthday');
   });
 });

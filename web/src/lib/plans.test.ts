@@ -1,4 +1,5 @@
-import { getProfile, ideasOffline } from '@jashn/core';
+import { ideasOffline } from '@jashn/core';
+import { getProfile } from '@jashn/core/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryStorage, TODAY, makeStore, sampleInput, savedPlan } from '../test-fixtures.ts';
 import { PlanStore } from './plans.svelte.ts';
