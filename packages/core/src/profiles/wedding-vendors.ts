@@ -1,11 +1,10 @@
 /**
- * Wedding vendor catalogue (design 6.6). Each vendor's `appliesWhen` mirrors its booking
- * task's, so a vendor never appears without the task that dates it. Deposit shares follow the
- * design: venue, photographer and decorator 30 %, caterer 25 %, others 20 %.
+ * Wedding vendors (design 6.6). `appliesWhen` mirrors the booking task's. Deposits: venue,
+ * photographer and decorator 30 %, caterer 25 %, others 20 %.
  */
 import type { VendorTemplate } from '../types.ts';
 
-/** Every wedding vendor; the vendor list keeps those whose `appliesWhen` matches the input. */
+/** Every wedding vendor; the list keeps those whose `appliesWhen` matches. */
 export const WEDDING_VENDORS: readonly VendorTemplate[] = [
   {
     id: 'venue',

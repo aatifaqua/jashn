@@ -1,7 +1,4 @@
-/**
- * Back-scheduling of profile and rule tasks into a dated timeline (design section 6.5). Every
- * date is an integer day number, so scheduling is plain integer arithmetic with no Date objects.
- */
+/** Back-scheduling of profile and rule tasks into a dated timeline (design 6.5). */
 import { applies } from './applies.ts';
 import { weekday } from './days.ts';
 import { countWord, formatDay } from './text.ts';
@@ -22,18 +19,16 @@ export interface StageInput {
   readonly profile: Profile;
   readonly ctx: EventContext;
   readonly input: EventInput;
-  /** The rules that fired for this input (fireRules), in table order, reasons already worded. */
   readonly fired: readonly FiredRule[];
 }
 
 interface Entry {
   readonly template: TaskTemplate;
   readonly reasons: Reason[];
-  /** Ideal due day after any lead-time factor. */
   idealDue: number;
 }
 
-/** Phase thresholds in days before the event, checked in order; frozen module-scope table. */
+/** Phase thresholds in days before the event, checked in order. */
 const PHASE_FLOORS: readonly { readonly min: number; readonly phase: Phase }[] = Object.freeze([
   { min: 60, phase: 'months-out' },
   { min: 14, phase: 'weeks-out' },
@@ -65,7 +60,6 @@ function leadReason(leadDays: number): Reason {
   };
 }
 
-/** Lead-time multipliers per vendor id with the reasons of the rules that set them. */
 function leadFactors(stage: StageInput): Map<string, { factor: number; reasons: Reason[] }> {
   const factors = new Map<string, { factor: number; reasons: Reason[] }>();
   for (const rule of stage.fired) {
@@ -94,10 +88,7 @@ function addEntry(entries: Map<string, Entry>, template: TaskTemplate, reason?: 
   entries.set(template.id, { template, reasons, idealDue: 0 });
 }
 
-/**
- * Profile tasks that apply plus rule-added tasks, keyed by id. A rule task whose id is already
- * present only adds its reason, so a task never appears twice.
- */
+/** Applicable profile and rule tasks by id; a duplicate rule task only adds its reason. */
 function collectEntries(stage: StageInput): Map<string, Entry> {
   const entries = new Map<string, Entry>();
   for (const template of stage.profile.tasks) {
@@ -126,15 +117,12 @@ function setIdealDue(entries: Map<string, Entry>, stage: StageInput): void {
   }
 }
 
-/** Task ids the fired rules pin to the front, such as "Lock the venue today". */
+/** Task ids the fired rules pin to the front. */
 export function pinnedIds(fired: readonly FiredRule[]): string[] {
   return fired.flatMap((rule) => rule.effects.pinTasks ?? []);
 }
 
-/**
- * The top actions once the user has ticked some tasks off: ticked ones drop out and the next
- * late, at-risk or upcoming tasks move up, while the plan's own top actions keep their order.
- */
+/** The top actions once the user has ticked some tasks off; the next ones move up. */
 export function remainingActions(
   plan: { readonly tasks: readonly Task[]; readonly topActions: readonly Task[] },
   ticked: ReadonlySet<string>,
@@ -147,10 +135,8 @@ export function remainingActions(
 }
 
 /**
- * Orders entries so every task follows the task it depends on, otherwise pinned tasks first and
- * then the most urgent (earliest ideal due day); this is also the priority order for spreading
- * late tasks, so a pinned late task is due today. A dependency on a task that does not apply is
- * ignored, and a cycle is broken at the back edge.
+ * Dependencies first, then pinned, then earliest ideal due day; this is also the order late
+ * tasks are spread in. A missing dependency is ignored and a cycle breaks at the back edge.
  */
 function dependencyOrder(entries: Map<string, Entry>, pinned: ReadonlySet<string>): Entry[] {
   const rank = (entry: Entry): number => (pinned.has(entry.template.id) ? 0 : 1);
@@ -169,7 +155,6 @@ function dependencyOrder(entries: Map<string, Entry>, pinned: ReadonlySet<string
   return ordered;
 }
 
-/** Ids the fired rules mark as already done, with the reason of the rule that did so. */
 function completedIds(stage: StageInput): Map<string, Reason> {
   const done = new Map<string, Reason>();
   for (const rule of stage.fired) {
@@ -191,20 +176,14 @@ function phaseOf(late: boolean, leadDays: number, daysBefore: number): Phase {
   return 'day-of';
 }
 
-/** Mutable state of the scheduling pass. */
 interface Pass {
   readonly ctx: EventContext;
   readonly done: Map<string, Reason>;
-  /** Day each scheduled task occupies for its dependents. */
   readonly dueById: Map<string, number>;
-  /** Next free day for a late task. */
   cursor: number;
 }
 
-/**
- * Reasons the status adds: how late the task is, and, when even the earliest workable day falls
- * after its last realistic day, why it is at risk. A late task can be both.
- */
+/** Reasons the status adds: how late, and why at risk; a late task can be both. */
 function statusReasons(entry: Entry, raw: number, late: boolean, pass: Pass): Reason[] {
   const { today, eventDay } = pass.ctx;
   const done = pass.done.get(entry.template.id);
@@ -227,16 +206,12 @@ function statusReasons(entry: Entry, raw: number, late: boolean, pass: Pass): Re
   return reasons;
 }
 
-/** True when the earliest workable day of a pre-event task is past its last realistic day. */
 function impossible(entry: Entry, raw: number, pass: Pass): boolean {
   const { leadDays, minLead } = entry.template;
   return leadDays >= 0 && raw > pass.ctx.eventDay - (minLead ?? 0);
 }
 
-/**
- * At-risk wins over late: a late task spread past its last workable day must say so, rather
- * than sit quietly on the event day looking merely overdue.
- */
+/** At-risk wins over late, so a task spread past its last workable day says so. */
 function statusOf(entry: Entry, raw: number, late: boolean, pass: Pass): TaskStatus {
   if (pass.done.has(entry.template.id)) return 'done';
   if (impossible(entry, raw, pass)) return 'at-risk';
@@ -261,11 +236,7 @@ function schedule(entry: Entry, pass: Pass): Task {
   return vendorId === undefined ? task : { ...task, vendorId };
 }
 
-/**
- * Builds the timeline in one pass over the tasks in dependency order. Nothing is dropped: a task
- * that cannot fit before the event stays on the list as at-risk with its reason. The result is
- * sorted by phase, then due day.
- */
+/** Builds the timeline by phase then due day; a task that cannot fit stays as at-risk. */
 export function buildTimeline(stage: StageInput): Task[] {
   const entries = collectEntries(stage);
   setIdealDue(entries, stage);
@@ -283,10 +254,7 @@ export function buildTimeline(stage: StageInput): Task[] {
 const TOP_ACTIONS = 3;
 const ACTION_ORDER: readonly TaskStatus[] = Object.freeze(['late', 'at-risk', 'upcoming']);
 
-/**
- * The first three of: the pinned tasks (those a fired rule pins), late tasks, at-risk tasks,
- * then the next upcoming ones. Done tasks never appear. Expects tasks in timeline order.
- */
+/** The first three of pinned, late, at-risk, then upcoming tasks; expects timeline order. */
 export function topActions(tasks: readonly Task[], pinned: readonly string[]): Task[] {
   const picks: Task[] = [];
   const take = (task: Task | undefined): void => {

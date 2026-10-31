@@ -37,20 +37,18 @@ constraints (diet, faith, accessibility, money).
 ## 2. User journey
 
 1. **Start.** Landing shows a one-line promise, three sample chips (Lucknow wedding,
-   7th birthday, Diwali mela), "My plans" (saved in this browser), and the form.
+   7th birthday, Diwali mela) and the form. A saved plan reopens on the next visit.
 2. **Describe the event** in three short fieldsets (section 5). A live summary beside the
    form shows days to go, expected headcount and the budget verdict as the user types.
 3. **Plan view** (lazy-loaded) opens on **Overview**: verdict banner, days to go, headcount,
    top three actions ("Book the venue", 12 days late), each with a "Why?" disclosure.
 4. Tabs: **Budget** (chart + table, trims), **Timeline** (phases, checkboxes, late and
-   at-risk flags, calendar export), **Vendors** (status per vendor, questions, payment
+   at-risk flags), **Vendors** (status per vendor, questions, payment
    schedule, "Draft enquiry"), **Day of** (run sheet), **Ideas** (generated).
 5. **Assistant** panel on every tab: ask a question or request a change. A proposed change
    shows a before/after preview (guests 250 → 180, verdict tight → comfortable) and is
    applied only when the user confirms.
-6. **Take it away:** print the plan, export the timeline to a calendar (.ics), copy the
-   checklist, or copy a share link (the event description travels in the URL fragment,
-   never to a server).
+6. **Take it away:** print the plan or copy the checklist.
 
 ---
 
@@ -85,13 +83,11 @@ jashn/
 │       ├── summary.ts        the plan facts generated text may use
 │       ├── samples.ts        the three sample events, dated from today
 │       ├── fallback/         deterministic stand-ins for every generative feature
-│       │   ├── ideas.ts      idea catalogue filtered by type, style, constraints
+│       │   ├── ideas.ts      one compact idea set per event type, filtered by needs
 │       │   ├── draft.ts      vendor enquiry template
-│       │   └── assistant.ts  offline intent parser -> reply + optional PlanPatch
+│       │   └── assistant.ts  offline answers from the plan summary
 │       ├── guards.ts         post-generation checks (dietary conflicts, length, links, amounts)
-│       ├── date-mentions.ts  dates written in generated text, checked against the plan
-│       ├── ics.ts            timeline -> RFC 5545 calendar text
-│       └── share.ts          input <-> compact URL-fragment encoding
+│       └── date-mentions.ts  dates written in generated text, checked against the plan
 ├── server/                   Hono on Node, stateless
 │   └── src/
 │       ├── config.ts         zod-validated environment
@@ -109,8 +105,8 @@ jashn/
         ├── lib/              plans.svelte.ts (state + persistence), storage.ts,
         │                     genai.ts (live or demo), demo-genai.json, format.ts
         ├── views/            Intake.svelte, PlanView.svelte (lazy)
-        └── components/       one component per tab + Assistant, VerdictBanner, BudgetChart,
-                              TaskList, VendorCard, RunSheet, IdeasPanel, ThemeToggle, ...
+        └── components/       one component per tab + Assistant, Overview, BudgetChart,
+                              TaskList, VendorCard, RunSheet, IdeasPanel, ...
 ```
 
 **Data flow**
@@ -452,16 +448,14 @@ call budget; past it, requests get the fallback with `source: "fallback"` instea
 
 - **State.** `plans.svelte.ts` holds the current input, derived plan (`$derived`, recomputed
   only when the normalised input changes) and per-plan user state (task checks, vendor
-  statuses, applied idea set). Up to 10 saved plans in `localStorage` under a versioned key,
-  written debounced, read through validation (invalid entries dropped, never trusted).
-  "Delete this plan" and "Clear all my data" controls.
+  statuses, applied idea set). The current plan is saved in `localStorage` under a versioned
+  key, written debounced, read through validation (an invalid entry is dropped, never trusted).
+  "New plan" clears it.
 - **Live summary.** The form recomputes the summary on input with a short debounce.
 - **Tabs** load nothing extra; the Plan view itself is a lazy chunk; profile data for the
-  chosen event type is a dynamic import; calendar export loads on first click.
+  chosen event type is a dynamic import.
 - **Charts** are hand-written SVG bars with a data table equivalent; no chart library.
-- **Exports.** Print stylesheet for the whole plan; `.ics` with all-day tasks and the event
-  (RFC 5545 escaping and line folding, stable UIDs); plain-text checklist to clipboard;
-  share link with the input encoded in the URL fragment (validated on open).
+- **Exports.** Print stylesheet for the whole plan; plain-text checklist to clipboard.
 - **Demo mode.** Without `VITE_API_BASE`, `genai.ts` serves the pre-generated Gemini output
   in `demo-genai.json` and the core fallbacks for anything else, with
   a visible "demo mode" note. The plan itself is identical in both modes because it is always
@@ -500,7 +494,7 @@ generated content, and the user's browser data.
   `form-action 'self'`. When the server hosts the built app, the same policy is sent as a
   header with `frame-ancestors 'none'`.
 - **Output handling:** Svelte escapes all text; `{@html}` is banned by lint; generated text is
-  rendered as text only; `.ics` text is escaped per RFC 5545.
+  rendered as text only.
 - **Key handling:** read once from the environment (Node's built-in env-file loading of
   `server/.env` for local runs), validated by zod at start-up, never logged or sent to the browser; `.env` ignored,
   `.env.example` documented.
@@ -523,8 +517,7 @@ generated content, and the user's browser data.
 - Core: integer day numbers; frozen module-scope tables; each stage is a single pass with no
   intermediate arrays; regexes and `Intl` formatters hoisted to module scope; `buildPlan`
   memoised on the canonical input key.
-- Bundles: `sideEffects: false` on the core; per-event-type profile chunks; lazy Plan view and
-  calendar export; no UI, chart, date or icon library; system font stack (no web fonts);
+- Bundles: `sideEffects: false` on the core; per-event-type profile chunks; lazy Plan view; no UI, chart, date or icon library; system font stack (no web fonts);
   icons as one inline SVG sprite; a gzip size budget for the first screen checked in CI.
 - Rendering: `$derived` recomputation only on input change; keyed lists; long lists use
   `content-visibility: auto`; storage writes debounced.
@@ -565,8 +558,8 @@ Vitest in every package, coverage enforced by thresholds in config.
   for invariants: budget lines + contingency equal the budget exactly for any valid input;
   no task due before today or after the event (except phase After); dependencies never
   inverted; every dietary constraint reaches the caterer questions; `applyPatch` then
-  `validateInput` always succeeds for a valid patch; share encoding round-trips; `.ics` output
-  is CRLF-terminated with lines ≤ 75 octets; guards catch every conflict in a fixture table.
+  `validateInput` always succeeds for a valid patch; guards catch every conflict in a fixture
+  table.
   Scenario tests for the three samples pin key figures.
 - **Server:** each route through `app.request()` with Gemini mocked: success, schema-invalid
   output, guard rejection, timeout, 429 chain fallthrough, quota exhaustion, cache hit and
@@ -624,7 +617,7 @@ counts; no currencies other than INR; prices are typical estimates, not quotes.
   stated in one place and easy to tune.
 - Dates are calendar dates; "today" is the date in India in both the browser and the server,
   so they agree on what is late. The run sheet uses local wall-clock times.
-- One event per plan; up to ten plans per browser.
+- One plan at a time, saved in this browser.
 - Permit requirements vary by city; Jashn lists them as "check local rules", not legal advice.
 
 ## 17. Left to the builder

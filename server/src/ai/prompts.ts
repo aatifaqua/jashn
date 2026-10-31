@@ -1,7 +1,6 @@
 /**
- * System instructions and user content for the three endpoints and the demo batch. Facts go
- * to Gemini as compact JSON built from the validated input and the plan summary; the user's
- * free-text note is the only unstructured input, and it travels fenced and declared as data.
+ * Prompts for the three endpoints. Facts go as compact JSON from the validated input; the
+ * user's note is the only free text, and it travels fenced and declared as data.
  */
 import type { Content } from '@google/genai';
 import {
@@ -16,7 +15,6 @@ import {
   type VendorItem,
 } from '@jashn/core';
 
-/** Rules every endpoint shares: role, respect, no invented figures, the note is data. */
 const BASE_RULES = [
   'You are Jashn, a warm and practical planning assistant for weddings, birthdays and community events in India.',
   "Respect the user's faith, culture, diet, accessibility needs and budget. Never stereotype a region, religion, caste or community, and never infer a faith from a name, city or event type.",
@@ -54,10 +52,7 @@ const DRAFT_RULES = [
 
 const LANGUAGE_RULE = 'Write all text in English (Indian usage).';
 
-/**
- * Fences the note as data. The fence markers are removed from inside the note so it cannot
- * close the fence early; the core has already stripped control characters and capped it.
- */
+/** Fence markers are stripped from the note so it cannot close the fence early. */
 export function fenceNote(note: string): string {
   const clean = note.replace(/<{3,}|>{3,}/g, '').trim();
   return clean === '' ? 'The user added no note.' : `<<<NOTE\n${clean}\nNOTE>>>`;
@@ -66,14 +61,10 @@ export function fenceNote(note: string): string {
 /** System instruction for /api/ideas. */
 export const IDEAS_SYSTEM = [BASE_RULES, IDEAS_RULES, LANGUAGE_RULE].join('\n\n');
 
-/** Built once: constructing an Intl formatter costs far more than calling one. */
+// Built once: constructing an Intl formatter costs far more than calling one.
 const MONTH_NAME = new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' });
 
-/**
- * Event facts for ideas, without any amount or exact date. The month and season carry what the
- * date means for ideas; withholding the date itself matches the guard that rejects any date in
- * ideas (JSON.stringify drops undefined fields).
- */
+// No amount or exact date: the ideas guard rejects any date, so month and season carry it.
 function ideasFacts(plan: Plan): object {
   const { event, expected, money } = planSummary(plan);
   const eventDay = plan.today + plan.daysToGo;
@@ -95,10 +86,7 @@ export function ideasContent(plan: Plan): string {
   return `Facts: ${JSON.stringify(ideasFacts(plan))}\n${fenceNote(plan.input.note)}`;
 }
 
-/**
- * System instruction for /api/assist, carrying the plan summary the answer must stick to. The
- * user's note is not here: it is user content (assistContents), never part of the rules.
- */
+/** Rules plus the plan summary; the user's note stays in user content, never the rules. */
 export function assistSystem(plan: Plan): string {
   const facts = JSON.stringify(planSummary(plan));
   return [
@@ -109,11 +97,7 @@ export function assistSystem(plan: Plan): string {
   ].join('\n\n');
 }
 
-/**
- * The conversation in the API's role names: the fenced note as a user turn of its own, then the
- * earlier turns and the new message. Keeping the note in user content, as ideas does, means it
- * never carries the weight of the system instruction.
- */
+/** The note is its own user turn, so it never carries the weight of the system instruction. */
 export function assistContents(
   note: string,
   history: readonly { readonly role: 'user' | 'assistant'; readonly text: string }[],
@@ -132,10 +116,7 @@ export function assistContents(
 /** System instruction for /api/draft. */
 export const DRAFT_SYSTEM = [BASE_RULES, DRAFT_RULES, LANGUAGE_RULE].join('\n\n');
 
-/**
- * Facts for one vendor enquiry. The note is left out on purpose: the draft goes to a third
- * party, and the note may hold details the user meant only for planning.
- */
+// The note is left out: the draft goes to a third party and the note may be private.
 function draftFacts(plan: Plan, vendor: VendorItem): object {
   const input: EventInput = plan.input;
   return {
@@ -154,37 +135,7 @@ function draftFacts(plan: Plan, vendor: VendorItem): object {
   };
 }
 
-/** User content for /api/draft. */
+/** User content for /api/draft: the vendor and plan facts as JSON. */
 export function draftContent(plan: Plan, vendor: VendorItem): string {
   return `Facts: ${JSON.stringify(draftFacts(plan, vendor))}`;
-}
-
-/**
- * System instruction for the demo batch (scripts/pregenerate.ts): the rules of all three
- * endpoints in one request, each under its own heading, and the plan summary the answers must
- * stick to. Answers carry a proposed change in `patch` instead of calling update_event.
- */
-export function batchSystem(plan: Plan): string {
-  return [
-    BASE_RULES,
-    LANGUAGE_RULE,
-    'Return one JSON object with three parts: ideas, drafts and answers. Each part follows its own rules below.',
-    `Ideas, from the ideas facts and the note:\n${IDEAS_RULES}`,
-    `Drafts, one per listed vendor, with its vendorId:\n${DRAFT_RULES}\nNever repeat anything from the note in a draft.`,
-    `Answers, one per listed message, with the message copied exactly:\n${ASSIST_RULES}\nHere you cannot call update_event: put the fields that change in "patch" instead, and leave "patch" out when the message asks for no change.`,
-    `Facts (the plan, computed by the planning engine): ${JSON.stringify(planSummary(plan))}`,
-  ].join('\n\n');
-}
-
-/** User content for the demo batch: the ideas facts and fenced note, the vendors, the messages. */
-export function batchContent(plan: Plan, messages: readonly string[]): string {
-  const vendors = plan.vendors.map((vendor) => ({
-    vendorId: vendor.id,
-    ...draftFacts(plan, vendor),
-  }));
-  return [
-    `Ideas facts: ${JSON.stringify(ideasFacts(plan))}\n${fenceNote(plan.input.note)}`,
-    `Vendors: ${JSON.stringify(vendors)}`,
-    `Messages: ${JSON.stringify(messages)}`,
-  ].join('\n\n');
 }

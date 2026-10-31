@@ -1,17 +1,15 @@
-/** Types for the decision engine's context and rules (6.1, 6.2) and for generated content (7). */
-import type { CategoryPoints, SlotTemplate, TaskTemplate } from './profile-types.ts';
+/** Types for the engine's context and rules (design 6.1, 6.2) and generated content (7). */
+import type { CategoryPoints, SlotTemplate, TaskTemplate } from './types.ts';
 import type { EventInput, PlanPatch, Reason, Source, VendorId } from './types.ts';
 
-/** Facts derived once per plan from the input and today (design section 6.1). */
+/** Facts derived once per plan from the input and today (design 6.1). */
 export interface EventContext {
   readonly today: number;
   readonly eventDay: number;
   readonly daysToGo: number;
-  /** 0 = Sunday … 6 = Saturday. */
   readonly weekday: number;
   /** Monday to Thursday, when venues are often cheaper. */
   readonly midweek: boolean;
-  /** 1 = January … 12 = December. */
   readonly month: number;
   readonly season: {
     /** November to February. */
@@ -24,16 +22,13 @@ export interface EventContext {
   /** Calendar days the event spans; above 1 only for multi-function weddings. */
   readonly spanDays: number;
   readonly expected: number;
-  /** Start time in minutes after midnight. */
   readonly startMinutes: number;
   readonly flags: {
-    /** Setting is outdoor or mixed. */
     readonly outdoor: boolean;
     /** At least 200 expected. */
     readonly largeCrowd: boolean;
     /** Community event that is outdoor or expects at least 500. */
     readonly publicGathering: boolean;
-    /** Fewer days to go than the type's minimum lead time. */
     readonly shortNotice: boolean;
   };
 }
@@ -50,8 +45,7 @@ export type BudgetEffect =
     }
   | { readonly kind: 'remove'; readonly category: CategoryPoints['category'] };
 
-/** A question to add to a vendor's list. */
-export interface VendorQuestion {
+interface VendorQuestion {
   readonly vendorId: VendorId;
   readonly text: string;
 }
@@ -68,15 +62,12 @@ export interface RuleEffects {
   readonly leadFactor?: { readonly vendorIds: readonly VendorId[]; readonly factor: number };
   /** Contingency as a fraction of the budget, replacing the default 0.10. */
   readonly contingency?: number;
-  /** Task ids the input says are already done. */
   readonly completeTasks?: readonly string[];
-  /** Task ids promoted to the front of the top actions. */
   readonly pinTasks?: readonly string[];
-  /** Show trims even when the verdict is comfortable. */
   readonly alwaysTrim?: boolean;
 }
 
-/** A contextual rule: when it applies, why, and what it changes (design section 6.2). */
+/** A contextual rule: when it applies, why, and what it changes (design 6.2). */
 export interface Rule {
   readonly id: string;
   readonly when: (ctx: EventContext, input: EventInput) => boolean;
@@ -91,20 +82,17 @@ export interface IdeaItem {
   readonly detail: string;
 }
 
-/** Personalised ideas for the event (POST /api/ideas). */
+/** Personalised ideas for the event, from Gemini or the offline set. */
 export interface Ideas {
   readonly theme: {
     readonly name: string;
     readonly palette: readonly string[];
     readonly why: string;
   };
-  /** Three decor ideas. */
   readonly decor: readonly IdeaItem[];
   /** Three to five menu items that respect the declared diet. */
   readonly menu: readonly IdeaItem[];
-  /** Three activities. */
   readonly activities: readonly IdeaItem[];
-  /** One guest-experience touch. */
   readonly touch: IdeaItem;
   readonly invitation: string;
 }

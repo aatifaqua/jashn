@@ -1,39 +1,28 @@
 /**
- * Response cache for generated ideas and drafts: LRU with a TTL, plus in-flight coalescing so
- * concurrent identical requests share one Gemini call. Only Gemini results are stored; a
- * fallback is served but never cached, so the next request tries Gemini again.
+ * LRU cache with a TTL and in-flight coalescing, so identical concurrent requests share one
+ * Gemini call. Fallbacks are never stored, so the next request tries Gemini again.
  */
 import { createHash } from 'node:crypto';
 import { canonicalKey, type EventInput, type Source } from '@jashn/core';
 
-/** Entries kept per cache. */
-export const CACHE_MAX = 256;
-/** How long a generated result is reused. */
-export const CACHE_TTL_MS = 3_600_000;
+const CACHE_MAX = 256;
+const CACHE_TTL_MS = 3_600_000;
 
 interface Entry<V> {
   readonly value: V;
   readonly expires: number;
 }
 
-/** What makes two generated results interchangeable. */
-export interface KeyParts {
+interface KeyParts {
   readonly endpoint: 'ideas' | 'draft';
   readonly input: EventInput;
-  /**
-   * Set for drafts, which state book-by dates that move with today. Ideas leave it out: they
-   * hold no dates, so a cached set stays valid across midnight.
-   */
+  /** Drafts only: their book-by dates move with today, while ideas hold no dates. */
   readonly today?: number;
   readonly vendorId?: string;
 }
 
-/**
- * SHA-256 of the canonical input plus everything else the output depends on. Hashing keeps
- * keys short and uniform, and the user's note never sits in memory as a readable map key.
- */
+/** Hashed so keys stay short and the user's note never sits in memory as a readable key. */
 export function cacheKey(parts: KeyParts): string {
-  // canonicalKey covers every input field.
   const material = [
     parts.endpoint,
     canonicalKey(parts.input),
@@ -45,15 +34,11 @@ export function cacheKey(parts: KeyParts): string {
 
 /** A cache of sourced results. */
 export interface ResponseCache<V extends { readonly source: Source }> {
-  /**
-   * Returns the cached value, or joins an identical request already in flight, or runs
-   * `produce`. The result is stored only when it came from Gemini.
-   */
   run(key: string, produce: () => Promise<V>): Promise<V>;
   readonly size: number;
 }
 
-/** Creates an empty cache; `now` is injected so tests can expire entries. */
+/** An empty cache; `now` is injected so tests can expire entries. */
 export function createCache<V extends { readonly source: Source }>(
   now: () => number,
   max = CACHE_MAX,

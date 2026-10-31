@@ -1,7 +1,4 @@
-/**
- * Closed id lists shared by the input validator, the profiles and the UI. The domain types in
- * types.ts are derived from these tuples, so a list and its type can never drift apart.
- */
+/** Closed id lists; types.ts derives its types from them, so the two never drift apart. */
 
 /** The three kinds of event Jashn plans. */
 export const EVENT_TYPES = ['wedding', 'birthday', 'community'] as const;
@@ -12,7 +9,7 @@ export const CITY_TIERS = ['metro', 'tier2', 'town'] as const;
 /** Where the event happens; outdoor and mixed settings trigger weather rules. */
 export const SETTINGS = ['indoor', 'outdoor', 'mixed'] as const;
 
-/** Needs the user can declare; each one changes the plan through a contextual rule. */
+/** Needs the user can declare; each one changes the plan through a rule. */
 export const CONSTRAINTS = [
   'vegetarian',
   'jain',
@@ -27,18 +24,14 @@ export const CONSTRAINTS = [
 /** Wedding functions in the order they usually happen; the ceremony is always included. */
 export const WEDDING_FUNCTIONS = ['haldi', 'mehndi', 'sangeet', 'ceremony', 'reception'] as const;
 
-/** Style ids per event type; each profile defines exactly these styles. */
+/** Style ids per event type; each profile defines exactly these. */
 export const STYLE_IDS = {
   wedding: ['traditional', 'intimate', 'destination'],
   birthday: ['kids', 'milestone', 'adult'],
   community: ['festival', 'fundraiser', 'meetup', 'clean-up'],
 } as const;
 
-/**
- * Budget category ids per event type. These are also the choices offered as priorities.
- * `bar` has no base weight; it exists so styles can fund it and the alcohol-free rule can
- * remove it.
- */
+/** Budget categories per type; `bar` has no base weight so the alcohol-free rule can drop it. */
 export const CATEGORY_IDS = {
   wedding: [
     'venue',
@@ -74,10 +67,7 @@ export const CATEGORY_IDS = {
   ],
 } as const;
 
-/**
- * Vendor ids shared by the profiles (which define the vendors) and the rules (which add
- * questions to or remove vendors by id). Add an id here before using it anywhere.
- */
+/** Vendor ids shared by profiles and rules; add an id here before using it anywhere. */
 export const VENDOR_IDS = [
   'venue',
   'caterer',
@@ -95,7 +85,7 @@ export const VENDOR_IDS = [
   'sanitation',
 ] as const;
 
-/** Timeline phases in display order (section 6.5 of the design). */
+/** Timeline phases in display order (design 6.5). */
 export const PHASES = [
   'do-now',
   'months-out',

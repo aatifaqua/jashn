@@ -1,7 +1,6 @@
 /**
- * Zod schemas for request bodies (strict: unknown keys are rejected) and for Gemini's
- * structured output. The response schemas are converted to JSON Schema for the API, so the
- * shape Gemini is asked for and the shape the server accepts are one definition.
+ * Strict zod schemas for request bodies and for Gemini's output. The output schemas also become
+ * the JSON Schema Gemini is given, so the requested and accepted shapes are one definition.
  */
 import {
   ASSIST_LIMITS,
@@ -16,14 +15,11 @@ import {
 } from '@jashn/core';
 import { z } from 'zod';
 
-/**
- * Structural bounds only, deliberately looser than the core's rules: the core validator runs
- * next and gives the precise, user-facing message for each field.
- */
+// Structural bounds only, looser than the core's rules: the core validator runs next and
+// gives the user-facing message for each field.
 const text = (max: number) => z.string().max(max);
 
-/** EventInput as JSON; semantic checks (dates, ranges, profile ids) are the core's job. */
-export const eventInputSchema = z
+const eventInputSchema = z
   .object({
     type: z.enum(EVENT_TYPES),
     style: text(40),
@@ -42,15 +38,14 @@ export const eventInputSchema = z
   })
   .strict();
 
-/** POST /api/ideas */
+/** Body of POST /api/ideas. */
 export const ideasRequestSchema = z.object({ input: eventInputSchema }).strict();
 
-/** One earlier turn of the conversation. */
 const turnSchema = z
   .object({ role: z.enum(['user', 'assistant']), text: z.string().min(1).max(ASSIST_LIMITS.turn) })
   .strict();
 
-/** POST /api/assist */
+/** Body of POST /api/assist. */
 export const assistRequestSchema = z
   .object({
     input: eventInputSchema,
@@ -59,7 +54,7 @@ export const assistRequestSchema = z
   })
   .strict();
 
-/** POST /api/draft */
+/** Body of POST /api/draft. */
 export const draftRequestSchema = z
   .object({ input: eventInputSchema, vendorId: z.enum(VENDOR_IDS) })
   .strict();
@@ -94,14 +89,14 @@ export const draftTextSchema = z
   .object({ text: z.string().min(1).max(GUARD_LIMITS.draft) })
   .strict() satisfies z.ZodType<Omit<Draft, 'vendorId'>>;
 
-/** JSON Schema for the API; the `$schema` marker is dropped because Gemini does not need it. */
+/** JSON Schema without the `$schema` marker, which Gemini does not need. */
 export function toResponseSchema(schema: z.ZodType): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(z.toJSONSchema(schema)).filter(([key]) => key !== '$schema'),
   );
 }
 
-/** Response schemas, converted once at start-up. */
+/** Converted once at start-up, not per request. */
 export const IDEAS_RESPONSE_SCHEMA = toResponseSchema(ideasSchema);
-/** See IDEAS_RESPONSE_SCHEMA. */
+/** Converted once at start-up, not per request. */
 export const DRAFT_RESPONSE_SCHEMA = toResponseSchema(draftTextSchema);

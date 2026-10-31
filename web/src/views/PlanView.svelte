@@ -1,6 +1,13 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import type { EventInput, Plan, PlanPatch, Profile, VendorStatus } from '@jashn/core';
+  import {
+    formatLongDay,
+    type EventInput,
+    type Plan,
+    type PlanPatch,
+    type Profile,
+    type VendorStatus,
+  } from '@jashn/core';
   import Assistant from '../components/Assistant.svelte';
   import BudgetChart from '../components/BudgetChart.svelte';
   import ConfirmButton from '../components/ConfirmButton.svelte';
@@ -12,7 +19,6 @@
   import TaskList from '../components/TaskList.svelte';
   import TrimList from '../components/TrimList.svelte';
   import VendorCard from '../components/VendorCard.svelte';
-  import { longDay } from '../lib/format.ts';
   import { defaultGenAi, type GenAi } from '../lib/genai.ts';
   import { eventTitle } from '../lib/labels.ts';
   import type { PlanStore } from '../lib/plans.svelte.ts';
@@ -30,16 +36,17 @@
     profile: Profile;
     genai?: GenAi | undefined;
     focusHeading: boolean;
-    page: Pick<Location, 'origin' | 'pathname'>;
     print: () => void;
     onedit: () => void;
+    /** Clears this plan to start another. */
+    onnew: () => void;
   }
-  let { store, entry, plan, profile, genai, focusHeading, page, print, onedit }: Props = $props();
+  let { store, entry, plan, profile, genai, focusHeading, print, onedit, onnew }: Props = $props();
 
   let active = $state<PlanTabId>('overview');
   let heading = $state<HTMLElement>();
 
-  /** The generative client and its fallback catalogues load with this view, not the start screen. */
+  /** The generative client and its fallbacks load with this view, not the start screen. */
   const client = $derived(genai ?? defaultGenAi());
   const checks = $derived(new Set(entry.checks));
   /** Category, function and style ids in words, from the loaded profile. */
@@ -77,28 +84,17 @@
 <article class="plan-view">
   <header class="plan-head">
     <h1 tabindex="-1" bind:this={heading}>{eventTitle(plan.input)}</h1>
-    <p class="muted">{longDay(plan.today + plan.daysToGo)} · starts {plan.input.startTime}</p>
+    <p class="muted">{formatLongDay(plan.today + plan.daysToGo)} · starts {plan.input.startTime}</p>
     <div class="button-row no-print">
       <button type="button" class="button ghost" onclick={onedit}>Edit details</button>
-      <button
-        type="button"
-        class="button ghost"
-        onclick={() => {
-          store.close();
-        }}
-      >
-        All plans
-      </button>
       <ConfirmButton
-        label="Delete this plan"
-        question="Delete this plan and its progress?"
-        confirmLabel="Yes, delete"
-        onconfirm={() => {
-          store.remove(entry.id);
-        }}
+        label="New plan"
+        question="Start a new plan? This plan and its progress will be cleared."
+        confirmLabel="Yes, start over"
+        onconfirm={onnew}
       />
     </div>
-    <ShareBar {plan} {checks} {page} {print} />
+    <ShareBar {plan} {checks} {print} />
     {#if client.mode === 'demo'}
       <p class="notice">
         <Icon name="info" /> Demo mode: no live AI here. Sample events use saved Gemini examples where
@@ -150,7 +146,6 @@
           {:else if tab.id === 'timeline'}
             <TaskList
               {plan}
-              planId={entry.id}
               {checks}
               ontoggle={(id: string, done: boolean) => {
                 store.setTask(id, done);

@@ -1,15 +1,13 @@
 /**
- * Per-client fixed-window rate limit for the generative routes. Clients are keyed by socket
- * address (IPv6 by its /64 network); X-Forwarded-For is read only when the operator switches
- * trust-proxy on, because anyone can send that header and would otherwise pick a fresh
- * identity per request.
+ * Per-client fixed-window rate limit. Clients are keyed by socket address (IPv6 by its /64);
+ * X-Forwarded-For is read only with trust-proxy on, since anyone can forge it.
  */
 import { isIP } from 'node:net';
 import type { Context, MiddlewareHandler } from 'hono';
 import type { AppEnv } from '../env.ts';
 import { problem } from './errors.ts';
 
-/** Finds the socket address of a request; undefined when the runtime cannot tell. */
+/** The socket address of a request; undefined when the runtime cannot tell. */
 export type SocketAddress = (c: Context<AppEnv>) => string | undefined;
 
 /** Settings for one limiter. */
@@ -18,40 +16,30 @@ export interface RateLimitOptions {
   readonly windowMs: number;
   readonly now: () => number;
   readonly keyOf: (c: Context<AppEnv>) => string;
-  /** Upper bound on tracked clients, so a flood of addresses cannot grow memory without limit. */
+  /** Bounds memory under a flood of addresses. */
   readonly maxEntries?: number;
 }
 
-/** One client's fixed window: requests counted so far and when the window ends. */
-export interface Window {
+interface Window {
   count: number;
   resetAt: number;
 }
 
 const DEFAULT_MAX_ENTRIES = 10_000;
-/** Expired windows are swept once per this many requests, keeping each request O(1) amortised. */
+// Expired windows are swept once per this many requests: O(1) amortised.
 const SWEEP_EVERY = 256;
 
 const IPV4_MAPPED = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i;
-/** "203.0.113.7:51000", as some proxies append it. */
 const IPV4_PORT = /^(\d{1,3}(?:\.\d{1,3}){3}):\d{1,5}$/;
-/** "[2001:db8::1]" or "[2001:db8::1]:51000". */
 const BRACKETED = /^\[([^\]]+)\](?::\d{1,5})?$/;
 
-/**
- * The address in one X-Forwarded-For entry, without brackets or a port; undefined when it is
- * not an IP address at all. Some proxies append "ip:port", and a key per source port would
- * hand every new connection a fresh window.
- */
-export function forwardedAddress(entry: string): string | undefined {
+// Strips brackets and port: a key per source port would give each connection a fresh window.
+function forwardedAddress(entry: string): string | undefined {
   const plain = BRACKETED.exec(entry)?.[1] ?? IPV4_PORT.exec(entry)?.[1] ?? entry;
   return isIP(plain) === 0 ? undefined : plain;
 }
 
-/**
- * The rate-limit identity of an address. An IPv6 host usually controls a whole /64, so it is
- * keyed by that network; otherwise it could rotate addresses to get a fresh window each time.
- */
+/** An IPv6 host usually controls a whole /64, so it is keyed by that network. */
 export function addressKey(address: string): string {
   const plain = address.replace(/%.*$/, '');
   const mapped = IPV4_MAPPED.exec(plain);
@@ -66,10 +54,8 @@ export function addressKey(address: string): string {
 }
 
 /**
- * Builds the client key. Behind a trusted proxy the right-most X-Forwarded-For entry is used:
- * it is the one the proxy itself appended, whereas entries to its left are client-supplied.
- * This assumes exactly one proxy hop (a platform load balancer), the supported deployment. An
- * entry that is not an IP address is ignored in favour of the socket address.
+ * Behind a trusted proxy, uses the right-most X-Forwarded-For entry: the one the proxy appended
+ * (one hop assumed). Anything else is client-supplied; a non-IP entry falls back to the socket.
  */
 export function clientKey(
   trustProxy: boolean,
@@ -86,24 +72,7 @@ export function clientKey(
   };
 }
 
-function sweepExpired(windows: Map<string, Window>, now: number): void {
-  for (const [key, window] of windows) {
-    if (window.resetAt <= now) windows.delete(key);
-  }
-}
-
-/** Map order is window-start order, so the first key is the oldest window. */
-function evictOldest(windows: Map<string, Window>): void {
-  for (const key of windows.keys()) {
-    windows.delete(key);
-    return;
-  }
-}
-
-/**
- * Fixed windows per key in a bounded map: each call counts one hit for the key and returns its
- * window. Shared by the request limit and the per-client share of the Gemini budget.
- */
+/** Bounded fixed windows per key: each call counts one hit and returns the key's window. */
 export function fixedWindows(
   windowMs: number,
   now: () => number,
@@ -116,13 +85,14 @@ export function fixedWindows(
     sinceSweep += 1;
     if (sinceSweep >= SWEEP_EVERY) {
       sinceSweep = 0;
-      sweepExpired(windows, at);
+      for (const [old, { resetAt }] of windows) if (resetAt <= at) windows.delete(old);
     }
     let window = windows.get(key);
     if (window === undefined || window.resetAt <= at) {
       windows.delete(key);
-      // A full map loses its oldest window: O(1) per request even under an address flood.
-      if (windows.size >= maxEntries) evictOldest(windows);
+      // Map order is start order, so a full map drops its oldest window in O(1).
+      const oldest = windows.keys().next();
+      if (windows.size >= maxEntries && oldest.done !== true) windows.delete(oldest.value);
       window = { count: 0, resetAt: at + windowMs };
       windows.set(key, window);
     }
@@ -131,10 +101,7 @@ export function fixedWindows(
   };
 }
 
-/**
- * Counts requests per client in fixed windows and answers 429 with Retry-After once a client
- * is over the limit. Standard RateLimit-* headers let a well-behaved client pace itself.
- */
+/** 429 with Retry-After over the limit; RateLimit-* headers let a client pace itself. */
 export function rateLimit(options: RateLimitOptions): MiddlewareHandler<AppEnv> {
   const hit = fixedWindows(options.windowMs, options.now, options.maxEntries);
   return async (c, next) => {

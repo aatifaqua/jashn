@@ -1,15 +1,12 @@
 /**
- * Access to the per-event-type profiles. The browser calls loadProfile so each type's tables
- * ship as their own chunk and load only when that type is chosen; the server and tests use
- * getProfile, where all three are already in memory.
+ * Lazy profile loading. The synchronous getProfile lives in all.ts so a browser bundle that
+ * loads profiles on demand never imports all three statically.
  */
 import type { EventType, Profile } from '../types.ts';
 
-export { getProfile } from './all.ts';
-
 /**
  * The profile of an event type, loaded on demand. Each branch is a literal dynamic import so
- * the bundler can split one chunk per type, keeping the first screen small.
+ * the bundler splits one chunk per type, keeping the first screen small.
  */
 export async function loadProfile(type: EventType): Promise<Profile> {
   switch (type) {

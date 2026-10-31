@@ -1,13 +1,8 @@
-/**
- * Finds calendar dates in generated text and checks them against the plan, the date
- * counterpart of the rupee-figure guard: a reply or draft may repeat a date the engine
- * computed, never one it made up or one that has gone stale since the text was written.
- */
+/** Date guard: generated text may repeat a date the engine computed, never an invented one. */
 import { functionDays } from './context.ts';
 import { daysInMonth, fromCivil, fromIso, toCivil } from './days.ts';
 import type { Plan, PlanPatch } from './types.ts';
 
-/** Month names, full and short, 1-based by position. */
 const MONTH_WORDS: readonly (readonly string[])[] = Object.freeze([
   ['january', 'jan'],
   ['february', 'feb'],
@@ -34,22 +29,17 @@ const YEAR = String.raw`(?:,?\s+(20\d{2})(?!\d))?`;
 /** No letter or combining mark may follow, so "mar" never matches inside "marigold". */
 const EDGE = String.raw`(?![\p{L}\p{M}])`;
 
-/** A date as written: the year is undefined when the text left it out. */
 interface Mention {
   readonly year: number | undefined;
   readonly month: number;
   readonly day: number;
 }
 
-/** NaN for an unknown word, which the validity check then rejects. */
 function monthOf(word: string | undefined): number {
   return Number(MONTH_OF.get(String(word).toLowerCase()));
 }
 
-/**
- * A lowercase "may" is the verb ("about 20 may need seating"), not the month, which generated
- * text capitalises; such a match is not a date at all.
- */
+/** A lowercase "may" is the verb ("20 may need seating"), not the month. */
 function isVerb(word: string | undefined): boolean {
   return word === 'may';
 }
@@ -60,15 +50,10 @@ function yearOf(year: string | undefined): number | undefined {
 
 interface Form {
   readonly pattern: RegExp;
-  /** The date a match states, or null when the match is not a date after all. */
   readonly read: (groups: RegExpMatchArray) => Mention | null;
 }
 
-/**
- * The written forms: "6 March 2027" or "6th of Mar", "March 6, 2027", ISO
- * "2027-03-06", and the Indian numeric "06/03/2027" (day first, with /, - or .). Patterns are
- * compiled once at module scope.
- */
+/** "6th of March 2027", "March 6, 2027", ISO, and Indian day-first "06/03/2027". */
 const FORMS: readonly Form[] = Object.freeze([
   {
     pattern: new RegExp(
@@ -100,10 +85,7 @@ function monthDay(month: number, day: number): string {
   return `${String(month)}-${String(day)}`;
 }
 
-/**
- * Every day the plan (and an optional proposed patch) states: today, the event day or days,
- * task due and ideal dates, vendor book-by dates, payment dates and run-sheet days.
- */
+/** Every day the plan (and an optional proposed patch) states. */
 export function planDays(plan: Plan, patch?: PlanPatch): ReadonlySet<number> {
   const eventDay = plan.today + plan.daysToGo;
   const days = new Set<number>([plan.today, eventDay]);
@@ -127,11 +109,7 @@ function isKnown(date: Mention, allowed: ReadonlySet<number>, loose: ReadonlySet
     : allowed.has(fromCivil(year, month, day));
 }
 
-/**
- * Dates in the text that are not in `allowed`, as they were written. A date with a year must
- * match exactly; one without a year matches any allowed day with the same day and month.
- * Impossible dates such as "31 February" always count as invented.
- */
+/** Dates not in `allowed`, as written; a year-less date matches by day and month. */
 export function inventedDates(text: string, allowed: ReadonlySet<number>): readonly string[] {
   const loose = new Set(
     [...allowed].map((day) => {

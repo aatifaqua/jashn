@@ -14,23 +14,9 @@ import { DRAFT_RESPONSE_SCHEMA, draftRequestSchema, draftTextSchema } from '../a
 import { cacheKey, type ResponseCache } from '../cache.ts';
 import type { AppEnv } from '../env.ts';
 import { invalidRequest } from '../middleware/errors.ts';
-import { assertClean, readEvent, sendSourced, sourced } from './common.ts';
+import { assertClean, readEvent, sendSourced, sourced, type RouteDeps } from './common.ts';
 
-/** What the draft route needs. */
-export interface DraftDeps {
-  readonly gemini: GeminiClient | null;
-  readonly today: () => number;
-  readonly cache: ResponseCache<Sourced<Draft>>;
-}
-
-/** Checks a generated enquiry's shape, length, links, amounts and dates; throws on failure. */
-export function checkDraft(raw: unknown, plan: Plan, vendor: VendorItem): Draft {
-  const { text } = draftTextSchema.parse(raw);
-  assertClean(guardDraft(text, plan));
-  return { vendorId: vendor.id, text };
-}
-
-/** Asks Gemini for the enquiry text, then checks it with checkDraft. */
+/** Asks Gemini for the enquiry, then re-checks its shape and guards; throws on failure. */
 export async function liveDraft(
   gemini: GeminiClient,
   plan: Plan,
@@ -42,11 +28,15 @@ export async function liveDraft(
     contents: draftContent(plan, vendor),
     responseJsonSchema: DRAFT_RESPONSE_SCHEMA,
   });
-  return checkDraft(JSON.parse(generation.text), plan, vendor);
+  const { text } = draftTextSchema.parse(JSON.parse(generation.text));
+  assertClean(guardDraft(text, plan));
+  return { vendorId: vendor.id, text };
 }
 
 /** Handler for POST /api/draft; a vendor the plan does not include is a 400. */
-export function draftHandler(deps: DraftDeps): Handler<AppEnv> {
+export function draftHandler(
+  deps: RouteDeps & { readonly cache: ResponseCache<Sourced<Draft>> },
+): Handler<AppEnv> {
   return async (c) => {
     const today = deps.today();
     const request = await readEvent(c, draftRequestSchema, today);
@@ -58,8 +48,7 @@ export function draftHandler(deps: DraftDeps): Handler<AppEnv> {
         { field: 'vendorId', code: 'invalid', message: 'This vendor is not part of the plan.' },
       ]);
     }
-    // The draft prompt leaves the note out, so the key does too: inputs that differ only in
-    // the note share one prompt, one Gemini call and one cache entry.
+    // The prompt leaves the note out, so the key does too: inputs differing only there share one.
     const input = { ...plan.input, note: '' };
     const key = cacheKey({ endpoint: 'draft', input, today, vendorId: vendor.id });
     const result = await deps.cache.run(key, () =>

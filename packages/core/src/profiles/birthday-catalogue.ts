@@ -1,116 +1,71 @@
 /**
- * Birthday task and vendor catalogues (design 6.5, 6.6). Lead days suit parties planned one to
- * six weeks ahead. `after` only names tasks that always apply, and each vendor's
- * `appliesWhen` mirrors its booking task's.
+ * Birthday catalogues (design 6.5, 6.6), for parties planned one to six weeks ahead. `after` only
+ * names tasks that always apply; each vendor's `appliesWhen` mirrors its booking task's.
  */
 import type { TaskTemplate, VendorTemplate } from '../types.ts';
+import { task } from '../templates.ts';
 
-/** Every birthday task; the timeline keeps those whose `appliesWhen` matches the input. */
+/** Every birthday task; the timeline keeps those whose `appliesWhen` matches. */
 export const BIRTHDAY_TASKS: readonly TaskTemplate[] = [
-  { id: 'set-budget', title: 'Set the budget and the guest list', leadDays: 35 },
-  {
-    id: 'book-venue',
-    title: 'Book the venue or party hall',
-    leadDays: 30,
+  task('set-budget', 'Set the budget and the guest list', 35),
+  task('book-venue', 'Book the venue or party hall', 30, {
     after: 'set-budget',
     vendorId: 'venue',
     minLead: 5,
-  },
-  {
-    id: 'book-caterer',
-    title: 'Book the caterer or restaurant',
-    leadDays: 21,
+  }),
+  task('book-caterer', 'Book the caterer or restaurant', 21, {
     after: 'book-venue',
     vendorId: 'caterer',
     minLead: 3,
-  },
-  {
-    id: 'book-entertainer',
-    title: 'Book the entertainer (magician, puppet show or games host)',
-    leadDays: 21,
+  }),
+  task('book-entertainer', 'Book the entertainer (magician, puppet show or games host)', 21, {
     vendorId: 'entertainer',
     appliesWhen: { styles: ['kids'] },
     minLead: 4,
-  },
-  {
-    id: 'book-dj',
-    title: 'Book the DJ or a live act',
-    leadDays: 21,
+  }),
+  task('book-dj', 'Book the DJ or a live act', 21, {
     vendorId: 'dj',
     appliesWhen: { styles: ['milestone', 'adult'] },
     minLead: 3,
-  },
-  {
-    id: 'book-photographer',
-    title: 'Book a photographer',
-    leadDays: 21,
-    vendorId: 'photographer',
-    minLead: 3,
-  },
-  {
-    id: 'book-decorator',
-    title: 'Book the balloon and theme decorator',
-    leadDays: 14,
+  }),
+  task('book-photographer', 'Book a photographer', 21, { vendorId: 'photographer', minLead: 3 }),
+  task('book-decorator', 'Book the balloon and theme decorator', 14, {
     vendorId: 'decorator',
     minLead: 3,
-  },
-  {
-    id: 'send-invites',
-    title: 'Send invitations',
-    leadDays: 14,
-    after: 'set-budget',
-    minLead: 5,
-  },
-  {
-    id: 'book-bartender',
-    title: 'Book a bartender and check the liquor licence',
-    leadDays: 14,
+  }),
+  task('send-invites', 'Send invitations', 14, { after: 'set-budget', minLead: 5 }),
+  task('book-bartender', 'Book a bartender and check the liquor licence', 14, {
     vendorId: 'bartender',
     appliesWhen: { styles: ['milestone', 'adult'], noConstraint: ['alcohol-free', 'halal'] },
     minLead: 3,
-  },
-  {
-    id: 'memories',
-    title: 'Collect old photos for a memories slideshow',
-    leadDays: 14,
+  }),
+  task('memories', 'Collect old photos for a memories slideshow', 14, {
     appliesWhen: { styles: ['milestone'] },
     minLead: 2,
-  },
-  {
-    id: 'order-cake',
-    title: 'Order the cake and confirm the message on it',
-    leadDays: 7,
+  }),
+  task('order-cake', 'Order the cake and confirm the message on it', 7, {
     vendorId: 'baker',
     minLead: 2,
-  },
-  {
-    id: 'return-gifts',
-    title: 'Buy and pack return gifts',
-    leadDays: 7,
+  }),
+  task('return-gifts', 'Buy and pack return gifts', 7, {
     appliesWhen: { styles: ['kids'] },
     minLead: 1,
-  },
-  {
-    id: 'plan-games',
-    title: 'Plan games and small prizes for the children',
-    leadDays: 7,
+  }),
+  task('plan-games', 'Plan games and small prizes for the children', 7, {
     appliesWhen: { styles: ['kids'] },
-  },
-  {
-    id: 'confirm-count',
-    title: 'Confirm RSVPs and the final count with the caterer',
-    leadDays: 4,
+  }),
+  task('confirm-count', 'Confirm RSVPs and the final count with the caterer', 4, {
     after: 'send-invites',
     minLead: 1,
-  },
-  { id: 'supplies', title: 'Buy candles, plates, napkins and party supplies', leadDays: 3 },
-  { id: 'playlist', title: 'Make the music playlist', leadDays: 3 },
-  { id: 'set-up', title: 'Set up the decor and receive the cake', leadDays: 0 },
-  { id: 'settle-balances', title: 'Return rented items and settle balances', leadDays: -1 },
-  { id: 'thank-you', title: 'Send thank-you messages and photos', leadDays: -3 },
+  }),
+  task('supplies', 'Buy candles, plates, napkins and party supplies', 3),
+  task('playlist', 'Make the music playlist', 3),
+  task('set-up', 'Set up the decor and receive the cake', 0),
+  task('settle-balances', 'Return rented items and settle balances', -1),
+  task('thank-you', 'Send thank-you messages and photos', -3),
 ];
 
-/** Every birthday vendor; the vendor list keeps those whose `appliesWhen` matches the input. */
+/** Every birthday vendor; the list keeps those whose `appliesWhen` matches. */
 export const BIRTHDAY_VENDORS: readonly VendorTemplate[] = [
   {
     id: 'venue',

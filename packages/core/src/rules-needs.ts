@@ -1,9 +1,5 @@
-/**
- * Contextual rules driven by the needs the user declares (design 6.2: step-free, diets,
- * alcohol-free, kid-friendly, eco-friendly, budget-strict). Each reason names the need. Halal
- * also drops the bar, since alcohol is not halal.
- */
-import { slot } from './profiles/slot.ts';
+/** Contextual rules driven by declared needs (design 6.2); each reason names the need. */
+import { slot } from './templates.ts';
 import type { Constraint, EventInput, Reason, Rule, RuleEffects } from './types.ts';
 
 const has =

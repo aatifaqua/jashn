@@ -1,7 +1,4 @@
-/**
- * Shared test support: a fixed clock, a config, a scripted fake of the Gemini SDK call and
- * request helpers. Imported only by *.test.ts files.
- */
+/** Test support: a fixed clock, a config, a scripted fake SDK call and request helpers. */
 import type { FunctionCall, GenerateContentParameters } from '@google/genai';
 import { indiaDay, sampleEvent, type EventInput, type Ideas, type SampleId } from '@jashn/core';
 import type { Hono } from 'hono';
@@ -32,19 +29,16 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
   };
 }
 
-/** A scripted reply: its text, function calls and, when it did not end normally, the reason. */
-export interface ScriptedReply {
+interface ScriptedReply {
   readonly text?: string;
   readonly functionCalls?: FunctionCall[];
   readonly finishReason?: string;
-  /** Hidden thinking text the model also returned. */
   readonly thought?: string;
 }
 
 /** One scripted SDK outcome: a response, an error to throw, or a call that never settles. */
 export type Scripted = ScriptedReply | Error | 'hang';
 
-/** The SDK's response shape for a scripted reply: one candidate whose parts carry it. */
 function toResponse(reply: ScriptedReply): RawResponse {
   const parts = [
     ...(reply.thought === undefined ? [] : [{ text: reply.thought, thought: true }]),
@@ -59,7 +53,7 @@ export function apiError(status: number): Error {
   return Object.assign(new Error(`status ${String(status)}`), { status });
 }
 
-/** A fake SDK call that plays the script in order (the last entry repeats) and records calls. */
+/** Plays the script in order (the last entry repeats) and records calls. */
 export function fakeGenerate(script: readonly Scripted[]): {
   readonly generate: GenerateFn;
   readonly calls: GenerateContentParameters[];
@@ -75,7 +69,7 @@ export function fakeGenerate(script: readonly Scripted[]): {
   return { generate, calls };
 }
 
-/** Builds an app with a fake clock, captured logs and short timings. */
+/** An app with a fake clock, captured logs and short timings. */
 export function testApp(overrides: Partial<AppDeps> = {}): {
   readonly app: Hono<AppEnv>;
   readonly logs: LogEntry[];

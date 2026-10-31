@@ -1,7 +1,4 @@
-/**
- * Entry point: loads server/.env if present, validates the environment, wires the real
- * Gemini SDK and socket addresses into the app, and listens. All behaviour lives in app.ts.
- */
+/** Entry point: wires the real SDK and socket addresses into the app and listens. */
 import { resolve } from 'node:path';
 import { serve } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';

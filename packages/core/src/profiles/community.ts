@@ -1,17 +1,10 @@
-/**
- * Community event profile: budget weights, styles with walk-in factors, run sheets, tasks and
- * vendors. Every figure is an editorial planning estimate for India, not a quote.
- */
+/** Community profile. Every figure is an editorial planning estimate for India, not a quote. */
 import type { Profile } from '../types.ts';
 import { COMMUNITY_TASKS, COMMUNITY_VENDORS } from './community-catalogue.ts';
-import { deepFreeze } from './freeze.ts';
-import { slot } from './slot.ts';
+import { deepFreeze } from '../freeze.ts';
+import { slot } from '../templates.ts';
 
-/**
- * The community profile, deep-frozen at module load. Every style's run sheet carries the
- * design's fixed frame: set-up three hours before, volunteer briefing, opening, programme,
- * close and clean-up.
- */
+/** Every run sheet keeps the design's frame: set-up 3 h before, briefing, open, close, clean-up. */
 export const COMMUNITY: Profile = deepFreeze<Profile>({
   type: 'community',
   label: 'Community event',

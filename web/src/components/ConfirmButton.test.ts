@@ -9,7 +9,7 @@ function setup() {
     props: {
       label: 'Delete',
       name: 'Delete the Pune party',
-      question: 'Delete this plan?',
+      question: 'Start a new plan?',
       confirmLabel: 'Yes, delete',
       onconfirm,
     },
@@ -22,7 +22,7 @@ describe('ConfirmButton', () => {
     const { container, onconfirm } = setup();
     await fireEvent.click(screen.getByRole('button', { name: 'Delete the Pune party' }));
     expect(onconfirm).not.toHaveBeenCalled();
-    expect(screen.getByRole('group', { name: 'Delete this plan?' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Start a new plan?' })).toBeInTheDocument();
     const confirm = screen.getByRole('button', { name: 'Yes, delete' });
     expect(document.activeElement).toBe(confirm);
     expect(await axe(container)).toHaveNoViolations();

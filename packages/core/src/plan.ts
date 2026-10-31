@@ -1,23 +1,16 @@
-/**
- * Plan assembly and diff (design 6.8): one context, one pass of the rules, then each stage in
- * a fixed order, so a plan is a pure function of the input, the day and the profile.
- */
+/** Plan assembly and diff (design 6.8): a plan is a pure function of input, day and profile. */
 import { volunteersNeeded } from './attendance.ts';
 import { planBudget } from './budget.ts';
 import { deriveContext } from './context.ts';
 import { canonicalKey, normaliseInput } from './input.ts';
-import { deepFreeze } from './profiles/freeze.ts';
+import { deepFreeze } from './freeze.ts';
 import { fireRules } from './rules.ts';
 import { buildRunSheet } from './runsheet.ts';
 import { buildTimeline, pinnedIds, topActions, type StageInput } from './timeline.ts';
 import { buildPayments, buildVendors } from './vendors.ts';
 import type { BudgetLine, EventInput, Plan, PlanDiff, Profile } from './types.ts';
 
-/**
- * Plans kept for reuse. The browser rebuilds on every keystroke of the live summary and the
- * assistant preview builds the current and the patched plan, so a handful of recent entries
- * catches nearly every repeat while keeping memory flat on a long-running server.
- */
+/** The browser rebuilds on every keystroke, so a small LRU catches repeats with flat memory. */
 const CACHE_SIZE = 16;
 
 interface Cached {
@@ -53,11 +46,8 @@ function assemble(input: EventInput, today: number, profile: Profile): Plan {
 }
 
 /**
- * Builds the complete plan for a validated input (the output of validateInput) on `today`,
- * using the profile of the input's event type. The profile is passed in rather than looked up
- * so the browser can load just that type's tables on demand (loadProfile) while the server
- * passes getProfile(type). Plans are memoised on the canonical input key and deep-frozen,
- * because the same plan object is handed to every caller that asks for it.
+ * Builds the plan for a validated input. The profile is passed in so the browser can load it
+ * lazily; plans are memoised and deep-frozen because callers share the same object.
  */
 export function buildPlan(input: EventInput, today: number, profile: Profile): Plan {
   if (profile.type !== input.type) {
@@ -85,11 +75,7 @@ function lineAmounts(lines: readonly BudgetLine[]): Map<string, number> {
   return new Map(lines.map((line) => [line.category, line.amount]));
 }
 
-/**
- * The user-facing changes between two plans, shown before a patch is applied: headcount,
- * verdict, every budget line whose amount changes (a line missing on one side counts as zero,
- * in the order the lines appear, new lines last) and tasks that become late.
- */
+/** Changes shown before a patch applies; a budget line missing on one side counts as zero. */
 export function diffPlans(before: Plan, after: Plan): PlanDiff {
   const was = lineAmounts(before.budget);
   const now = lineAmounts(after.budget);

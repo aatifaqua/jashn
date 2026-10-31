@@ -1,8 +1,4 @@
-/**
- * Post-generation guards (design sections 7 and 9). Generated text is checked after schema
- * validation; any issue makes the server serve the deterministic fallback instead. Word tables
- * and regexes are compiled once at module scope so a check is a few linear scans.
- */
+/** Post-generation guards (design 7, 9): any issue makes the server serve the fallback. */
 import { inventedDates, planDays } from './date-mentions.ts';
 import { ASSIST_LIMITS } from './fields.ts';
 import type { Constraint, Ideas, Plan, PlanPatch } from './types.ts';
@@ -27,7 +23,6 @@ const MEAT =
   'macchi jhinga jheenga nalli nihari haleem paya kaleji boti tangdi bheja rogan ' +
   'pomfret surmai rohu hilsa ilish bangda bombil kingfish shellfish catfish crabmeat';
 const EGG = 'egg omelette omelet meringue anda ande';
-/** Roots, bulbs and fungi a Jain menu leaves out, plus honey. */
 const ROOTS =
   'onion garlic potato carrot radish beetroot beet turnip ginger yam shallot leek mushroom ' +
   'honey pyaz pyaaz piyaz lehsun lahsun aloo aalu gajar mooli adrak shakarkandi arbi chukandar ' +
@@ -38,10 +33,8 @@ const ALCOHOL =
   'sangria liquor brandy scotch martini margarita mojito daaru daru sharab sharaab toddy feni';
 
 /**
- * Whole words only (any Unicode letter or mark counts as part of a word, so "café" is one word),
- * with an optional English plural. "Non-alcoholic", "virgin mojito", "non-alcoholic
- * cocktails", "alcohol-free cocktails", "zero-proof cocktails", "egg-free" and "eggless" are not
- * conflicts; only a hyphen joins "free" or "less", so "fish, less oil" is still caught.
+ * Whole Unicode words with an optional plural. Only a hyphen joins "free" or "less", so
+ * "egg-free" passes while "fish, less oil" is still caught.
  */
 function wordPattern(...lists: string[]): RegExp {
   const words = lists.join(' ').split(' ').join('|');
@@ -78,27 +71,22 @@ const UNITS = Object.freeze({
   thousand: 1e3,
 });
 
-/** A word in generated text that conflicts with a declared dietary constraint. */
-export interface DietConflict {
+interface DietConflict {
   readonly constraint: Constraint;
   readonly word: string;
 }
 
-/** Which check failed. */
-export type GuardCode = 'diet' | 'link' | 'length' | 'amount' | 'date';
+type GuardCode = 'diet' | 'link' | 'length' | 'amount' | 'date';
 
-/** One reason generated output was rejected; `where` names the field. */
-export interface GuardIssue {
+interface GuardIssue {
   readonly code: GuardCode;
   readonly where: string;
   readonly detail: string;
 }
 
 /**
- * Finds words that break the declared diet: meat, fish or egg under vegetarian or Jain; root
- * vegetables under Jain; pork or alcohol under halal; alcohol under alcohol-free. Negations
- * such as "no onion" are still reported, because a false alarm only costs a fallback while a
- * miss would put a forbidden dish on the menu.
+ * Words that break the declared diet. Negations such as "no onion" are still reported: a false
+ * alarm only costs a fallback, a miss would put a forbidden dish on the menu.
  */
 export function dietConflicts(
   text: string,
@@ -119,10 +107,7 @@ export function hasLink(text: string): boolean {
   return LINK.test(text);
 }
 
-/**
- * Every rupee figure the plan (and an optional proposed patch) states, rounded to whole
- * rupees. A reply may quote these; any other figure was invented.
- */
+/** Every rupee figure the plan (and an optional patch) states; any other figure was invented. */
 export function planAmounts(plan: Plan, patch?: PlanPatch): ReadonlySet<number> {
   const amounts = new Set<number>();
   const add = (amount: number): void => {
@@ -150,7 +135,6 @@ export function planAmounts(plan: Plan, patch?: PlanPatch): ReadonlySet<number> 
 
 function unitOf(word: string | undefined): number {
   if (word === undefined) return 1;
-  // AMOUNT only captures these words, optionally pluralised, so the stem is always a key.
   return UNITS[word.toLowerCase().replace(/s$/, '') as keyof typeof UNITS];
 }
 
@@ -161,15 +145,10 @@ function matches(value: number, tolerance: number, allowed: ReadonlySet<number>)
   return false;
 }
 
-/**
- * Rupee figures in the text that are not in `allowed`.
- * "₹8,00,000" must match exactly (to the rupee); a rounded figure such as "8.2 lakh" matches
- * any allowed amount it rounds from.
- */
+/** Rupee figures not in `allowed`; "8.2 lakh" matches any allowed amount it rounds from. */
 export function inventedAmounts(text: string, allowed: ReadonlySet<number>): readonly number[] {
   const invented: number[] = [];
   for (const [, mark, digits, unitWord, rupees] of text.matchAll(AMOUNT)) {
-    // The digits group is never empty in a match; the check narrows its type.
     if (digits === undefined || (mark ?? unitWord ?? rupees) === undefined) continue;
     const unit = unitOf(unitWord);
     const decimals = digits.split('.')[1]?.length ?? 0;
@@ -211,9 +190,8 @@ function checkText(where: string, text: string, max: number, scope: Scope): Guar
 }
 
 /**
- * Checks generated ideas: lengths, links, dietary conflicts in every field, and no rupee
- * figures or calendar dates at all, since ideas never carry prices and leave the date as a
- * placeholder (so saved or pre-generated ideas cannot go stale when the plan moves).
+ * Checks generated ideas. No rupee figures or dates at all, so saved or pre-generated ideas
+ * cannot go stale when the plan moves.
  */
 export function guardIdeas(ideas: Ideas, constraints: readonly Constraint[]): GuardIssue[] {
   const scope: Scope = { constraints, amounts: new Set(), days: new Set(), diet: true };
@@ -242,10 +220,7 @@ export function guardIdeas(ideas: Ideas, constraints: readonly Constraint[]): Gu
   ];
 }
 
-/**
- * Checks a vendor enquiry draft: length, links, and no rupee figure or date absent from the
- * plan. Diet words are not checked here because an enquiry legitimately says "no onion".
- */
+/** Checks an enquiry draft; diet words are skipped because an enquiry may say "no onion". */
 export function guardDraft(text: string, plan: Plan): GuardIssue[] {
   const scope: Scope = {
     constraints: [],
@@ -257,9 +232,8 @@ export function guardDraft(text: string, plan: Plan): GuardIssue[] {
 }
 
 /**
- * Checks an assistant reply: length, links, and no rupee figure or date absent from the plan
- * or the proposed patch, so the assistant can never quote a price or a deadline the engine did
- * not compute, and a reply written for an older plan is rejected once its dates move.
+ * Checks an assistant reply, so it can never quote a price or deadline the engine did not
+ * compute for this plan (or the proposed patch).
  */
 export function guardReply(reply: string, plan: Plan, patch?: PlanPatch): GuardIssue[] {
   const scope: Scope = {

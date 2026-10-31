@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_IDS, EVENT_TYPES, STYLE_IDS, VENDOR_IDS, WEDDING_FUNCTIONS } from '../ids.ts';
 import { parseTime } from '../days.ts';
-import { deepFreeze } from './freeze.ts';
-import { getProfile, loadProfile } from './index.ts';
-import { slot } from './slot.ts';
+import { getProfile } from './all.ts';
+import { deepFreeze } from '../freeze.ts';
+import { slot } from '../templates.ts';
+import { loadProfile } from './index.ts';
 import type { Applicability, Profile } from '../types.ts';
 
 const PROFILES: readonly Profile[] = EVENT_TYPES.map(getProfile);

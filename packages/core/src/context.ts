@@ -4,8 +4,7 @@ import { fromIso, parseTime, toCivil, weekday as weekdayOf } from './days.ts';
 import { WEDDING_FUNCTIONS } from './ids.ts';
 import type { EventContext, EventInput, FunctionId, Profile } from './types.ts';
 
-/** A wedding function placed on a day relative to the event day (the ceremony, offset 0). */
-export interface FunctionDay {
+interface FunctionDay {
   readonly functionId: FunctionId;
   readonly offset: number;
 }
@@ -18,19 +17,13 @@ const BEFORE_CEREMONY: readonly FunctionId[] = WEDDING_FUNCTIONS.filter(
 /** Latest start (15:00) at which an intimate ceremony still leaves the evening for a reception. */
 const SAME_EVENING_LATEST_START = 15 * 60;
 
-/** True when an intimate wedding holds its reception on the ceremony's own evening. */
 function sameEvening(input: EventInput): boolean {
   return (
     input.style === 'intimate' && (parseTime(input.startTime) ?? 0) <= SAME_EVENING_LATEST_START
   );
 }
 
-/**
- * Days of each chosen wedding function relative to the ceremony: earlier functions on
- * consecutive days ending the day before it, and the reception the next day (the same evening
- * for an intimate wedding that starts by 15:00, since guests rarely stay over). Empty for other
- * event types.
- */
+/** Days of each wedding function relative to the ceremony; an intimate reception is same-day. */
 export function functionDays(input: EventInput): readonly FunctionDay[] {
   if (input.type !== 'wedding') return [];
   const chosen = new Set(input.functions);
@@ -46,7 +39,6 @@ export function functionDays(input: EventInput): readonly FunctionDay[] {
   return days;
 }
 
-/** Calendar days covered by the function days; 1 for a single-day event. */
 function spanOf(days: readonly FunctionDay[]): number {
   let first = 0;
   let last = 0;
@@ -57,10 +49,7 @@ function spanOf(days: readonly FunctionDay[]): number {
   return last - first + 1;
 }
 
-/**
- * Seasons of a calendar month (1 to 12). Month ranges are inclusive and read straight from design
- * 6.1; exported so the offline ideas pick seasonal entries by the same definition.
- */
+/** Seasons of a month (1 to 12), inclusive ranges from design 6.1. */
 export function seasonOf(month: number): EventContext['season'] {
   return {
     peakWedding: month >= 11 || month <= 2,
@@ -69,11 +58,7 @@ export function seasonOf(month: number): EventContext['season'] {
   };
 }
 
-/**
- * Computes the event context from a validated input. `today` is a day number; the profile
- * supplies turnout and the minimum lead time. Malformed date or time (never the case after
- * validateInput) fall back to today and midnight so the function stays total.
- */
+/** The context of a validated input; a malformed date or time falls back to stay total. */
 export function deriveContext(input: EventInput, today: number, profile: Profile): EventContext {
   const eventDay = fromIso(input.date) ?? today;
   const day = weekdayOf(eventDay);

@@ -1,8 +1,4 @@
-/**
- * The Hono application, built from injected dependencies (the Gemini SDK call, the clock, the
- * socket-address lookup and the log sink) so tests drive it through app.request() with fakes
- * and no network. index.ts wires the real ones and listens.
- */
+/** The Hono app, built from injected dependencies so tests drive it with fakes and no network. */
 import { indiaDay, type Draft, type Ideas, type Sourced } from '@jashn/core';
 import { Hono } from 'hono';
 import { compress } from 'hono/compress';
@@ -32,29 +28,23 @@ import { healthHandler } from './routes/health.ts';
 import { ideasHandler } from './routes/ideas.ts';
 import { mountStatic } from './static.ts';
 
-/** Everything the app needs from the outside world. */
+/** Everything the app needs from the outside world, injected so tests can fake it. */
 export interface AppDeps {
   readonly config: Config;
   /** The Gemini SDK call; null runs every generative route on its fallback. */
   readonly generate: GenerateFn | null;
-  /** Wall clock in epoch ms; defaults to Date.now. */
   readonly now?: () => number;
   readonly socketAddress?: SocketAddress;
   readonly log?: LogSink;
-  /** Overrides for the chain's timeouts and backoff (tests use short ones). */
   readonly timings?: Partial<Timings>;
 }
 
-/**
- * Whether the generative routes call Gemini: a key (an SDK call) and a non-zero hourly budget.
- * A zero budget means Gemini is off, so health, the routes and the start-up log all say
- * "fallback" plainly.
- */
+/** Gemini needs a key and a non-zero hourly budget; otherwise everything reports "fallback". */
 export function usesGemini(config: Config, generate: GenerateFn | null): generate is GenerateFn {
   return generate !== null && config.hourlyBudget > 0;
 }
 
-/** Builds the app: middleware, the four API routes and, when configured, the web app. */
+/** Middleware, the API routes and, when configured, the built web app. */
 export function createApp(deps: AppDeps): Hono<AppEnv> {
   const { config } = deps;
   const now = deps.now ?? Date.now;

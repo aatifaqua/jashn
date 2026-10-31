@@ -1,7 +1,4 @@
-/**
- * Budget allocation (design 6.4): base weights, style deltas, rule deltas and priorities,
- * renormalised and rounded to ₹100 so the lines plus contingency equal the budget exactly.
- */
+/** Budget allocation (design 6.4), rounded to ₹100 so lines plus contingency equal the budget. */
 import { assessFeasibility } from './feasibility.ts';
 import { ROUNDING_UNIT } from './money.ts';
 import type { FiredRule } from './rules.ts';
@@ -18,19 +15,16 @@ import type {
 
 /** Contingency without the budget-strict rule, as a fraction of the budget. */
 export const DEFAULT_CONTINGENCY = 0.1;
-/** Multiplier on each category the user picks as a priority. */
-export const PRIORITY_FACTOR = 1.25;
-/** Lines split across wedding functions by guest share. */
+const PRIORITY_FACTOR = 1.25;
 const SPLIT_CATEGORIES: ReadonlySet<string> = new Set(['catering', 'decor']);
 
 /** Allocated lines and the reserve; lines plus contingency equal the budget exactly. */
-export interface BudgetAllocation {
+interface BudgetAllocation {
   readonly lines: readonly BudgetLine[];
   readonly contingency: number;
 }
 
-/** Allocation plus its feasibility verdict and trims. */
-export interface BudgetResult extends BudgetAllocation {
+interface BudgetResult extends BudgetAllocation {
   readonly feasibility: Feasibility;
 }
 
@@ -40,17 +34,12 @@ interface Weight {
   readonly reasons: Reason[];
 }
 
-/** One item's whole-unit share from apportion. */
-export interface Portion<T> {
+interface Portion<T> {
   readonly item: T;
   units: number;
 }
 
-/**
- * Integer apportionment by the largest-remainder method: shares of `total` units proportional
- * to each item's weight, summing to `total` exactly. Ties go to the earlier item so results
- * are stable. With no positive weight, every item gets zero.
- */
+/** Largest-remainder apportionment of `total` units by weight; ties go to the earlier item. */
 export function apportion<T>(
   total: number,
   items: readonly T[],
@@ -132,7 +121,6 @@ function addPriorities(table: Map<string, Weight>, input: EventInput, profile: P
   }
 }
 
-/** Weights after base, style, rule and priority steps (design 6.4 steps 1 to 3). */
 function weighCategories(
   input: EventInput,
   profile: Profile,
@@ -152,7 +140,6 @@ function weighCategories(
   return table;
 }
 
-/** Splits a line across the chosen wedding functions by their guest share. */
 function splitByFunction(amount: number, input: EventInput, profile: Profile): FunctionAmount[] {
   const chosen = profile.functions.filter((def) => input.functions.includes(def.id));
   return apportion(amount / ROUNDING_UNIT, chosen, (def) => def.guestShare)
@@ -161,12 +148,8 @@ function splitByFunction(amount: number, input: EventInput, profile: Profile): F
 }
 
 /**
- * Allocates the budget across the profile's categories. Weights are renormalised to the
- * non-contingency share and apportioned in ₹100 units in one pass; the contingency takes the
- * rupees left over, so lines plus contingency always equal the budget exactly. Categories
- * whose weight ends at zero (an unfunded or removed bar) get no line, and neither does a
- * category (or a function's part of one) that a very small budget rounds down to ₹0, so no
- * ₹0 line is shown with reasons for money it never receives.
+ * Apportions the budget in ₹100 units; contingency takes the rest. Lines that round to ₹0 are
+ * dropped so no line shows reasons for money it never receives.
  */
 export function allocateBudget(
   input: EventInput,
@@ -192,10 +175,7 @@ export function allocateBudget(
   return { lines, contingency: input.budget - spendUnits * ROUNDING_UNIT };
 }
 
-/**
- * Allocation and feasibility for one plan. `fired` is the output of fireRules for the same
- * context, so the rules are evaluated once per plan.
- */
+/** Allocation and feasibility; `fired` comes from fireRules so rules run once per plan. */
 export function planBudget(
   input: EventInput,
   profile: Profile,

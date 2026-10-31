@@ -27,4 +27,15 @@ describe('debounce', () => {
     vi.runAllTimers();
     expect(fn).not.toHaveBeenCalled();
   });
+
+  it('runs a pending call at once on flush, and only once', () => {
+    vi.useFakeTimers();
+    const fn = vi.fn();
+    const debounced = debounce(fn, 10);
+    debounced.flush();
+    debounced.run(3);
+    debounced.flush();
+    vi.runAllTimers();
+    expect(fn).toHaveBeenCalledExactlyOnceWith(3);
+  });
 });

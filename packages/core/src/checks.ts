@@ -52,10 +52,7 @@ const CHECKS: Partial<Record<InputField, Check>> = {
   note: (input) => (input.note.length > INPUT_LIMITS.noteMax ? 'too-long' : null),
 };
 
-/**
- * Runs every value rule except on fields in `skip` (those already failed structurally), in
- * form order so the error summary reads top to bottom.
- */
+/** Value rules for fields not in `skip`, in form order so the error summary reads top down. */
 export function checkInput(
   input: EventInput,
   today: number,

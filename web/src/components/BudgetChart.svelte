@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { BudgetLine, FunctionAmount } from '@jashn/core';
-  import { percent, rupees } from '../lib/format.ts';
+  import { formatRupees, type BudgetLine, type FunctionAmount } from '@jashn/core';
+  import { percent } from '../lib/format.ts';
 
   /**
    * The budget split as hand-drawn SVG bars with a full table equivalent. The SVG is one image
@@ -39,7 +39,9 @@
   );
 
   function functionText(slices: readonly FunctionAmount[]): string {
-    return slices.map((slice) => `${labelOf(slice.functionId)} ${rupees(slice.amount)}`).join(', ');
+    return slices
+      .map((slice) => `${labelOf(slice.functionId)} ${formatRupees(slice.amount)}`)
+      .join(', ');
   }
 </script>
 
@@ -47,12 +49,12 @@
   <svg
     viewBox="0 0 {WIDTH} {rows.length * ROW}"
     role="img"
-    aria-label="Budget split of {rupees(total)}: {summary}."
+    aria-label="Budget split of {formatRupees(total)}: {summary}."
   >
     {#each rows as row, index (row.key)}
       <g transform="translate(0 {index * ROW})">
         <text class="bar-label" x="0" y="13">{row.label}</text>
-        <text class="bar-value" x={WIDTH} y="13" text-anchor="end">{rupees(row.amount)}</text>
+        <text class="bar-value" x={WIDTH} y="13" text-anchor="end">{formatRupees(row.amount)}</text>
         <rect class="bar-track" x="0" y="18" width={WIDTH} height={BAR} rx="3"></rect>
         <rect
           class="bar {row.key === 'contingency' ? 'bar-reserve' : ''}"
@@ -72,7 +74,7 @@
 
 <div class="table-wrap">
   <table>
-    <caption>Budget split of {rupees(total)}</caption>
+    <caption>Budget split of {formatRupees(total)}</caption>
     <thead>
       <tr>
         <th scope="col">Category</th>
@@ -89,20 +91,20 @@
               <span class="cell-note">{functionText(line.perFunction)}</span>
             {/if}
           </th>
-          <td class="num">{rupees(line.amount)}</td>
+          <td class="num">{formatRupees(line.amount)}</td>
           <td class="num">{percent(line.share)}</td>
         </tr>
       {/each}
       <tr>
         <th scope="row">Contingency</th>
-        <td class="num">{rupees(contingency)}</td>
+        <td class="num">{formatRupees(contingency)}</td>
         <td class="num">{percent(contingency / total)}</td>
       </tr>
     </tbody>
     <tfoot>
       <tr>
         <th scope="row">Total</th>
-        <td class="num">{rupees(total)}</td>
+        <td class="num">{formatRupees(total)}</td>
         <td class="num">100%</td>
       </tr>
     </tfoot>

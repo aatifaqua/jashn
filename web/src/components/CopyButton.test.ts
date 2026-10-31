@@ -45,9 +45,12 @@ describe('CopyButton', () => {
     expect(seen).toContain('');
   });
 
-  it('says when copying is blocked', async () => {
-    vi.stubGlobal('navigator', {});
-    render(CopyButton, { props: { text: () => 'x', label: 'Copy', done: 'Done.', icon: 'link' } });
+  it.each([
+    ['missing', {}],
+    ['denied', { clipboard: { writeText: () => Promise.reject(new Error('denied')) } }],
+  ])('says when copying is blocked (clipboard %s)', async (_, navigator) => {
+    vi.stubGlobal('navigator', navigator);
+    render(CopyButton, { props: { text: () => 'x', label: 'Copy', done: 'Done.' } });
     await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
     await waitFor(() => {
       expect(screen.getByRole('status')).toHaveTextContent(/blocked/);

@@ -1,7 +1,4 @@
-/**
- * Domain types shared by the core, the server and the web app. Calendar dates are integer day
- * numbers (days since 1970-01-01) so scheduling is plain integer arithmetic; see days.ts.
- */
+/** Domain types. Calendar dates are integer day numbers (days since 1970-01-01); see days.ts. */
 import type {
   CATEGORY_IDS,
   CITY_TIERS,
@@ -18,7 +15,7 @@ import type {
 
 /** Wedding, birthday or community event. */
 export type EventType = (typeof EVENT_TYPES)[number];
-/** Metro, tier-2 city, or town/village. */
+/** Metro, tier-2 city, or town or village. */
 export type CityTier = (typeof CITY_TIERS)[number];
 /** Indoor, outdoor or mixed. */
 export type Setting = (typeof SETTINGS)[number];
@@ -28,8 +25,7 @@ export type Constraint = (typeof CONSTRAINTS)[number];
 export type FunctionId = (typeof WEDDING_FUNCTIONS)[number];
 /** Any style id of any event type. */
 export type StyleId = (typeof STYLE_IDS)[EventType][number];
-/** Any budget category id of any event type. */
-export type CategoryId = (typeof CATEGORY_IDS)[EventType][number];
+type CategoryId = (typeof CATEGORY_IDS)[EventType][number];
 /** A vendor id known to the profiles and rules. */
 export type VendorId = (typeof VENDOR_IDS)[number];
 /** Timeline phase, in display order. */
@@ -38,30 +34,24 @@ export type Phase = (typeof PHASES)[number];
 export type VendorStatus = (typeof VENDOR_STATUSES)[number];
 /** Budget feasibility verdict. */
 export type Verdict = 'comfortable' | 'tight' | 'unrealistic';
-/** Timeline status; `done` marks work the input says is already finished (venue booked). */
+/** Timeline status; `done` marks work the input says is finished (venue booked). */
 export type TaskStatus = 'upcoming' | 'late' | 'at-risk' | 'done';
 /** Where a generated result came from; the UI labels every generated item with it. */
 export type Source = 'gemini' | 'fallback';
 
-/** Everything the user tells Jashn about the event (design section 5). */
+/** Everything the user tells Jashn about the event (design 5). */
 export interface EventInput {
   readonly type: EventType;
-  /** Style id from the type's profile. */
   readonly style: string;
-  /** Wedding functions; always empty for other types. */
   readonly functions: readonly string[];
   /** ISO calendar date, YYYY-MM-DD. */
   readonly date: string;
-  /** Local wall-clock start, HH:MM. */
   readonly startTime: string;
-  /** Used only to personalise ideas. */
   readonly city: string;
   readonly tier: CityTier;
   readonly setting: Setting;
   readonly venueBooked: boolean;
-  /** Invited guests, a whole number. */
   readonly invited: number;
-  /** Whole rupees. */
   readonly budget: number;
   /** At most two budget category ids. */
   readonly priorities: readonly string[];
@@ -72,7 +62,7 @@ export interface EventInput {
 
 /** A field of EventInput. */
 export type InputField = keyof EventInput;
-/** A field a PlanPatch may change. */
+/** A field an assistant patch may change. */
 export type PatchField = (typeof PATCH_FIELDS)[number];
 /** A proposed change to the input; previewed with diffPlans and applied only on confirmation. */
 export type PlanPatch = Partial<Pick<EventInput, PatchField>>;
@@ -90,7 +80,7 @@ export type ErrorCode =
   | 'past'
   | 'too-far';
 
-/** One validation problem, shown inline beside the field and in the error summary. */
+/** One validation problem, shown beside the field and in the error summary. */
 export interface FieldError {
   /** The offending field, or `patch` when a patch object itself is malformed. */
   readonly field: InputField | 'patch';
@@ -108,7 +98,7 @@ export type PatchResult =
   | { readonly ok: true; readonly patch: PlanPatch; readonly value: EventInput }
   | { readonly ok: false; readonly errors: readonly FieldError[] };
 
-/** Why a derived item exists; every number, task and notice carries at least one. */
+/** Why a derived item exists; every number, task and notice carries one. */
 export interface Reason {
   readonly code: string;
   readonly text: string;
@@ -164,11 +154,9 @@ export interface VendorItem {
   readonly label: string;
   readonly category: string;
   readonly bookBy: number;
-  /** The input says this vendor is already booked (today the venue only); its deposit is paid. */
+  /** The input says it is already booked (the venue only), so its deposit is paid. */
   readonly booked: boolean;
-  /** Deposit as a fraction of the vendor's budget line, 0..1. */
   readonly depositShare: number;
-  /** Fraction of its budget line the vendor is paid, when the line also buys other things. */
   readonly lineShare?: number;
   readonly questions: readonly string[];
   readonly reasons: readonly Reason[];
@@ -197,7 +185,6 @@ export interface Plan {
   readonly today: number;
   readonly daysToGo: number;
   readonly expected: number;
-  /** Volunteers needed; zero for weddings and birthdays. */
   readonly volunteers: number;
   readonly budget: readonly BudgetLine[];
   readonly contingency: number;
@@ -210,20 +197,116 @@ export interface Plan {
   readonly notices: readonly Reason[];
 }
 
-/** A before/after pair in a plan diff. */
+/** A before and after pair in a plan diff. */
 export interface Change<T> {
   readonly before: T;
   readonly after: T;
 }
 
-/** User-facing differences between two plans, shown before a patch is applied. */
+/** Differences between two plans, previewed before a patch is applied. */
 export interface PlanDiff {
   readonly expected: Change<number>;
   readonly verdict: Change<Verdict>;
-  /** Only the lines whose amount changed; a missing side is zero. */
+  /** Only changed lines; a missing side is zero. */
   readonly budget: readonly (Change<number> & { readonly category: string })[];
   readonly newlyLate: readonly Task[];
 }
 
-export type * from './profile-types.ts';
 export type * from './engine-types.ts';
+
+/** Catalogue entry condition: every listed key must match, an absent key matches anything. */
+export interface Applicability {
+  readonly styles?: readonly StyleId[];
+  readonly functions?: readonly FunctionId[];
+  readonly anyConstraint?: readonly Constraint[];
+  readonly noConstraint?: readonly Constraint[];
+  readonly settings?: readonly Setting[];
+}
+
+/** A catalogue task, scheduled backwards from the event day. */
+export interface TaskTemplate {
+  readonly id: string;
+  readonly title: string;
+  /** Days before the event it should ideally be done; negative means after the event. */
+  readonly leadDays: number;
+  readonly after?: string;
+  readonly vendorId?: VendorId;
+  readonly appliesWhen?: Applicability;
+  /** Latest number of days before the event the task can still realistically happen (default 0). */
+  readonly minLead?: number;
+}
+
+/** A catalogue vendor; it appears when its `appliesWhen` matches. */
+export interface VendorTemplate {
+  readonly id: VendorId;
+  readonly label: string;
+  readonly category: CategoryId;
+  /** Id of the timeline task that books this vendor; its due day is the book-by date. */
+  readonly taskId: string;
+  /** Typical deposit as a fraction of the vendor's line, 0..1. */
+  readonly depositShare: number;
+  /** Share of a line that also buys other things; vendors without it split the rest evenly. */
+  readonly lineShare?: number;
+  readonly questions: readonly string[];
+  readonly appliesWhen?: Applicability;
+}
+
+/** A run-sheet slot relative to the start time. */
+export interface SlotTemplate {
+  /** Minutes from the start time; negative for set-up before it. */
+  readonly offsetMin: number;
+  readonly durationMin: number;
+  readonly title: string;
+  readonly owner: string;
+}
+
+/** A budget adjustment in percentage points of the whole budget. */
+export interface CategoryPoints {
+  readonly category: CategoryId;
+  readonly points: number;
+}
+
+/** A style of event within a type, with its start time and run sheet. */
+export interface StyleDef {
+  readonly id: StyleId;
+  readonly label: string;
+  readonly startTime: string;
+  /** Walk-in multiplier on expected headcount (community styles); 1 otherwise. */
+  readonly walkIn: number;
+  readonly deltas: readonly CategoryPoints[];
+  readonly runSheet: readonly SlotTemplate[];
+}
+
+/** A wedding function, its share of guests and its own run sheet. */
+export interface FunctionDef {
+  readonly id: FunctionId;
+  readonly label: string;
+  /** Share of expected guests who attend, used to split catering and decor. */
+  readonly guestShare: number;
+  /** Minutes after midnight on the function's own day, so a haldi stays a morning event. */
+  readonly anchorMin: number;
+  readonly runSheet: readonly SlotTemplate[];
+}
+
+interface CategoryDef {
+  readonly id: CategoryId;
+  readonly label: string;
+  readonly weight: number;
+}
+
+/** Everything the engine needs to know about one event type. */
+export interface Profile {
+  readonly type: EventType;
+  readonly label: string;
+  readonly styles: readonly StyleDef[];
+  readonly functions: readonly FunctionDef[];
+  /** Base weights sum to 90; the remaining 10 is contingency. */
+  readonly categories: readonly CategoryDef[];
+  readonly turnout: number;
+  /** Modest cost floor in rupees per expected guest, by city tier. */
+  readonly floors: Readonly<Record<CityTier, number>>;
+  /** Below this many days to go the plan switches to short-notice mode. */
+  readonly minLeadDays: number;
+  readonly tasks: readonly TaskTemplate[];
+  readonly vendors: readonly VendorTemplate[];
+}

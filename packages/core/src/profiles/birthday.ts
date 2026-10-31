@@ -1,13 +1,10 @@
-/**
- * Birthday profile: budget weights, styles, run sheets, tasks and vendors. Every figure is an
- * editorial planning estimate for India, not a quote.
- */
+/** Birthday profile. Every figure is an editorial planning estimate for India, not a quote. */
 import type { Profile } from '../types.ts';
 import { BIRTHDAY_TASKS, BIRTHDAY_VENDORS } from './birthday-catalogue.ts';
-import { deepFreeze } from './freeze.ts';
-import { slot } from './slot.ts';
+import { deepFreeze } from '../freeze.ts';
+import { slot } from '../templates.ts';
 
-/** The birthday profile, deep-frozen at module load so every plan shares one immutable table. */
+/** Deep-frozen at load, so every plan shares one immutable table. */
 export const BIRTHDAY: Profile = deepFreeze<Profile>({
   type: 'birthday',
   label: 'Birthday',

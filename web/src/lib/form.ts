@@ -15,7 +15,7 @@ import type {
   StyleDef,
 } from '@jashn/core';
 
-/** What the form fields are bound to. */
+/** What the form fields are bound to; guests and budget stay text until validated. */
 export interface FormState {
   type: EventType;
   style: string;

@@ -42,7 +42,7 @@ const FIRST_TODAY = fromCivil(2026, 1, 1);
 const LAST_TODAY = fromCivil(2027, 12, 31);
 
 /** A valid "today" anywhere in two calendar years. */
-export const todayArb = fc.integer({ min: FIRST_TODAY, max: LAST_TODAY });
+const todayArb = fc.integer({ min: FIRST_TODAY, max: LAST_TODAY });
 
 const clock = fc
   .tuple(fc.integer({ min: 0, max: 23 }), fc.integer({ min: 0, max: 59 }))

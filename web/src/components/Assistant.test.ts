@@ -37,7 +37,9 @@ describe('Assistant', () => {
   });
 
   it('previews a proposed change and applies it only on confirmation', async () => {
-    const { container, onapply } = setup();
+    const { container, onapply } = setup(
+      fakeGenAi(() => ({ reply: 'Here is the change.', patch: { invited: 330 } })),
+    );
     await ask('Cut guests by 20');
     const preview = await screen.findByRole('group', { name: 'Proposed change' });
     const rows = within(preview).getAllByRole('row');
@@ -59,8 +61,10 @@ describe('Assistant', () => {
   });
 
   it('drops a proposal on Dismiss and returns focus to the message field', async () => {
-    const { onapply } = setup();
-    await ask('Cut the budget by 10%');
+    const { onapply } = setup(
+      fakeGenAi(() => ({ reply: 'Here is the change.', patch: { invited: 330 } })),
+    );
+    await ask('Cut guests by 20');
     await screen.findByRole('group', { name: 'Proposed change' });
     await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(screen.queryByRole('group', { name: 'Proposed change' })).toBeNull();

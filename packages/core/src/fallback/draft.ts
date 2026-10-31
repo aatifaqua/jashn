@@ -55,11 +55,7 @@ function questionLines(vendor: VendorItem): string[] {
   ];
 }
 
-/**
- * Builds an enquiry for one vendor from the plan's facts and that vendor's questions. It
- * carries no names or contact details, and it leaves the budget out so the vendor quotes
- * before seeing what the family can spend.
- */
+/** A vendor enquiry with no contact details; the budget is left out so the vendor quotes first. */
 export function draftEnquiry(plan: Plan, vendor: VendorItem): Draft {
   const lines = [
     'Hello,',

@@ -1,6 +1,8 @@
 <script lang="ts">
   import {
     VENDOR_STATUSES,
+    formatRupees,
+    toIso,
     type Draft,
     type Payment,
     type Plan,
@@ -9,7 +11,7 @@
     type VendorStatus,
   } from '@jashn/core';
   import type { GenAi } from '../lib/genai.ts';
-  import { isoDay, rupees, shortDay } from '../lib/format.ts';
+  import { shortDay } from '../lib/format.ts';
   import { VENDOR_STATUS_LABELS } from '../lib/labels.ts';
   import { isVendorStatus } from '../lib/validate.ts';
   import CopyButton from './CopyButton.svelte';
@@ -57,7 +59,7 @@
       {#if vendor.booked}
         <Icon name="check" /> Already booked
       {:else}
-        Book by <time datetime={isoDay(vendor.bookBy)}>{shortDay(vendor.bookBy, plan.today)}</time>
+        Book by <time datetime={toIso(vendor.bookBy)}>{shortDay(vendor.bookBy, plan.today)}</time>
       {/if}
     </p>
   </header>
@@ -91,11 +93,11 @@
       {#each payments as payment (payment.kind)}
         <li>
           {payment.kind === 'deposit' ? 'Deposit' : 'Balance'}
-          {rupees(payment.amount)}
+          {formatRupees(payment.amount)}
           {#if settled}
             <span class="badge badge-done"><Icon name="check" /> Paid</span>
           {:else}
-            by <time datetime={isoDay(payment.due)}>{shortDay(payment.due, plan.today)}</time>
+            by <time datetime={toIso(payment.due)}>{shortDay(payment.due, plan.today)}</time>
           {/if}
         </li>
       {/each}

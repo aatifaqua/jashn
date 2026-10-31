@@ -3,8 +3,7 @@
  * CSS alone; a choice made with the toggle is saved and set as `data-theme` on <html>.
  */
 
-/** A theme the user picked explicitly. */
-export type Theme = 'light' | 'dark';
+type Theme = 'light' | 'dark';
 
 /** Separate from the plans key so clearing plans never resets the theme, and vice versa. */
 export const THEME_KEY = 'jashn.theme';

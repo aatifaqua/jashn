@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deriveContext } from './context.ts';
-import { getProfile } from './profiles/index.ts';
+import { getProfile } from './profiles/all.ts';
 import { RULES, fireRules } from './rules.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';
 import type { Constraint, EventInput } from './types.ts';

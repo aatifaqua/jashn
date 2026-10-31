@@ -1,14 +1,10 @@
-/**
- * Plain-language formatting for everything the core words for people: rule reasons, trims,
- * fallback replies, drafts, ideas and the calendar export (Indian conventions).
- */
+/** Plain-language formatting with Indian conventions. */
 import { MS_PER_DAY } from './days.ts';
 import type { EventInput, StyleId } from './types.ts';
 
 /**
- * Formatters are built once at module scope because constructing an Intl formatter is far
- * slower than calling one. Dates format in UTC, where a day number maps exactly to midnight,
- * so the text never shifts with the viewer's time zone.
+ * Intl formatters are built once because constructing one is slow. Dates format in UTC, so the
+ * text never shifts with the viewer's time zone.
  */
 const COUNT = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
 const DATE = new Intl.DateTimeFormat('en-GB', {
@@ -66,7 +62,7 @@ export function formatDay(day: number): string {
   return DATE.format(day * MS_PER_DAY);
 }
 
-/** Weekday name of a day number, e.g. "Saturday". */
+/** Weekday of a day number, e.g. "Saturday". */
 export function weekdayName(day: number): string {
   return WEEKDAY.format(day * MS_PER_DAY);
 }
@@ -74,11 +70,6 @@ export function weekdayName(day: number): string {
 /** A day number as a long date, e.g. "Saturday, 20 February 2027", for letters and invitations. */
 export function formatLongDay(day: number): string {
   return LONG_DATE.format(day * MS_PER_DAY);
-}
-
-/** An ISO date (already validated) as a long date, e.g. "Saturday, 20 February 2027". */
-export function formatIsoDate(iso: string): string {
-  return LONG_DATE.format(new Date(`${iso}T00:00:00Z`));
 }
 
 /** An ISO date (already validated) as a short date, e.g. "20 Feb", for short lists. */
@@ -91,7 +82,7 @@ export function withArticle(phrase: string): string {
   return VOWEL_START.test(phrase) ? `an ${phrase}` : `a ${phrase}`;
 }
 
-/** The event described in a few words, e.g. "traditional wedding". */
+/** The event in a few words, e.g. "traditional wedding". */
 export function occasion(input: Pick<EventInput, 'type' | 'style'>): string {
   const named = (OCCASIONS as Readonly<Record<string, string | undefined>>)[input.style];
   return named ?? (input.type === 'community' ? 'community event' : input.type);

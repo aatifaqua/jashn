@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Plan } from '@jashn/core';
-  import { count, daysToGoText, rupees } from '../lib/format.ts';
-  import { VERDICTS } from '../lib/labels.ts';
+  import { formatCount, type Plan } from '@jashn/core';
+  import { daysToGoText } from '../lib/format.ts';
+  import { VERDICTS, perGuestText } from '../lib/labels.ts';
   import Icon from './Icon.svelte';
 
   /** The figures beside the form, announced politely as they change. */
@@ -25,7 +25,7 @@
         </div>
         <div>
           <dt>Expected guests</dt>
-          <dd>{count(plan.expected)}</dd>
+          <dd>{formatCount(plan.expected)}</dd>
         </div>
         <div>
           <dt>Budget</dt>
@@ -35,10 +35,7 @@
           </dd>
         </div>
       </dl>
-      <p class="muted">
-        About {rupees(plan.feasibility.perGuest)} per expected guest; a modest version needs about
-        {rupees(plan.feasibility.floor)}.
-      </p>
+      <p class="muted">{perGuestText(plan.feasibility)}</p>
     {/if}
   </div>
 </aside>

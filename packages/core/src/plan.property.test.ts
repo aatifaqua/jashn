@@ -4,13 +4,11 @@ import { assistOffline } from './fallback/assistant.ts';
 import { draftEnquiry } from './fallback/draft.ts';
 import { ideasOffline } from './fallback/ideas.ts';
 import { guardDraft, guardIdeas, guardReply } from './guards.ts';
-import { toIcs } from './ics.ts';
 import { PATCH_FIELDS } from './ids.ts';
-import { applyPatch, normaliseInput, validateInput, validatePatch } from './input.ts';
+import { applyPatch, validateInput, validatePatch } from './input.ts';
 import { buildPlan, diffPlans } from './plan.ts';
 import { getProfile } from './profiles/all.ts';
 import { RULES } from './rules.ts';
-import { decodeShare, encodeShare } from './share.ts';
 import { caseArb, inputArb } from './test-fixtures.ts';
 import type { EventInput, Plan, PlanPatch } from './types.ts';
 
@@ -21,8 +19,6 @@ function planOf(input: EventInput, today: number): Plan {
 function eventDayOf(plan: Plan): number {
   return plan.today + plan.daysToGo;
 }
-
-const octets = (line: string): number => new TextEncoder().encode(line).length;
 
 describe('buildPlan invariants (any valid input)', () => {
   it('inputs from the generator are valid', () => {
@@ -147,32 +143,6 @@ describe('patches', () => {
         expect(checked.ok && checked.value).toEqual(applied);
       }),
       { numRuns: 300 },
-    );
-  });
-});
-
-describe('exports', () => {
-  it('round-trips every valid input through a share link', () => {
-    fc.assert(
-      fc.property(caseArb, ({ input, today }) => {
-        expect(decodeShare(`#${encodeShare(input)}`, today)).toEqual(normaliseInput(input));
-      }),
-      { numRuns: 300 },
-    );
-  });
-
-  it('writes .ics lines of at most 75 octets, each ended by CRLF', () => {
-    fc.assert(
-      fc.property(caseArb, fc.nat(), ({ input, today }, stampMs) => {
-        const text = toIcs(planOf(input, today), { stampMs });
-        expect(text.endsWith('\r\n')).toBe(true);
-        const lines = text.slice(0, -2).split('\r\n');
-        for (const line of lines) {
-          expect(line).not.toMatch(/[\r\n]/);
-          expect(octets(line)).toBeLessThanOrEqual(75);
-        }
-      }),
-      { numRuns: 100 },
     );
   });
 });

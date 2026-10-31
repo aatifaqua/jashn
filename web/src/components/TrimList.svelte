@@ -1,6 +1,5 @@
 <script lang="ts">
-  import type { Trim } from '@jashn/core';
-  import { rupees } from '../lib/format.ts';
+  import { formatRupees, type Trim } from '@jashn/core';
   import Why from './Why.svelte';
 
   /** Ways to save, largest first; trims never apply themselves. */
@@ -21,7 +20,7 @@
     <ul class="trim-list">
       {#each trims as trim (trim.id)}
         <li>
-          <p><strong>{trim.label}</strong>: saves about {rupees(trim.saves)}</p>
+          <p><strong>{trim.label}</strong>: saves about {formatRupees(trim.saves)}</p>
           <Why reasons={trim.reasons} />
         </li>
       {/each}

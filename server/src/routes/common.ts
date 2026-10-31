@@ -1,7 +1,6 @@
 /**
- * What the three generative routes share: reading and validating the body (zod, then the
- * core validator), building the plan on the server, and wrapping Gemini so any failure
- * becomes the deterministic fallback with the source labelled.
+ * Shared by the generative routes: body validation (zod, then the core validator), building
+ * the plan on the server, and turning any Gemini failure into the labelled fallback.
  */
 import {
   buildPlan,
@@ -14,42 +13,36 @@ import {
 import type { Context } from 'hono';
 import type { z } from 'zod';
 import { statusOf, type GeminiClient } from '../ai/gemini.ts';
-import type { AppEnv, Failure } from '../env.ts';
+import type { AppEnv } from '../env.ts';
 import { invalidRequest, problem, type FieldIssue } from '../middleware/errors.ts';
 
 /** Sent with every generated answer; the UI shows it next to generated content. */
 export const DISCLAIMER =
   'Costs and dates are planning estimates for India, not vendor quotes. Check details with your vendors and local authorities.';
 
-/** A validated request: its body and the plan the server derived from the input. */
-export type Validated<T> =
+/** What the generating routes need: the client (null without a key) and today. */
+export interface RouteDeps {
+  readonly gemini: GeminiClient | null;
+  readonly today: () => number;
+}
+
+type Validated<T> =
   | { readonly ok: true; readonly body: T; readonly plan: Plan }
   | { readonly ok: false; readonly response: Response };
 
-/** Field paths name the EventInput field directly ("budget", not "input.budget"). */
-function fieldOf(path: readonly PropertyKey[]): string {
-  const parts = path.map(String);
-  if (parts[0] === 'input' && parts.length > 1) parts.shift();
-  return parts.length === 0 ? 'body' : parts.join('.');
-}
-
-/**
- * Converts zod issues to field issues with fixed wording. Neither values nor unknown key
- * names are echoed back, so a response never reflects attacker-chosen text.
- */
-export function zodFields(error: z.ZodError): FieldIssue[] {
+// Fixed wording: neither values nor unknown key names are echoed, so no attacker text is reflected.
+function zodFields(error: z.ZodError): FieldIssue[] {
   return error.issues.map((issue) => {
-    const field = fieldOf(issue.path);
+    const parts = issue.path.map(String);
+    if (parts[0] === 'input' && parts.length > 1) parts.shift();
+    const field = parts.length === 0 ? 'body' : parts.join('.');
     return issue.code === 'unrecognized_keys'
       ? { field, code: 'unknown', message: 'Remove fields the API does not accept.' }
       : { field, code: 'invalid', message: `${field} is not valid.` };
   });
 }
 
-/**
- * Parses the JSON body against a strict schema, then validates the event with the core (the
- * same rules as the form), then builds the plan. The server never trusts a client's plan.
- */
+/** Validates the body like the form does, then builds the plan: a client's plan is never trusted. */
 export async function readEvent<T extends { readonly input: unknown }>(
   c: Context<AppEnv>,
   schema: z.ZodType<T>,
@@ -72,7 +65,7 @@ export async function readEvent<T extends { readonly input: unknown }>(
   return { ok: true, body: parsed.data, plan };
 }
 
-/** Thrown when generated output fails a guard; the caller serves the fallback instead. */
+/** Generated output failed a guard; the caller serves the fallback instead. */
 export class GuardRejectedError extends Error {
   override readonly name = 'GuardRejectedError';
 }
@@ -83,21 +76,8 @@ export function assertClean(issues: readonly unknown[]): void {
 }
 
 /**
- * Why the Gemini path failed, for the log: the error's class name and the HTTP status of the
- * underlying API error, if any. A revoked key (403) or a wrong model id (404) then shows up in
- * the logs instead of as a silent, permanent fallback; a bug (a TypeError) shows its own name.
- */
-export function failureOf(error: unknown): Failure {
-  const name = error instanceof Error ? error.name : typeof error;
-  const status = statusOf(error instanceof Error ? error.cause : undefined);
-  return status === undefined ? { name } : { name, status };
-}
-
-/**
- * Runs the Gemini path and labels the result; with no client, or on any failure (timeout,
- * chain exhausted, budget spent, schema-invalid JSON, guard rejection), it labels and returns
- * the fallback. The user always gets an answer, the label says which kind, and the reason for
- * a fallback goes to the request's log line.
+ * Runs the Gemini path, or on no client, a spent client share or any failure, the fallback.
+ * The reason for a fallback (error name and API status) goes to the log line.
  */
 export async function sourced<T extends object>(
   c: Context<AppEnv>,
@@ -105,25 +85,23 @@ export async function sourced<T extends object>(
   live: (client: GeminiClient) => Promise<T>,
   fallback: () => T,
 ): Promise<Sourced<T>> {
-  if (gemini !== null && takeShare(c)) {
-    try {
-      return { ...(await live(gemini)), source: 'gemini' };
-    } catch (error) {
-      c.set('failure', failureOf(error));
+  if (gemini !== null) {
+    if (c.var.takeShare?.() === false) {
+      c.set('failure', { name: 'ClientShareSpent' });
+    } else {
+      try {
+        return { ...(await live(gemini)), source: 'gemini' };
+      } catch (error) {
+        const name = error instanceof Error ? error.name : typeof error;
+        const status = statusOf(error instanceof Error ? error.cause : undefined);
+        c.set('failure', status === undefined ? { name } : { name, status });
+      }
     }
   }
   return { ...fallback(), source: 'fallback' };
 }
 
-/** True while the client has Gemini share left this hour (always, without the middleware). */
-function takeShare(c: Context<AppEnv>): boolean {
-  const take = c.var.takeShare;
-  if (take === undefined || take()) return true;
-  c.set('failure', { name: 'ClientShareSpent' });
-  return false;
-}
-
-/** Sends a generated answer with its source and the estimates disclaimer. */
+/** A generated answer with its source and the estimates disclaimer. */
 export function sendSourced(c: Context<AppEnv>, result: { readonly source: Source }): Response {
   c.set('source', result.source);
   return c.json({ ...result, disclaimer: DISCLAIMER });

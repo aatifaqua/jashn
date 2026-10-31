@@ -1,7 +1,4 @@
-/**
- * Suggested savings, each with the amount it frees (design 6.4). Trims never apply
- * themselves; the user or the assistant turns one into a patch.
- */
+/** Suggested savings (design 6.4); trims never apply themselves, the user or assistant does. */
 import { attendanceBasisPoints, expectedFor, maxInvitedFor } from './attendance.ts';
 import { functionDays } from './context.ts';
 import { ROUNDING_UNIT, roundRupees } from './money.ts';
@@ -16,13 +13,11 @@ import type {
   Verdict,
 } from './types.ts';
 
-/** Everything a trim needs to price itself. */
-export interface TrimContext {
+interface TrimContext {
   readonly input: EventInput;
   readonly profile: Profile;
   readonly ctx: EventContext;
   readonly lines: readonly BudgetLine[];
-  /** Cost floor per expected guest. */
   readonly floor: number;
   readonly verdict: Verdict;
 }
@@ -50,11 +45,7 @@ function trim(id: string, label: string, saves: number, text: string): Trim {
   return { id, label, saves, reasons: [{ code: id, text }] };
 }
 
-/**
- * Largest invited count that lifts the verdict one step: to the floor when unrealistic, to
- * 1.5 × the floor when tight. Same integer test as verdictFor, so the trim and the verdict
- * always agree.
- */
+/** Largest invited count that lifts the verdict one step; same integer test as verdictFor. */
 function inviteFewer({ input, profile, ctx, lines, floor, verdict }: TrimContext): Trim | null {
   const basisPoints = attendanceBasisPoints(profile, input.style);
   const reachFloor = verdict === 'unrealistic';
@@ -97,10 +88,7 @@ function lunch({ input, ctx, lines }: TrimContext): Trim | null {
   );
 }
 
-/**
- * Folds the two smallest functions held before the ceremony (haldi, mehndi, sangeet) into one
- * day. The reception comes after the ceremony, so it is never merged with them.
- */
+/** Folds the two smallest pre-ceremony functions into one day; the reception is never merged. */
 function mergeFunctions({ input, profile, lines }: TrimContext): Trim | null {
   const chosen = profile.functions.filter((def) => input.functions.includes(def.id));
   const before = new Set(
@@ -145,7 +133,6 @@ function sponsorship({ input, ctx, floor }: TrimContext): Trim | null {
   );
 }
 
-/** Trim builders; each returns null when its trim does not fit the event. */
 const BUILDERS = Object.freeze([
   inviteFewer,
   weekdayDate,
@@ -155,10 +142,7 @@ const BUILDERS = Object.freeze([
   sponsorship,
 ]);
 
-/**
- * Every trim that saves something for this event, largest saving first (ties by id so the
- * order is stable).
- */
+/** Every trim that saves something, largest first (ties by id for a stable order). */
 export function rankTrims(context: TrimContext): Trim[] {
   const trims: Trim[] = [];
   for (const build of BUILDERS) {

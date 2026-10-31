@@ -1,120 +1,77 @@
 /**
- * Community event task and vendor catalogues (design 6.5, 6.6). Permission tasks come from the
- * public-gathering rule, not from here, because they depend on crowd size and setting. `after`
- * only names tasks that always apply, and each vendor's `appliesWhen` mirrors its task's.
+ * Community catalogues (design 6.5, 6.6). Permission tasks come from the public-gathering rule.
+ * `after` only names tasks that always apply; each vendor's `appliesWhen` mirrors its task's.
  */
 import type { StyleId, TaskTemplate, VendorTemplate } from '../types.ts';
+import { task } from '../templates.ts';
 
 /** Styles that need a stage, sound and catering; a clean-up drive needs none of them. */
 const STAGED: readonly StyleId[] = ['festival', 'fundraiser', 'meetup'];
 
-/** Every community task; the timeline keeps those whose `appliesWhen` matches the input. */
+/** Every community task; the timeline keeps those whose `appliesWhen` matches. */
 export const COMMUNITY_TASKS: readonly TaskTemplate[] = [
-  { id: 'form-team', title: 'Form the organising team and set the budget', leadDays: 60 },
-  {
-    id: 'book-venue',
-    title: 'Book the ground, park or hall',
-    leadDays: 45,
+  task('form-team', 'Form the organising team and set the budget', 60),
+  task('book-venue', 'Book the ground, park or hall', 45, {
     after: 'form-team',
     vendorId: 'venue',
     minLead: 14,
-  },
-  { id: 'sponsors', title: 'Approach sponsors and local businesses', leadDays: 45, minLead: 10 },
-  {
-    id: 'book-tent',
-    title: 'Book the tent, stage, sound and lights',
-    leadDays: 30,
+  }),
+  task('sponsors', 'Approach sponsors and local businesses', 45, { minLead: 10 }),
+  task('book-tent', 'Book the tent, stage, sound and lights', 30, {
     after: 'book-venue',
     vendorId: 'tent-sound',
     appliesWhen: { styles: STAGED },
     minLead: 7,
-  },
-  {
-    id: 'book-caterer',
-    title: 'Book food stalls or the caterer',
-    leadDays: 30,
+  }),
+  task('book-caterer', 'Book food stalls or the caterer', 30, {
     vendorId: 'caterer',
     appliesWhen: { styles: STAGED },
     minLead: 7,
-  },
-  {
-    id: 'book-performers',
-    title: 'Book performers, speakers or a host',
-    leadDays: 30,
+  }),
+  task('book-performers', 'Book performers, speakers or a host', 30, {
     vendorId: 'entertainer',
     appliesWhen: { styles: STAGED },
     minLead: 7,
-  },
-  {
-    id: 'donations',
-    title: 'Set up online donations and a receipt process',
-    leadDays: 21,
+  }),
+  task('donations', 'Set up online donations and a receipt process', 21, {
     appliesWhen: { styles: ['fundraiser'] },
     minLead: 5,
-  },
-  {
-    id: 'book-sanitation',
-    title: 'Book portable toilets, bins and a waste collector',
-    leadDays: 21,
+  }),
+  task('book-sanitation', 'Book portable toilets, bins and a waste collector', 21, {
     vendorId: 'sanitation',
     minLead: 5,
-  },
-  { id: 'volunteers', title: 'Recruit volunteers and assign roles', leadDays: 21, minLead: 5 },
-  {
-    id: 'publicity',
-    title: 'Start publicity: posters, social media and resident groups',
-    leadDays: 21,
+  }),
+  task('volunteers', 'Recruit volunteers and assign roles', 21, { minLead: 5 }),
+  task('publicity', 'Start publicity: posters, social media and resident groups', 21, {
     minLead: 5,
-  },
-  {
-    id: 'print-banners',
-    title: 'Print banners and posters',
-    leadDays: 14,
+  }),
+  task('print-banners', 'Print banners and posters', 14, {
     vendorId: 'printer',
     appliesWhen: { noConstraint: ['eco-friendly'] },
     minLead: 4,
-  },
-  {
-    id: 'volunteer-kit',
-    title: 'Order volunteer T-shirts, badges, gloves and bags',
-    leadDays: 14,
-    minLead: 4,
-  },
-  {
-    id: 'book-photographer',
-    title: 'Ask a photographer or volunteer to cover the event',
-    leadDays: 14,
+  }),
+  task('volunteer-kit', 'Order volunteer T-shirts, badges, gloves and bags', 14, { minLead: 4 }),
+  task('book-photographer', 'Ask a photographer or volunteer to cover the event', 14, {
     vendorId: 'photographer',
     minLead: 2,
-  },
-  {
-    id: 'volunteer-food',
-    title: 'Arrange water and breakfast for volunteers',
-    leadDays: 7,
+  }),
+  task('volunteer-food', 'Arrange water and breakfast for volunteers', 7, {
     appliesWhen: { styles: ['clean-up'] },
     minLead: 1,
-  },
-  {
-    id: 'site-walk',
-    title: 'Walk the site: entry, exits, power and drinking water',
-    leadDays: 7,
+  }),
+  task('site-walk', 'Walk the site: entry, exits, power and drinking water', 7, {
     after: 'book-venue',
     minLead: 1,
-  },
-  {
-    id: 'first-aid-kit',
-    title: 'Stock the first-aid kit and note the nearest hospital',
-    leadDays: 5,
-    minLead: 1,
-  },
-  { id: 'briefing-notes', title: 'Write the volunteer briefing and run sheet', leadDays: 3 },
-  { id: 'brief-volunteers', title: 'Run the volunteer briefing', leadDays: 0 },
-  { id: 'clear-site', title: 'Clear the site and hand it back', leadDays: -1 },
-  { id: 'publish-accounts', title: 'Publish the accounts and thank sponsors', leadDays: -7 },
-  { id: 'share-outcome', title: 'Share photos and the outcome with the community', leadDays: -10 },
+  }),
+  task('first-aid-kit', 'Stock the first-aid kit and note the nearest hospital', 5, { minLead: 1 }),
+  task('briefing-notes', 'Write the volunteer briefing and run sheet', 3),
+  task('brief-volunteers', 'Run the volunteer briefing', 0),
+  task('clear-site', 'Clear the site and hand it back', -1),
+  task('publish-accounts', 'Publish the accounts and thank sponsors', -7),
+  task('share-outcome', 'Share photos and the outcome with the community', -10),
 ];
 
-/** Every community vendor; the vendor list keeps those whose `appliesWhen` matches the input. */
+/** Every community vendor; the list keeps those whose `appliesWhen` matches. */
 export const COMMUNITY_VENDORS: readonly VendorTemplate[] = [
   {
     id: 'venue',

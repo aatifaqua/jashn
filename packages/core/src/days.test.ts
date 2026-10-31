@@ -1,7 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
-  addDays,
   addYears,
   daysInMonth,
   formatTime,
@@ -70,7 +69,7 @@ describe('civil helpers', () => {
   });
 });
 
-describe('weekday and addDays', () => {
+describe('weekday', () => {
   it('numbers weekdays from Sunday, also before the epoch', () => {
     expect(weekday(0)).toBe(4);
     expect(weekday(-1)).toBe(3);
@@ -84,11 +83,6 @@ describe('weekday and addDays', () => {
         expect(weekday(day)).toBe(new Date(day * MS_PER_DAY).getUTCDay());
       }),
     );
-  });
-
-  it('adds and subtracts days', () => {
-    expect(addDays(10, 5)).toBe(15);
-    expect(addDays(10, -12)).toBe(-2);
   });
 });
 

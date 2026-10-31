@@ -1,10 +1,6 @@
-/**
- * The three sample events offered on the start screen and used by the demo content and the
- * scenario tests. Dates are placed relative to today (the first Saturday after a fixed lead
- * time), so a sample always validates and always lands on the same weekday.
- */
+/** Start-screen samples, dated relative to today so they always validate and land on a Saturday. */
 import { toIso, weekday } from './days.ts';
-import { deepFreeze } from './profiles/freeze.ts';
+import { deepFreeze } from './freeze.ts';
 import type { EventInput } from './types.ts';
 
 /** Sample ids in the order the start screen shows them. */
@@ -22,11 +18,6 @@ interface SampleDef {
   readonly input: Omit<EventInput, 'date'>;
 }
 
-/**
- * Each sample shows off a different part of the engine: a multi-function wedding with a
- * tight budget, a booked kids' party, and a short-notice outdoor mela that needs
- * permissions, volunteers and a waste plan.
- */
 const SAMPLES: Readonly<Record<SampleId, SampleDef>> = deepFreeze({
   'lucknow-wedding': {
     label: 'Lucknow wedding',
@@ -88,9 +79,8 @@ const SAMPLES: Readonly<Record<SampleId, SampleDef>> = deepFreeze({
 });
 
 /**
- * Prompts the assistant panel suggests. They live here, beside the samples, because the
- * pre-generated demo answers are keyed by these exact strings in the web app and the script
- * that writes them. None changes the date, since sample dates move with today.
+ * Pre-generated demo answers are keyed by these exact strings. None changes the date, since
+ * sample dates move with today.
  */
 export const SUGGESTED_PROMPTS = Object.freeze([
   'What is late?',

@@ -1,7 +1,4 @@
-/**
- * Field metadata for EventInput: labels, limits, error messages and the structural reader that
- * turns untrusted JSON (a request body, localStorage, a share link) into a typed input.
- */
+/** Field labels, limits, messages and the reader that types untrusted JSON as an input. */
 import { CITY_TIERS, CONSTRAINTS, EVENT_TYPES, SETTINGS } from './ids.ts';
 import type { ErrorCode, EventInput, FieldError, InputField } from './types.ts';
 
@@ -16,12 +13,8 @@ export const INPUT_LIMITS = {
   maxLeadYears: 3,
 } as const;
 
-/**
- * Limits of an assistant turn, shared by the form, the API schema and the offline parser so the
- * three can never disagree. Capping the message also bounds prompt size and regex work.
- */
+/** Assistant turn limits, shared so they never disagree; they also bound regex work. */
 export const ASSIST_LIMITS = Object.freeze({
-  /** Characters in one user message. */
   message: 500,
   /** Earlier turns sent with a message; the client drops older ones. */
   history: 6,
@@ -82,7 +75,7 @@ function generic(label: string, field: InputField, code: ErrorCode): string {
   return texts[code];
 }
 
-/** Builds a field error with its plain-language message. */
+/** A field error carrying its plain-language message. */
 export function fieldError(field: InputField, code: ErrorCode): FieldError {
   const message = SPECIFIC[`${field}:${code}`] ?? generic(FIELD_LABELS[field], field, code);
   return { field, code, message };
@@ -101,17 +94,12 @@ function isStringList(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
-/** Typed input plus the fields whose raw value had the wrong type or an unknown id. */
-export interface Shape {
+interface Shape {
   readonly input: EventInput;
   readonly errors: readonly FieldError[];
 }
 
-/**
- * Reads each known field from untrusted data, substituting a neutral placeholder and
- * recording an error when the type is wrong. Unknown keys are never copied, so nothing
- * unvalidated can ride along into the plan.
- */
+/** Reads known fields only, so nothing unvalidated can ride along into the plan. */
 export function readShape(raw: unknown): Shape {
   const record = isRecord(raw) ? raw : {};
   const errors: FieldError[] = [];

@@ -1,8 +1,6 @@
 /**
- * Day-of run sheet (design section 6.7). The event day's templates are anchored to the start
- * time and each other wedding function to its customary hour; slots are
- * placed on an absolute minute line (day x 1440 + minute) so a slot past midnight lands on the
- * right day and sorting is a single integer compare.
+ * Day-of run sheet (design 6.7). Slots sit on an absolute minute line so one past midnight
+ * lands on the right day and sorting is one integer compare.
  */
 import { functionDays } from './context.ts';
 import { formatTime } from './days.ts';
@@ -11,7 +9,6 @@ import type { RunSheetSlot, SlotTemplate } from './types.ts';
 
 const MINUTES_PER_DAY = 1440;
 
-/** A slot pinned to an absolute minute. */
 interface Placed {
   readonly at: number;
   readonly template: SlotTemplate;
@@ -28,7 +25,6 @@ function place(into: Placed[], templates: readonly SlotTemplate[], anchor: numbe
   return end;
 }
 
-/** Minutes a block's preparation starts before its anchor (0 when nothing comes before it). */
 function leadIn(templates: readonly SlotTemplate[]): number {
   let earliest = 0;
   for (const { offsetMin } of templates) earliest = Math.min(earliest, offsetMin);
@@ -36,11 +32,8 @@ function leadIn(templates: readonly SlotTemplate[]): number {
 }
 
 /**
- * Places the wedding function blocks on the days context.ts assigns them, so the run sheet and
- * the plan's span always agree. Each block starts at its function's customary time on its own
- * day (a morning haldi, an evening sangeet) rather than at the ceremony's start time. A
- * same-day reception starts at its customary time or, if the main day runs later, once the
- * main day's last slot ends (its preparation starting as that slot ends).
+ * Function blocks on the days context.ts assigns, each at its customary time; a same-day
+ * reception waits for the main day's last slot to end.
  */
 function placeFunctions(into: Placed[], stage: StageInput, mainEnd: number): void {
   for (const { functionId, offset } of functionDays(stage.input)) {
@@ -52,7 +45,6 @@ function placeFunctions(into: Placed[], stage: StageInput, mainEnd: number): voi
   }
 }
 
-/** The event day's templates: the ceremony block (weddings), the style template, rule slots. */
 function mainDayTemplates(stage: StageInput): SlotTemplate[] {
   const style = stage.profile.styles.find((def) => def.id === stage.input.style);
   const ceremony = stage.input.functions.includes('ceremony')
@@ -73,12 +65,7 @@ function toSlot({ at, template }: Placed): RunSheetSlot {
   };
 }
 
-/**
- * Builds the run sheet. The event day carries the style template (its own frame, such as a
- * community event's set-up, briefing and clean-up), the ceremony block for weddings and any
- * rule-added slots (accessibility helper, hydration, rain check); multi-function weddings add
- * one block per function on the days around it. Slots are returned in time order.
- */
+/** Builds the run sheet in time order, with one block per extra wedding function. */
 export function buildRunSheet(stage: StageInput): RunSheetSlot[] {
   const placed: Placed[] = [];
   const anchor = stage.ctx.eventDay * MINUTES_PER_DAY + stage.ctx.startMinutes;

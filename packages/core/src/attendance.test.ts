@@ -7,7 +7,7 @@ import {
   maxInvitedFor,
   volunteersNeeded,
 } from './attendance.ts';
-import { getProfile } from './profiles/index.ts';
+import { getProfile } from './profiles/all.ts';
 import { sampleInput } from './test-fixtures.ts';
 
 const wedding = getProfile('wedding');

@@ -1,6 +1,6 @@
 /**
- * POST /api/assist: answers a question from the plan summary, or turns a change request into
- * a validated PlanPatch through Gemini function calling. Never cached: turns are conversational.
+ * POST /api/assist: answers from the plan summary, or turns a change request into a validated
+ * PlanPatch through function calling. Never cached: turns are conversational.
  */
 import {
   assistOffline,
@@ -22,18 +22,16 @@ import { assistContents, assistSystem } from '../ai/prompts.ts';
 import { assistRequestSchema } from '../ai/schemas.ts';
 import { ASSIST_TOOLS, UPDATE_EVENT } from '../ai/tools.ts';
 import type { AppEnv } from '../env.ts';
-import { assertClean, GuardRejectedError, readEvent, sendSourced, sourced } from './common.ts';
+import {
+  assertClean,
+  GuardRejectedError,
+  readEvent,
+  sendSourced,
+  sourced,
+  type RouteDeps,
+} from './common.ts';
 
-/** What the assistant route needs. */
-export interface AssistDeps {
-  readonly gemini: GeminiClient | null;
-  readonly today: () => number;
-}
-
-/**
- * A reply for a proposed change when the model sent only the function call. It is built from
- * the plan diff, so every figure in it was computed by the engine.
- */
+/** A reply built from the plan diff, so every figure in it was computed by the engine. */
 export function describeDiff(diff: PlanDiff): string {
   const parts: string[] = [];
   const { expected, verdict, budget, newlyLate } = diff;
@@ -52,12 +50,11 @@ export function describeDiff(diff: PlanDiff): string {
 }
 
 /**
- * Validates a function call exactly like a form submission and rebuilds the plan. The model's
- * words are kept only when they pass the reply guards against the current plan and the patch,
- * the same check the browser repeats; otherwise the reply is built from the plan diff, so a
- * valid change is never lost to its wording and the browser never rejects what was sent.
+ * Validates a function call like a form submission. The model's words are kept only if they
+ * pass the same reply guards the browser repeats; otherwise the reply comes from the plan diff,
+ * so a valid change is never lost to its wording.
  */
-export function proposal(call: FunctionCall, text: string, plan: Plan): AssistReply {
+function proposal(call: FunctionCall, text: string, plan: Plan): AssistReply {
   if (call.name !== UPDATE_EVENT) throw new GuardRejectedError('unknown tool');
   const result = validatePatch(call.args, plan.input, plan.today);
   if (!result.ok) throw new GuardRejectedError('patch rejected by validation');
@@ -67,7 +64,7 @@ export function proposal(call: FunctionCall, text: string, plan: Plan): AssistRe
   return { reply, patch: result.patch };
 }
 
-/** One assistant turn through Gemini; the first function call, if any, is the proposal. */
+/** One assistant turn; the first function call, if any, is the proposal. */
 export async function liveAssist(
   gemini: GeminiClient,
   plan: Plan,
@@ -79,15 +76,8 @@ export async function liveAssist(
     contents: assistContents(plan.input.note, body.history, body.message),
     tools: [...ASSIST_TOOLS],
   });
-  return checkReply(generation.text, generation.functionCalls[0], plan);
-}
-
-/**
- * Checks a generated turn: a function call goes through proposal(); a plain reply must be
- * non-empty and pass the reply guards. Throws when the turn cannot be served.
- */
-export function checkReply(raw: string, call: FunctionCall | undefined, plan: Plan): AssistReply {
-  const text = raw.trim();
+  const text = generation.text.trim();
+  const [call] = generation.functionCalls;
   if (call !== undefined) return proposal(call, text, plan);
   if (text === '') throw new GuardRejectedError('empty reply');
   assertClean(guardReply(text, plan));
@@ -95,7 +85,7 @@ export function checkReply(raw: string, call: FunctionCall | undefined, plan: Pl
 }
 
 /** Handler for POST /api/assist. */
-export function assistHandler(deps: AssistDeps): Handler<AppEnv> {
+export function assistHandler(deps: RouteDeps): Handler<AppEnv> {
   return async (c) => {
     const request = await readEvent(c, assistRequestSchema, deps.today());
     if (!request.ok) return request.response;

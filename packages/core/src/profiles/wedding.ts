@@ -1,18 +1,11 @@
-/**
- * Wedding profile: budget weights, styles, functions, run sheets, tasks and vendors. Every
- * figure is an editorial planning estimate for India, not a quote.
- */
+/** Wedding profile. Every figure is an editorial planning estimate for India, not a quote. */
 import type { Profile } from '../types.ts';
-import { deepFreeze } from './freeze.ts';
-import { slot } from './slot.ts';
+import { deepFreeze } from '../freeze.ts';
+import { slot } from '../templates.ts';
 import { WEDDING_TASKS } from './wedding-tasks.ts';
 import { WEDDING_VENDORS } from './wedding-vendors.ts';
 
-/**
- * The wedding profile, deep-frozen at module load so every plan shares one immutable table.
- * Function run sheets are offsets from the event start time on that function's own day; the
- * ceremony has no function run sheet because the style's run sheet is the ceremony day.
- */
+/** The ceremony has no function run sheet because the style's run sheet is the ceremony day. */
 export const WEDDING: Profile = deepFreeze<Profile>({
   type: 'wedding',
   label: 'Wedding',

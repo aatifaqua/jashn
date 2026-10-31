@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { expectedHeadcount } from './attendance.ts';
 import { deriveContext } from './context.ts';
 import { costFloor, verdictFor } from './feasibility.ts';
-import { getProfile } from './profiles/index.ts';
+import { getProfile } from './profiles/all.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';
 import { rankTrims } from './trims.ts';
 import type { BudgetLine, EventInput, Trim } from './types.ts';

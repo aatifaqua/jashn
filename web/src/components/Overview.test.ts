@@ -18,6 +18,40 @@ describe('Overview', () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  it('shows the verdict as an icon and a word, never colour alone', async () => {
+    const plan = planFor();
+    const feasibility = { verdict: 'tight', perGuest: 4027, floor: 3500, trims: [] } as const;
+    const props = { plan: { ...plan, feasibility }, checks: NONE, today: TODAY };
+    const { container, rerender } = render(Overview, { props });
+    const icon = (): string | null | undefined =>
+      container.querySelector('.verdict-head use')?.getAttribute('href');
+    expect(screen.getByText('Tight')).toBeInTheDocument();
+    expect(icon()).toBe('#i-alert');
+    expect(screen.getByText(/₹4,027 per expected guest/)).toBeInTheDocument();
+    await rerender({
+      ...props,
+      plan: { ...plan, feasibility: { ...feasibility, verdict: 'unrealistic' } },
+    });
+    expect(screen.getByText('Unrealistic')).toBeInTheDocument();
+    expect(icon()).toBe('#i-stop');
+  });
+
+  it('lists the first actions with status and a Why? disclosure each', () => {
+    const plan = planFor();
+    const { container } = render(Overview, { props: { plan, checks: NONE, today: TODAY } });
+    const actions = container.querySelectorAll('.action');
+    expect(actions).toHaveLength(plan.topActions.length);
+    for (const action of actions) expect(action.textContent).toContain('Why?');
+    expect(screen.getAllByText(/days? late$/).length).toBeGreaterThan(0);
+  });
+
+  it('says when nothing needs doing', () => {
+    const plan = planFor();
+    const all = new Set(plan.tasks.map((task) => task.id));
+    render(Overview, { props: { plan, checks: all, today: TODAY } });
+    expect(screen.getByText(/nothing needs doing yet/)).toBeInTheDocument();
+  });
+
   it('leaves out volunteers for private events', () => {
     const plan = planFor(sampleInput('kids-birthday'));
     render(Overview, { props: { plan, checks: NONE, today: TODAY } });

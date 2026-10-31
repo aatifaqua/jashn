@@ -1,8 +1,6 @@
 /**
- * Calendar dates as integer day numbers: days since 1970-01-01, with no time of day and no
- * time zone. Integer days make back-scheduling plain arithmetic and rule out daylight-saving
- * and time-zone bugs. Conversions use Howard Hinnant's civil-calendar algorithms, which need
- * no Date allocation.
+ * Dates as integer days since 1970-01-01, ruling out time-zone and daylight-saving bugs.
+ * Conversions use Howard Hinnant's civil-calendar algorithms, with no Date allocation.
  */
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -11,8 +9,7 @@ const DAYS_PER_ERA = 146_097;
 const EPOCH_SHIFT = 719_468;
 const MINUTES_PER_DAY = 1440;
 
-/** A calendar date split into year, month (1-12) and day of month. */
-export interface CivilDate {
+interface CivilDate {
   readonly year: number;
   readonly month: number;
   readonly day: number;
@@ -22,7 +19,7 @@ function isLeap(year: number): boolean {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
-/** Days in a month (1-12) of a year. */
+/** Days in a month (1 to 12) of a year, leap years included. */
 export function daysInMonth(year: number, month: number): number {
   if (month === 2) return isLeap(year) ? 29 : 28;
   return [4, 6, 9, 11].includes(month) ? 30 : 31;
@@ -39,7 +36,7 @@ export function fromCivil(year: number, month: number, day: number): number {
   return era * DAYS_PER_ERA + dayOfEra - EPOCH_SHIFT;
 }
 
-/** Calendar date of a day number. */
+/** Calendar year, month and day of a day number. */
 export function toCivil(dayNumber: number): CivilDate {
   const z = dayNumber + EPOCH_SHIFT;
   const era = Math.floor(z / DAYS_PER_ERA);
@@ -69,7 +66,7 @@ export function fromIso(iso: string): number | null {
   return fromCivil(y, m, d);
 }
 
-/** Formats a day number as YYYY-MM-DD. */
+/** A day number as YYYY-MM-DD, the format inputs and saved plans use. */
 export function toIso(dayNumber: number): string {
   const { year, month, day } = toCivil(dayNumber);
   const pad = (value: number, width: number): string => String(value).padStart(width, '0');
@@ -81,35 +78,23 @@ export function weekday(dayNumber: number): number {
   return (((dayNumber + 4) % 7) + 7) % 7;
 }
 
-/**
- * The same calendar date `years` later, as a day number; 29 February falls back to 28 February
- * in a common year. Counting by the calendar keeps "three years ahead" exact across leap days.
- */
+/** The same calendar date `years` later; 29 February falls back to 28 in a common year. */
 export function addYears(dayNumber: number, years: number): number {
   const { year, month, day } = toCivil(dayNumber);
   return fromCivil(year + years, month, Math.min(day, daysInMonth(year + years, month)));
 }
 
-/** Day number `days` after (or before, when negative) the given day. */
-export function addDays(dayNumber: number, days: number): number {
-  return dayNumber + days;
-}
-
-/** Month of a day number: 1 = January … 12 = December. */
+/** Month of a day number, 1 for January to 12 for December. */
 export function month(dayNumber: number): number {
   return toCivil(dayNumber).month;
 }
 
 /** India Standard Time is a fixed UTC+05:30 with no daylight saving, so arithmetic is exact. */
 const IST_OFFSET_MS = 330 * 60_000;
-/** Milliseconds in a day; a day number times this is that day's UTC midnight. */
+/** A day number times this is that day's UTC midnight in milliseconds. */
 export const MS_PER_DAY = 86_400_000;
 
-/**
- * The calendar date in India at an epoch time, as a day number. Jashn plans events in India,
- * so the browser and the server both use it: they then agree on "today" (and on which dates are
- * in the past) wherever the user or the host happens to be.
- */
+/** Today in India, so browser and server agree on "today" wherever either runs. */
 export function indiaDay(epochMs: number): number {
   return Math.floor((epochMs + IST_OFFSET_MS) / MS_PER_DAY);
 }

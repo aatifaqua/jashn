@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assessFeasibility, costFloor, verdictFor } from './feasibility.ts';
 import { deriveContext } from './context.ts';
-import { getProfile } from './profiles/index.ts';
+import { getProfile } from './profiles/all.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';
 import type { BudgetLine, EventInput } from './types.ts';
 

@@ -4,6 +4,9 @@
  */
 import {
   FIELD_LABELS,
+  formatCount,
+  formatDay,
+  formatRupees,
   fromIso,
   type CityTier,
   type Constraint,
@@ -13,10 +16,9 @@ import {
   type PlanPatch,
   type Setting,
 } from '@jashn/core';
-import { count, dayLabel, rupees } from './format.ts';
 import { CONSTRAINT_LABELS, SETTING_LABELS, TIER_LABELS, VERDICTS } from './labels.ts';
 
-/** One line of the preview. */
+/** One line of the before and after preview. */
 export interface PreviewRow {
   readonly label: string;
   readonly before: string;
@@ -34,13 +36,14 @@ function word(field: PatchField, id: string, labelOf: LabelOf): string {
 }
 
 function show(field: PatchField, value: EventInput[PatchField], labelOf: LabelOf): string {
-  if (typeof value === 'number') return field === 'budget' ? rupees(value) : count(value);
+  if (typeof value === 'number')
+    return field === 'budget' ? formatRupees(value) : formatCount(value);
   if (typeof value !== 'string') {
     return value.length === 0 ? 'none' : value.map((id) => word(field, id, labelOf)).join(', ');
   }
   if (field === 'date') {
     const day = fromIso(value);
-    return day === null ? value : dayLabel(day);
+    return day === null ? value : formatDay(day);
   }
   return field === 'startTime' ? value : word(field, value, labelOf);
 }
@@ -66,8 +69,8 @@ export function diffRows(diff: PlanDiff, labelOf: LabelOf): PreviewRow[] {
   if (diff.expected.before !== diff.expected.after) {
     rows.push({
       label: 'Expected guests',
-      before: count(diff.expected.before),
-      after: count(diff.expected.after),
+      before: formatCount(diff.expected.before),
+      after: formatCount(diff.expected.after),
     });
   }
   if (diff.verdict.before !== diff.verdict.after) {
@@ -80,8 +83,8 @@ export function diffRows(diff: PlanDiff, labelOf: LabelOf): PreviewRow[] {
   for (const line of diff.budget) {
     rows.push({
       label: labelOf(line.category),
-      before: rupees(line.before),
-      after: rupees(line.after),
+      before: formatRupees(line.before),
+      after: formatRupees(line.after),
     });
   }
   for (const task of diff.newlyLate) {

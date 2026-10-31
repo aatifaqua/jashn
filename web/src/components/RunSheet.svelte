@@ -1,6 +1,5 @@
 <script lang="ts">
-  import type { RunSheetSlot } from '@jashn/core';
-  import { longDay } from '../lib/format.ts';
+  import { formatLongDay, type RunSheetSlot } from '@jashn/core';
 
   /** The day-of schedule as one table per day (several for multi-function weddings). */
   interface Props {
@@ -22,7 +21,7 @@
 {#each days as group (group.day)}
   <div class="table-wrap">
     <table class="run-sheet">
-      <caption>{longDay(group.day)}</caption>
+      <caption>{formatLongDay(group.day)}</caption>
       <thead>
         <tr>
           <th scope="col">Time</th>

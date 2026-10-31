@@ -13,6 +13,7 @@ async function setup(genai: GenAi | null = fakeGenAi()) {
   if (entry === null || plan === null || profile === null) throw new Error('store not ready');
   const print = vi.fn();
   const onedit = vi.fn();
+  const onnew = vi.fn();
   const view = render(PlanView, {
     props: {
       store,
@@ -21,12 +22,12 @@ async function setup(genai: GenAi | null = fakeGenAi()) {
       profile,
       genai: genai ?? undefined,
       focusHeading: true,
-      page: { origin: 'https://jashn.example', pathname: '/' },
       print,
       onedit,
+      onnew,
     },
   });
-  return { ...view, store, print, onedit };
+  return { ...view, store, print, onedit, onnew };
 }
 
 function tab(name: string): HTMLElement {
@@ -133,17 +134,15 @@ describe('PlanView', () => {
   });
 
   it('wires the header actions', async () => {
-    const { store, print, onedit } = await setup();
+    const { print, onedit, onnew } = await setup();
     await fireEvent.click(screen.getByRole('button', { name: 'Print' }));
     expect(print).toHaveBeenCalledOnce();
     await fireEvent.click(screen.getByRole('button', { name: 'Edit details' }));
     expect(onedit).toHaveBeenCalledOnce();
-    await fireEvent.click(screen.getByRole('button', { name: 'All plans' }));
-    expect(store.currentId).toBeNull();
-    await fireEvent.click(screen.getByRole('button', { name: /Delete this plan/ }));
-    expect(store.plans).toHaveLength(1);
-    await fireEvent.click(screen.getByRole('button', { name: 'Yes, delete' }));
-    expect(store.plans).toHaveLength(0);
+    await fireEvent.click(screen.getByRole('button', { name: 'New plan' }));
+    expect(onnew).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Yes, start over' }));
+    expect(onnew).toHaveBeenCalledOnce();
   });
 
   it('creates its own demo client when none is injected', async () => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TaskStatus } from '@jashn/core';
+  import { type TaskStatus } from '@jashn/core';
   import { lateByText } from '../lib/format.ts';
   import { TASK_BADGES } from '../lib/labels.ts';
   import Icon from './Icon.svelte';

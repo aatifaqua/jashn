@@ -1,18 +1,17 @@
 <script lang="ts">
-  import { remainingActions, type Plan } from '@jashn/core';
-  import { count, daysToGoText, rupees } from '../lib/format.ts';
+  import { formatCount, formatRupees, remainingActions, toIso, type Plan } from '@jashn/core';
+  import { daysToGoText, shortDay } from '../lib/format.ts';
+  import { VERDICTS, perGuestText } from '../lib/labels.ts';
   import Icon from './Icon.svelte';
-  import TopActions from './TopActions.svelte';
-  import VerdictBanner from './VerdictBanner.svelte';
+  import TaskBadge from './TaskBadge.svelte';
+  import Why from './Why.svelte';
 
   /**
-   * The Overview tab: verdict, key figures, what to do first and the plan's notices. Ticked
-   * tasks leave "Do these first", and the countdown uses the real today, so a past event reads
-   * "Held N days ago" rather than "Today".
+   * The Overview tab. Ticked tasks leave "Do these first", and the countdown uses the real
+   * today, so a past event reads "Held N days ago" rather than "Today".
    */
   interface Props {
     plan: Plan;
-    /** Task ids the user has ticked off. */
     checks: ReadonlySet<string>;
     /** The real calendar day, which is later than plan.today once the event has passed. */
     today: number;
@@ -20,9 +19,19 @@
   let { plan, checks, today }: Props = $props();
 
   const actions = $derived(remainingActions(plan, checks));
+  const feasibility = $derived(plan.feasibility);
+  const verdict = $derived(VERDICTS[feasibility.verdict]);
 </script>
 
-<VerdictBanner feasibility={plan.feasibility} />
+<!-- The verdict is an icon, a word and a sentence, so it never relies on colour alone. -->
+<div class="verdict verdict-{feasibility.verdict}">
+  <p class="verdict-head">
+    <Icon name={verdict.icon} />
+    <span>Budget: <strong>{verdict.word}</strong></span>
+  </p>
+  <p>{verdict.text}</p>
+  <p class="muted">{perGuestText(feasibility)}</p>
+</div>
 
 <dl class="figures">
   <div>
@@ -31,21 +40,39 @@
   </div>
   <div>
     <dt>Expected guests</dt>
-    <dd>{count(plan.expected)} of {count(plan.input.invited)} invited</dd>
+    <dd>{formatCount(plan.expected)} of {formatCount(plan.input.invited)} invited</dd>
   </div>
   <div>
     <dt>Budget</dt>
-    <dd>{rupees(plan.input.budget)}</dd>
+    <dd>{formatRupees(plan.input.budget)}</dd>
   </div>
   {#if plan.volunteers > 0}
     <div>
       <dt>Volunteers needed</dt>
-      <dd>{count(plan.volunteers)}</dd>
+      <dd>{formatCount(plan.volunteers)}</dd>
     </div>
   {/if}
 </dl>
 
-<TopActions {actions} today={plan.today} />
+<section aria-labelledby="top-actions-title">
+  <h3 id="top-actions-title">Do these first</h3>
+  {#if actions.length === 0}
+    <p class="muted">Everything is on track; nothing needs doing yet.</p>
+  {:else}
+    <ol class="action-list">
+      {#each actions as task (task.id)}
+        <li class="action">
+          <p class="action-title">{task.title}</p>
+          <p class="action-meta">
+            Due <time datetime={toIso(task.due)}>{shortDay(task.due, plan.today)}</time>
+            <TaskBadge status={task.status} idealDue={task.idealDue} today={plan.today} />
+          </p>
+          <Why reasons={task.reasons} />
+        </li>
+      {/each}
+    </ol>
+  {/if}
+</section>
 
 {#if plan.notices.length > 0}
   <section aria-labelledby="notices-title">

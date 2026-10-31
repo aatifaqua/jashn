@@ -18,7 +18,7 @@ import {
   STYLE_IDS,
   WEDDING_FUNCTIONS,
 } from './ids.ts';
-import { getProfile } from './profiles/index.ts';
+import { getProfile } from './profiles/all.ts';
 import { fireRules } from './rules.ts';
 import type { FiredRule } from './rules.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';

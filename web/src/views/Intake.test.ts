@@ -2,9 +2,8 @@ import { getProfile, toIso } from '@jashn/core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { axe } from 'vitest-axe';
 import { describe, expect, it, vi } from 'vitest';
-import { MemoryStorage, TODAY, makeStore, sampleInput, savedPlan } from '../test-fixtures.ts';
+import { TODAY, makeStore, sampleInput } from '../test-fixtures.ts';
 import { PlanStore } from '../lib/plans.svelte.ts';
-import { writePlans } from '../lib/storage.ts';
 import Intake from './Intake.svelte';
 
 function setup(store: PlanStore = makeStore(), editing = false) {
@@ -21,12 +20,11 @@ async function type(label: RegExp | string, value: string): Promise<void> {
 }
 
 describe('Intake', () => {
-  it('shows the start screen: heading, samples, saved plans and three fieldsets', async () => {
+  it('shows the start screen: heading, samples and three fieldsets', async () => {
     const { container } = setup();
     const heading = screen.getByRole('heading', { level: 1, name: 'Plan your celebration' });
     expect(document.activeElement).toBe(heading);
     expect(screen.getByRole('heading', { name: 'Try a sample' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'My plans' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /The event/ })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /Place and people/ })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: /Money and needs/ })).toBeInTheDocument();
@@ -84,32 +82,15 @@ describe('Intake', () => {
     expect(screen.getByRole('radio', { name: /Meetup/ })).toBeChecked();
   });
 
-  it('opens a sample in one click', async () => {
-    const { store, ondone } = setup();
+  it('opens a sample in one click, with the samples disabled meanwhile', async () => {
+    const { container, store, ondone } = setup();
+    expect(container.querySelectorAll('.samples button')).toHaveLength(3);
     await fireEvent.click(screen.getByRole('button', { name: 'Diwali mela' }));
+    expect(screen.getByRole('button', { name: '7th birthday' })).toBeDisabled();
     await waitFor(() => {
       expect(ondone).toHaveBeenCalledOnce();
     });
     expect(store.current?.input.type).toBe('community');
-  });
-
-  it('opens and deletes saved plans', async () => {
-    const store = makeStore();
-    await store.create(sampleInput('kids-birthday'));
-    await store.create(sampleInput());
-    store.close();
-    const { ondone } = setup(store);
-    await fireEvent.click(screen.getByRole('button', { name: /^Children's birthday party/ }));
-    await waitFor(() => {
-      expect(ondone).toHaveBeenCalledOnce();
-    });
-    expect(store.current?.input.type).toBe('birthday');
-    await fireEvent.click(screen.getByRole('button', { name: /^Delete Traditional wedding/ }));
-    await fireEvent.click(screen.getByRole('button', { name: 'Yes, delete' }));
-    expect(store.plans).toHaveLength(1);
-    await fireEvent.click(screen.getByRole('button', { name: 'Clear all my data' }));
-    await fireEvent.click(screen.getByRole('button', { name: 'Yes, clear all my data' }));
-    expect(store.plans).toHaveLength(0);
   });
 
   it('edits the open plan with the form prefilled', async () => {
@@ -137,25 +118,23 @@ describe('Intake', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load/);
   });
 
-  it('retries the plan that failed to open, not just the form type', async () => {
-    const storage = new MemoryStorage();
-    writePlans(storage, [savedPlan()]);
+  it('retries the sample that failed to load, not just the form type', async () => {
     let online = false;
     const store = new PlanStore({
-      storage,
+      storage: null,
       today: TODAY,
       loadProfile: (type) =>
         online ? Promise.resolve(getProfile(type)) : Promise.reject(new Error('offline')),
     });
     const { ondone } = setup(store);
-    await fireEvent.click(screen.getByRole('button', { name: 'Traditional wedding in Lucknow' }));
+    await fireEvent.click(screen.getByRole('button', { name: '7th birthday' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load/);
     online = true;
     await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
       expect(ondone).toHaveBeenCalledOnce();
     });
-    expect(store.currentId).toBe(savedPlan().id);
+    expect(store.current?.input.type).toBe('birthday');
   });
 
   it('retries loading the form type when nothing else failed', async () => {
@@ -190,17 +169,14 @@ describe('Intake', () => {
     expect(store.current?.input.invited).toBe(280);
   });
 
-  it('stays put when a plan cannot be made or opened', async () => {
-    const storage = new MemoryStorage();
-    writePlans(storage, [savedPlan()]);
+  it('stays put when a plan cannot be made', async () => {
     const store = new PlanStore({
-      storage,
+      storage: null,
       today: TODAY,
       loadProfile: () => Promise.reject(new Error('offline')),
     });
     const { ondone } = setup(store);
     await fireEvent.click(screen.getByRole('button', { name: '7th birthday' }));
-    await fireEvent.click(screen.getByRole('button', { name: 'Traditional wedding in Lucknow' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load/);
     expect(ondone).not.toHaveBeenCalled();
   });

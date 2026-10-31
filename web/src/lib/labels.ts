@@ -13,8 +13,10 @@ import {
   type Verdict,
   type VendorStatus,
   type EventInput,
+  type Feasibility,
+  formatRupees,
 } from '@jashn/core';
-import type { IconName } from './icons.ts';
+import type { IconName } from '../components/Icon.svelte';
 
 /** Event type cards on the form. */
 export const TYPE_LABELS: Readonly<Record<EventType, { label: string; hint: string }>> = {
@@ -99,4 +101,9 @@ export function eventTitle(input: Pick<EventInput, 'type' | 'style' | 'city'>): 
   const what = occasion(input);
   const name = what.charAt(0).toUpperCase() + what.slice(1);
   return input.city === '' ? name : `${name} in ${input.city}`;
+}
+
+/** The per-guest figure against the modest floor, shown in the Overview and beside the form. */
+export function perGuestText({ perGuest, floor }: Pick<Feasibility, 'perGuest' | 'floor'>): string {
+  return `About ${formatRupees(perGuest)} per expected guest; a modest version needs about ${formatRupees(floor)}.`;
 }

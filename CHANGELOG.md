@@ -26,15 +26,14 @@ All notable changes to this project are documented here. The format follows
   with late and at-risk flags; vendor checklist with questions and payment schedule; day-of run
   sheet; plan assembly with memoisation and plan diffs; plan summary for the assistant.
 - `@jashn/core`: guards for dietary conflicts, links, length, invented rupee figures and
-  invented or stale calendar dates; `.ics` export; share-link encoding; offline ideas, enquiry
-  drafts and assistant; three sample events.
+  invented or stale calendar dates; offline ideas, enquiry drafts and assistant answers; three sample events.
 - Server: Hono API with `GET /api/health` and `POST /api/ideas`, `/api/assist`, `/api/draft`;
   Gemini model chain with timeouts, schema-constrained output, function calling for plan
   changes and deterministic fallbacks; secure headers, CORS allow-list, rate limit, hourly call
   budget, response cache with in-flight coalescing; optional static hosting of the web app.
 - Web: Svelte 5 app with intake and live summary, lazy plan view with overview, budget,
-  timeline, vendors, day-of and ideas tabs, an assistant with change preview, saved plans,
-  share links, calendar export, print stylesheet, light and dark themes, and demo mode with
+  timeline, vendors, day-of and ideas tabs, an assistant with change preview, an autosaved
+  plan, print stylesheet, light and dark themes, and demo mode with
   pre-generated Gemini content where available (so far ideas for one sample) and offline
   content elsewhere.
 - Repository: CI, CodeQL, GitHub Pages and Dependabot workflows; first-screen size budget;

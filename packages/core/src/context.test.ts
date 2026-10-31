@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveContext, functionDays } from './context.ts';
 import { fromIso } from './days.ts';
-import { getProfile } from './profiles/index.ts';
+import { getProfile } from './profiles/all.ts';
 import { TODAY, sampleInput } from './test-fixtures.ts';
 import type { EventInput } from './types.ts';
 

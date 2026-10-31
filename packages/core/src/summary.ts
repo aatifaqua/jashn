@@ -1,7 +1,6 @@
 /**
- * The compact view of a plan that the assistant reasons over: the server sends it to Gemini as
- * prompt JSON and the offline assistant answers from it, so both can only state what the
- * engine computed. Dates are ISO strings, the form a language model reads most reliably.
+ * The compact plan view both assistants answer from, so they only state what the engine computed.
+ * Dates are ISO strings, which a language model reads most reliably.
  */
 import { toIso } from './days.ts';
 import { weekdayName } from './text.ts';
@@ -13,21 +12,18 @@ const LIST_MAX = 5;
 /** A task as the assistant sees it. */
 export interface SummaryTask {
   readonly title: string;
-  /** ISO date. */
   readonly due: string;
   readonly status: TaskStatus;
 }
 
-/** An upcoming payment as the assistant sees it. */
-export interface SummaryPayment {
+interface SummaryPayment {
   readonly vendor: string;
   readonly kind: 'deposit' | 'balance';
-  /** ISO date. */
   readonly due: string;
   readonly amount: number;
 }
 
-/** Everything the assistant may quote; every rupee figure here is also in the full plan. */
+/** Everything the assistant may quote; every rupee figure is also in the full plan. */
 export interface PlanSummary {
   /** The input without the free-text note, which a prompt fences separately as data. */
   readonly event: Omit<EventInput, 'note'> & { readonly weekday: string };
@@ -41,12 +37,9 @@ export interface PlanSummary {
     readonly floor: number;
     readonly contingency: number;
     readonly lines: readonly { readonly category: string; readonly amount: number }[];
-    /** Ranked by saving, largest first. */
     readonly trims: readonly { readonly label: string; readonly saves: number }[];
   };
-  /** How many tasks are late, and the first of them in timeline order. */
   readonly late: { readonly count: number; readonly tasks: readonly SummaryTask[] };
-  /** The next task that is neither late nor done. */
   readonly next: SummaryTask | null;
   readonly topActions: readonly SummaryTask[];
   readonly vendors: readonly { readonly label: string; readonly bookBy: string }[];
@@ -94,10 +87,7 @@ function upcomingPayments(plan: Plan): SummaryPayment[] {
     }));
 }
 
-/**
- * Condenses a plan for the assistant. The note is left out on purpose: it is user free text,
- * so the server passes it fenced and declared as data rather than mixed into the facts.
- */
+/** Condenses a plan; the free-text note is left out so the server can fence it as data. */
 export function planSummary(plan: Plan): PlanSummary {
   const late = plan.tasks.filter((task) => task.status === 'late');
   const next = plan.tasks.find((task) => task.status === 'upcoming' || task.status === 'at-risk');

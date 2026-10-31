@@ -1,11 +1,7 @@
-/**
- * The contextual rules table (design 6.2). A rule fires on facts from the context and input
- * and carries a reason naming the input that triggered it; later stages read the effects of
- * the fired rules, so every adjustment in the plan can explain itself.
- */
+/** Contextual rules (design 6.2); each carries a reason naming the input that triggered it. */
 import { SAFETY_THRESHOLDS } from './attendance.ts';
-import { deepFreeze } from './profiles/freeze.ts';
-import { slot } from './profiles/slot.ts';
+import { deepFreeze } from './freeze.ts';
+import { slot } from './templates.ts';
 import { NEED_RULES } from './rules-needs.ts';
 import { countWord, formatCount, formatDay, weekdayName } from './text.ts';
 import type { EventContext, EventInput, Reason, Rule, RuleEffects } from './types.ts';
@@ -114,7 +110,6 @@ const CALENDAR_RULES: readonly Rule[] = [
   },
 ];
 
-/** Rules on crowd size and bookings already made. */
 const CROWD_RULES: readonly Rule[] = [
   {
     id: 'large-crowd',
@@ -192,20 +187,14 @@ const CROWD_RULES: readonly Rule[] = [
   },
 ];
 
-/**
- * Every rule in table order, deep-frozen at module load so no plan can alter another's rules.
- * Order matters only for budget effects, which apply in this sequence.
- */
+/** Every rule, deep-frozen; order matters only for budget effects, applied in sequence. */
 export const RULES: readonly Rule[] = deepFreeze([
   ...CALENDAR_RULES,
   ...NEED_RULES,
   ...CROWD_RULES,
 ]);
 
-/**
- * The rules that apply to this input, each with its reason worded for it. One pass over the
- * table; later stages read effects from this list instead of re-testing conditions.
- */
+/** One pass over the table; later stages read this list instead of re-testing conditions. */
 export function fireRules(ctx: EventContext, input: EventInput): FiredRule[] {
   const fired: FiredRule[] = [];
   for (const rule of RULES) {

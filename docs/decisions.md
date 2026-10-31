@@ -78,10 +78,9 @@ the Lucknow wedding only.
 
 **Context.** No accounts are needed to plan an event, and stored personal data is a liability.
 **Decision.** The server keeps nothing but a short-lived response cache. Plans live in the
-browser's `localStorage` under a versioned key, read back through validation; share links carry
-the input in the URL fragment, which is never sent to a server.
+browser's `localStorage` under a versioned key, read back through validation.
 **Consequences.** Nothing to breach across users and no data-retention policy to run. Plans do
-not follow a user across devices except through a share link.
+not follow a user across devices.
 
 ## 9. No UI, chart, date or icon libraries
 

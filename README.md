@@ -34,13 +34,13 @@ and money.
 | Birthdays                                     | Kids, milestone and adult styles, cake, return gifts and entertainer tasks, a party run sheet                                                         | [profiles/birthday.ts](packages/core/src/profiles/birthday.ts), [birthday-catalogue.ts](packages/core/src/profiles/birthday-catalogue.ts)                                                                                                                |
 | Community events                              | Festival, fundraiser, meetup and clean-up drive; walk-in factors, volunteers, permits marked "check local rules", sanitation and safety               | [profiles/community.ts](packages/core/src/profiles/community.ts), [community-catalogue.ts](packages/core/src/profiles/community-catalogue.ts), [attendance.ts](packages/core/src/attendance.ts)                                                          |
 | Budgets                                       | Weighted split rounded to ₹100 that sums exactly, feasibility verdict against a cost floor, ranked trims, SVG chart with a full table                 | [budget.ts](packages/core/src/budget.ts), [feasibility.ts](packages/core/src/feasibility.ts), [trims.ts](packages/core/src/trims.ts), [BudgetChart.svelte](web/src/components/BudgetChart.svelte), [TrimList.svelte](web/src/components/TrimList.svelte) |
-| Timelines                                     | Back-scheduled tasks with dependencies, late and at-risk flags, phases, compression for short notice, `.ics` calendar export                          | [timeline.ts](packages/core/src/timeline.ts), [ics.ts](packages/core/src/ics.ts), [TaskList.svelte](web/src/components/TaskList.svelte), [calendar.ts](web/src/lib/calendar.ts)                                                                          |
+| Timelines                                     | Back-scheduled tasks with dependencies, late and at-risk flags, phases, compression for short notice, a day-of run sheet                              | [timeline.ts](packages/core/src/timeline.ts), [runsheet.ts](packages/core/src/runsheet.ts), [TaskList.svelte](web/src/components/TaskList.svelte)                                                                                                        |
 | Vendor checklists                             | Vendors derived from type, functions and needs; book-by dates, deposits and balances, questions per vendor, status, enquiry drafts                    | [vendors.ts](packages/core/src/vendors.ts), [VendorCard.svelte](web/src/components/VendorCard.svelte), [routes/draft.ts](server/src/routes/draft.ts)                                                                                                     |
 | Personalised ideas                            | Theme, palette, decor, menu that respects every declared diet, activities, a guest touch and invitation wording                                       | [routes/ideas.ts](server/src/routes/ideas.ts), [fallback/ideas.ts](packages/core/src/fallback/ideas.ts), [IdeasPanel.svelte](web/src/components/IdeasPanel.svelte)                                                                                       |
 | GenAI-powered assistant                       | Gemini writes ideas, vendor enquiries and answers from a compact plan summary; schema-constrained, re-validated and guarded                           | [ai/gemini.ts](server/src/ai/gemini.ts), [ai/prompts.ts](server/src/ai/prompts.ts), [ai/schemas.ts](server/src/ai/schemas.ts), [guards.ts](packages/core/src/guards.ts)                                                                                  |
 | Smart, dynamic assistant                      | Answers questions and turns requests ("cut guests by 20", "make it indoor") into a validated change shown as a before/after preview                   | [routes/assist.ts](server/src/routes/assist.ts), [ai/tools.ts](server/src/ai/tools.ts), [Assistant.svelte](web/src/components/Assistant.svelte), [preview.ts](web/src/lib/preview.ts), [plan.ts](packages/core/src/plan.ts) (`diffPlans`)                |
 | Logical decision making based on user context | Context (season, weekday, lead time, crowd size, setting) fires rules that change tasks, budget shares, vendors and the run sheet, each with a reason | [context.ts](packages/core/src/context.ts), [rules.ts](packages/core/src/rules.ts), [rules-needs.ts](packages/core/src/rules-needs.ts), [Why.svelte](web/src/components/Why.svelte)                                                                      |
-| Practical real-world usability                | Works offline in the browser, saves up to ten plans, share link in the URL fragment, print stylesheet, calendar export, copyable checklist            | [plans.svelte.ts](web/src/lib/plans.svelte.ts), [storage.ts](web/src/lib/storage.ts), [share.ts](packages/core/src/share.ts), [ShareBar.svelte](web/src/components/ShareBar.svelte), [app.css](web/src/app.css)                                          |
+| Practical real-world usability                | Works offline in the browser, autosaves the plan with its progress, print stylesheet, copyable checklist                                              | [plans.svelte.ts](web/src/lib/plans.svelte.ts), [storage.ts](web/src/lib/storage.ts), [ShareBar.svelte](web/src/components/ShareBar.svelte), [app.css](web/src/app.css)                                                                                  |
 
 ## How the solution works
 
@@ -59,13 +59,13 @@ form ──normaliseInput──▶ EventInput ──buildPlan(today)──▶ Pl
 2. **The plan is computed in the browser** by `@jashn/core`: no network, instant, and identical
    in demo and live mode. It opens on an overview with the verdict and the top three actions,
    each with a "Why?" disclosure.
-3. **Tabs:** Budget (chart, table, trims), Timeline (phases, checkboxes, calendar export),
+3. **Tabs:** Budget (chart, table, trims), Timeline (phases, checkboxes),
    Vendors (status, questions, payments, enquiry draft), Day of (run sheet) and Ideas.
 4. **The assistant** sits beside every tab. A question gets an answer grounded in the plan; a
    change request gets a preview (guests 350 → 330, verdict tight → comfortable) and is applied
    only when you press Apply.
-5. **Take it away:** print the plan, export tasks to a calendar, copy the checklist or copy a
-   share link. Plans and progress stay in this browser.
+5. **Take it away:** print the plan or copy the checklist. The plan and its progress stay in
+   this browser.
 
 ## Approach and logic
 
@@ -120,11 +120,11 @@ the UI shows that reason next to the item it changed.
 
 ## Where Gemini is used
 
-| Feature                       | Endpoint      | What Gemini does                                                                                         | When it is unavailable                                                        |
-| :---------------------------- | :------------ | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------- |
-| Personalised ideas            | `/api/ideas`  | Theme, palette, decor, menu, activities, guest touch and invitation wording                              | Catalogue ideas filtered by type, style, season and needs                     |
-| Assistant answers and changes | `/api/assist` | Answers from the plan summary; turns a change request into an `update_event` function call (a PlanPatch) | Offline intent parser that answers from the same summary and proposes patches |
-| Vendor enquiry drafts         | `/api/draft`  | A polite enquiry stating the event facts and asking that vendor's questions                              | Template enquiry with the same facts and questions                            |
+| Feature                       | Endpoint      | What Gemini does                                                                                         | When it is unavailable                                            |
+| :---------------------------- | :------------ | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
+| Personalised ideas            | `/api/ideas`  | Theme, palette, decor, menu, activities, guest touch and invitation wording                              | A compact idea set per event type, filtered by declared needs     |
+| Assistant answers and changes | `/api/assist` | Answers from the plan summary; turns a change request into an `update_event` function call (a PlanPatch) | Answers from the same summary; changes are made with Edit details |
+| Vendor enquiry drafts         | `/api/draft`  | A polite enquiry stating the event facts and asking that vendor's questions                              | Template enquiry with the same facts and questions                |
 
 **How it is kept honest.** Requests carry only the validated input; the server rebuilds the plan
 itself. Prompts give compact JSON facts, fence the user's note as data, and state the rules:
@@ -141,8 +141,8 @@ schema or guard) serves the deterministic fallback instead of an error, and ever
 `source: "gemini" | "fallback"`, which the UI labels. The GitHub Pages demo has no server: it
 serves the Gemini output pre-generated so far
 ([demo-genai.json](web/src/lib/demo-genai.json), written by
-[pregenerate.ts](server/scripts/pregenerate.ts), one Gemini request per sample; today ideas for
-the Lucknow wedding)
+[pregenerate.ts](server/scripts/pregenerate.ts), which runs the same live calls as the routes for
+each sample)
 and the labelled offline fallbacks for everything else. Because
 the sample dates move with today, the same guards drop any pre-generated draft or answer whose
 dates no longer match the plan, and ideas never state a date.
@@ -157,7 +157,7 @@ dates no longer match the plan, and ideas never state a date.
 - Dates are calendar dates with no time zone. "Today" is the date in India in both the browser
   and the server, so they agree on what is late or in the past. The run sheet uses local
   wall-clock times.
-- One event per plan, up to ten plans per browser. No accounts, bookings, payments or guest
+- One plan at a time, saved in this browser. No accounts, bookings, payments or guest
   lists; drafts are copied and sent by the user.
 - Permit needs vary by city, so Jashn lists them as "check local rules", not legal advice.
 
@@ -175,12 +175,12 @@ npm run dev -w web               # web on http://localhost:5173, demo mode
 For the live path in development, set `CORS_ORIGINS=http://localhost:5173` in `server/.env` and
 start the web app with `VITE_API_BASE=http://localhost:8787 npm run dev -w web`.
 
-| Command                         | What it does                                                                        |
-| :------------------------------ | :---------------------------------------------------------------------------------- |
-| `npm run verify`                | Format check, lint (0 warnings), typecheck, tests with coverage, build, size budget |
-| `npm test`                      | Tests with coverage thresholds in every workspace                                   |
-| `npm run pregenerate -w server` | Regenerates the demo content: one Gemini call per sample, resumable (needs a key)   |
-| `docker build -t jashn .`       | One image serving the API and the built app from one origin                         |
+| Command                         | What it does                                                                          |
+| :------------------------------ | :------------------------------------------------------------------------------------ |
+| `npm run verify`                | Format check, lint (0 warnings), typecheck, tests with coverage, build, size budget   |
+| `npm test`                      | Tests with coverage thresholds in every workspace                                     |
+| `npm run pregenerate -w server` | Regenerates the demo content with the live Gemini calls for each sample (needs a key) |
+| `docker build -t jashn .`       | One image serving the API and the built app from one origin                           |
 
 **Web modes.** With `VITE_API_BASE` set (an absolute URL, or `/` when the server hosts the app)
 the web app calls the API. Without it the build runs in **demo mode**, as on GitHub Pages: the
@@ -198,7 +198,7 @@ repository root and checked at start-up). See [.env.example](.env.example).
 jashn/
 ├── packages/core/   @jashn/core: pure TypeScript, no runtime dependencies, no I/O
 │                    input validation, context and rules, budget, timeline, vendors, run sheet,
-│                    plan assembly and diff, guards, .ics and share links, offline fallbacks
+│                    plan assembly and diff, guards, offline fallbacks
 ├── server/          Hono on Node, stateless: config, middleware (security, rate limit, quota,
 │                    errors, logger), routes (health, ideas, assist, draft), ai/ (Gemini chain,
 │                    prompts, schemas, tools), response cache, optional static hosting
@@ -213,13 +213,13 @@ the main decisions in [docs/decisions.md](docs/decisions.md).
 
 ## Quality notes
 
-| Focus area    | What we did                                                                                                                                                                                                                                                                                     | Where                                                                                                                                                                                                                                     |
-| :------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Code quality  | Strict TypeScript (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), typescript-eslint strict type-checked with budgets (complexity 10, 60 lines per function, 250 per file, depth 3, 4 params), Prettier, JSDoc on every export, one shared core for all planning logic               | [tsconfig.base.json](tsconfig.base.json), [eslint.config.js](eslint.config.js), [packages/core/src/index.ts](packages/core/src/index.ts)                                                                                                  |
-| Security      | Strict zod schemas then the core validator, JSON only, 16 KB body limit, generic errors with a request id, secure headers and API CSP, CORS allow-list, SPA CSP without `unsafe-inline`, rate limit and hourly Gemini budget, fenced note, guarded output, key only on the server               | [SECURITY.md](SECURITY.md), [middleware/security.ts](server/src/middleware/security.ts), [middleware/rateLimit.ts](server/src/middleware/rateLimit.ts), [routes/common.ts](server/src/routes/common.ts), [web/index.html](web/index.html) |
-| Efficiency    | Plan computed in the browser; integer day numbers; memoised `buildPlan`; per-type profile chunks, lazy plan view, calendar export and demo content; no UI, chart or date library; first-screen gzip budget in CI; server cache with in-flight coalescing, `compress()`, immutable hashed assets | [plan.ts](packages/core/src/plan.ts), [days.ts](packages/core/src/days.ts), [cache.ts](server/src/cache.ts), [static.ts](server/src/static.ts), [scripts/size-budget.mjs](scripts/size-budget.mjs)                                        |
-| Testing       | Vitest in every workspace with coverage thresholds (core 100 %); fast-check property tests for budget, timeline, patches, share links and `.ics`; scenario tests pinning the samples; every route with Gemini mocked; every component with an axe check                                         | [plan.property.test.ts](packages/core/src/plan.property.test.ts), [samples.test.ts](packages/core/src/samples.test.ts), [app.test.ts](server/src/app.test.ts), [Assistant.test.ts](web/src/components/Assistant.test.ts)                  |
-| Accessibility | Skip link and landmarks, fieldsets and legends, inline errors plus a focusable error summary, ARIA tabs with roving tabindex, live regions, status as icon plus word, SVG chart with a table, documented AA contrast in both themes, forced colours, reduced motion                             | [App.svelte](web/src/App.svelte), [Intake.svelte](web/src/views/Intake.svelte), [PlanView.svelte](web/src/views/PlanView.svelte), [app.css](web/src/app.css), [tabs.ts](web/src/lib/tabs.ts)                                              |
+| Focus area    | What we did                                                                                                                                                                                                                                                                       | Where                                                                                                                                                                                                                                     |
+| :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code quality  | Strict TypeScript (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), typescript-eslint strict type-checked with budgets (complexity 10, 60 lines per function, 250 per file, depth 3, 4 params), Prettier, JSDoc on every export, one shared core for all planning logic | [tsconfig.base.json](tsconfig.base.json), [eslint.config.js](eslint.config.js), [packages/core/src/index.ts](packages/core/src/index.ts)                                                                                                  |
+| Security      | Strict zod schemas then the core validator, JSON only, 16 KB body limit, generic errors with a request id, secure headers and API CSP, CORS allow-list, SPA CSP without `unsafe-inline`, rate limit and hourly Gemini budget, fenced note, guarded output, key only on the server | [SECURITY.md](SECURITY.md), [middleware/security.ts](server/src/middleware/security.ts), [middleware/rateLimit.ts](server/src/middleware/rateLimit.ts), [routes/common.ts](server/src/routes/common.ts), [web/index.html](web/index.html) |
+| Efficiency    | Plan computed in the browser; integer day numbers; memoised `buildPlan`; per-type profile chunks, lazy plan view and demo content; no UI, chart or date library; first-screen gzip budget in CI; server cache with in-flight coalescing, `compress()`, immutable hashed assets    | [plan.ts](packages/core/src/plan.ts), [days.ts](packages/core/src/days.ts), [cache.ts](server/src/cache.ts), [static.ts](server/src/static.ts), [scripts/size-budget.mjs](scripts/size-budget.mjs)                                        |
+| Testing       | Vitest in every workspace with coverage thresholds (core 100 %); fast-check property tests for budget, timeline and patches; scenario tests pinning the samples; every route with Gemini mocked; every component with an axe check                                                | [plan.property.test.ts](packages/core/src/plan.property.test.ts), [samples.test.ts](packages/core/src/samples.test.ts), [app.test.ts](server/src/app.test.ts), [Assistant.test.ts](web/src/components/Assistant.test.ts)                  |
+| Accessibility | Skip link and landmarks, fieldsets and legends, inline errors plus a focusable error summary, ARIA tabs with roving tabindex, live regions, status as icon plus word, SVG chart with a table, documented AA contrast in both themes, forced colours, reduced motion               | [App.svelte](web/src/App.svelte), [Intake.svelte](web/src/views/Intake.svelte), [PlanView.svelte](web/src/views/PlanView.svelte), [app.css](web/src/app.css), [tabs.ts](web/src/lib/tabs.ts)                                              |
 
 ## License
 

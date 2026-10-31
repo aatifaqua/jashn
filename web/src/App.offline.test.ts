@@ -13,6 +13,6 @@ describe('App without the plan view chunk', () => {
     const storage = new MemoryStorage();
     render(App, { props: { storage, store: makeStore(storage), genai: fakeGenAi() } });
     await fireEvent.click(screen.getByRole('button', { name: '7th birthday' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load the plan view/);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load your plan/);
   });
 });

@@ -25,7 +25,7 @@ import {
 } from '@jashn/core';
 import { isRecord, readDraft, readIdeas, readReply } from './validate.ts';
 
-/** Lookups into one demo data set. */
+/** Pre-generated content for an unchanged sample; null when an item is missing or invalid. */
 export interface DemoContent {
   ideas(input: EventInput, today: number): Ideas | null;
   draft(plan: Plan, vendorId: string): Draft | null;

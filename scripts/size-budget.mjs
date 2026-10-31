@@ -2,7 +2,7 @@
 /**
  * Fails the build when the first screen grows past its gzip budget. The first screen is every
  * script and stylesheet that web/dist/index.html loads directly (its entry, preloads and CSS);
- * lazy chunks such as the plan view, the profiles, the calendar export and the demo content are
+ * lazy chunks such as the plan view, the profiles and the demo content are
  * left out because they load only when used. Sizes are measured with gzip level 9, close to
  * what a static host serves.
  *

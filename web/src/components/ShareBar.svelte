@@ -1,31 +1,34 @@
 <script lang="ts">
-  import type { Plan } from '@jashn/core';
-  import { checklistText } from '../lib/checklist.ts';
-  import { shareLink } from '../lib/share.ts';
+  import { PHASES, formatDay, formatLongDay, occasion, type Plan } from '@jashn/core';
+  import { PHASE_LABELS } from '../lib/labels.ts';
   import CopyButton from './CopyButton.svelte';
   import Icon from './Icon.svelte';
 
-  /** Ways to take the plan away: print, copy the checklist, copy a share link. */
   interface Props {
     plan: Plan;
     checks: ReadonlySet<string>;
-    page: Pick<Location, 'origin' | 'pathname'>;
     print: () => void;
   }
-  let { plan, checks, page, print }: Props = $props();
+  let { plan, checks, print }: Props = $props();
+
+  /** Plain text by phase, with due dates and ticks, readable in any messaging app. */
+  function checklistText(): string {
+    const when = formatLongDay(plan.today + plan.daysToGo);
+    const lines = [`Jashn checklist: ${occasion(plan.input)}, ${when}`];
+    for (const phase of PHASES) {
+      const tasks = plan.tasks.filter((task) => task.phase === phase);
+      if (tasks.length === 0) continue;
+      lines.push('', PHASE_LABELS[phase]);
+      for (const task of tasks) {
+        const done = checks.has(task.id) || task.status === 'done';
+        lines.push(`[${done ? 'x' : ' '}] ${task.title} (due ${formatDay(task.due)})`);
+      }
+    }
+    return lines.join('\n');
+  }
 </script>
 
 <div class="share-bar" role="group" aria-label="Take the plan with you">
   <button type="button" class="button" onclick={print}><Icon name="print" /> Print</button>
-  <CopyButton
-    text={() => checklistText(plan, checks)}
-    label="Copy checklist"
-    done="Checklist copied."
-  />
-  <CopyButton
-    text={() => shareLink(plan.input, page)}
-    label="Copy share link"
-    done="Link copied. It holds the event details, never your progress."
-    icon="link"
-  />
+  <CopyButton text={checklistText} label="Copy checklist" done="Checklist copied." />
 </div>

@@ -1,8 +1,4 @@
-/**
- * Normalisation, validation and patching of EventInput. The form, the server and every read
- * of stored or shared data go through the same functions, so there is one definition of a
- * valid event.
- */
+/** Normalisation, validation and patching of EventInput: one definition of a valid event. */
 import { checkInput } from './checks.ts';
 import { INPUT_FIELDS, readShape } from './fields.ts';
 import { PATCH_FIELDS } from './ids.ts';
@@ -15,14 +11,10 @@ import type {
   PlanPatch,
 } from './types.ts';
 
-/**
- * Control and invisible format characters (zero-width spaces, bidi overrides, BOM). The
- * zero-width joiner (U+200D) is kept: emoji sequences such as a family emoji need it.
- */
+/** Control and invisible format characters; the zero-width joiner stays for emoji sequences. */
 const INVISIBLE = /(?!‍)[\p{Cc}\p{Cf}]/gu;
 const WHITESPACE = /\s+/gu;
 
-/** Fields whose rules depend on the event type, so they are skipped when the type is bad. */
 const TYPE_DEPENDENT: readonly InputField[] = ['style', 'functions', 'priorities'];
 
 /** NFC as well, so "café" typed composed or decomposed compares and caches as equal. */
@@ -40,11 +32,7 @@ function cleanList<T extends string>(values: readonly T[]): T[] {
   return [...new Set(values)].sort();
 }
 
-/**
- * Tidies text and lists without changing meaning: trims, collapses whitespace, strips control
- * and zero-width characters, de-duplicates and sorts lists, and empties `functions` for
- * non-weddings. It never clamps a number or drops a choice; validateInput reports those.
- */
+/** Tidies text and lists without changing meaning; never clamps a number or drops a choice. */
 export function normaliseInput(input: EventInput): EventInput {
   return {
     ...input,
@@ -64,10 +52,7 @@ function byFieldOrder(a: FieldError, b: FieldError): number {
   return index(a) - index(b);
 }
 
-/**
- * Validates untrusted data (a form, a request body, localStorage, a share link) against the
- * rules of design section 5 and returns either the normalised input or every field error.
- */
+/** Validates untrusted data (design 5): the normalised input or every field error. */
 export function validateInput(raw: unknown, today: number): InputResult {
   const shape = readShape(raw);
   const input = normaliseInput(shape.input);
@@ -88,11 +73,7 @@ function isPatchShape(raw: unknown): raw is Readonly<Record<string, unknown>> {
   return keys.length > 0 && keys.every((key) => (PATCH_FIELDS as readonly string[]).includes(key));
 }
 
-/**
- * Validates an untrusted patch (from the assistant or a request) against a base input. The
- * patch must be a non-empty object of patchable fields only, and the patched input must pass
- * validateInput, so a model can never propose a change the form itself would reject.
- */
+/** Validates an untrusted patch, so a model never proposes a change the form would reject. */
 export function validatePatch(raw: unknown, base: EventInput, today: number): PatchResult {
   if (!isPatchShape(raw)) {
     return {
@@ -108,11 +89,7 @@ export function validatePatch(raw: unknown, base: EventInput, today: number): Pa
   return { ok: true, patch, value: result.value };
 }
 
-/**
- * Stable string key for an input, equal for inputs that normalise to the same event. Used to
- * memoise buildPlan and, hashed, to key the server's response cache. Values are emitted in
- * fixed field order so key order in the source object never matters.
- */
+/** Stable key, equal for inputs that normalise alike; keys the plan memo and response cache. */
 export function canonicalKey(input: EventInput): string {
   const clean = normaliseInput(input);
   return JSON.stringify(INPUT_FIELDS.map((field) => clean[field]));

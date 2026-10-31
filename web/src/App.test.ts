@@ -1,9 +1,18 @@
-import { encodeShare, indiaDay } from '@jashn/core';
+import { getProfile, indiaDay } from '@jashn/core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { axe } from 'vitest-axe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { STORAGE_KEY } from './lib/storage.ts';
-import { MemoryStorage, fakeGenAi, makeStore, sampleInput } from './test-fixtures.ts';
+import { PlanStore } from './lib/plans.svelte.ts';
+import { STORAGE_KEY, writePlan } from './lib/storage.ts';
+import { THEME_KEY } from './lib/theme.ts';
+import {
+  MemoryStorage,
+  TODAY,
+  fakeGenAi,
+  makeStore,
+  sampleInput,
+  savedPlan,
+} from './test-fixtures.ts';
 import App from './App.svelte';
 
 function setup(storage = new MemoryStorage()) {
@@ -14,8 +23,8 @@ function setup(storage = new MemoryStorage()) {
 }
 
 afterEach(() => {
-  history.replaceState(null, '', '/');
   vi.restoreAllMocks();
+  delete document.documentElement.dataset.theme;
 });
 
 describe('App', () => {
@@ -26,9 +35,37 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Dark theme' })).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/planning estimates/);
-    expect(screen.getByRole('contentinfo')).toHaveTextContent(/stay in this browser/);
+    expect(screen.getByRole('contentinfo')).toHaveTextContent(/stays in this browser/);
     await screen.findByRole('radio', { name: 'Traditional' });
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('draws the decorative logo mark', () => {
+    const { container } = setup();
+    expect(container.querySelector('svg.logo-mark')?.getAttribute('aria-hidden')).toBe('true');
+    expect(container.querySelector('.logo-tick')).not.toBeNull();
+  });
+
+  it('toggles the dark theme, reflects it in aria-pressed and remembers it', async () => {
+    const { storage } = setup();
+    const button = screen.getByRole('button', { name: 'Dark theme' });
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    await fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(storage.getItem(THEME_KEY)).toBe('dark');
+    await fireEvent.click(button);
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  it('starts from the saved theme', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(THEME_KEY, 'dark');
+    setup(storage);
+    expect(screen.getByRole('button', { name: 'Dark theme' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   it('goes from a sample to the lazy plan view, applies a change, edits and returns', async () => {
@@ -51,42 +88,67 @@ describe('App', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await screen.findByRole('heading', { level: 1, name: /birthday party in Pune/ });
 
-    await fireEvent.click(screen.getByRole('button', { name: 'All plans' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'New plan' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Yes, start over' }));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Plan your celebration' }),
     ).toBeInTheDocument();
+    expect(store.current).toBeNull();
   });
 
-  it('opens a valid share link and clears it from the address bar', async () => {
-    history.replaceState(null, '', `/#plan=${encodeShare(sampleInput('diwali-mela'))}`);
-    const { store } = setup();
-    await screen.findByRole('heading', { level: 1, name: /community festival in Indore/i });
-    expect(store.plans).toHaveLength(1);
-    expect(location.hash).toBe('');
+  it('reopens the saved plan on load', async () => {
+    const storage = new MemoryStorage();
+    writePlan(storage, savedPlan({ checks: ['book-venue'] }));
+    const { store } = setup(storage);
+    await screen.findByRole('heading', { level: 1, name: /wedding in Lucknow/ });
+    expect(store.current?.checks).toEqual(['book-venue']);
   });
 
-  it('reports a broken share link without opening anything', async () => {
-    history.replaceState(null, '', '/#plan=broken!');
-    const { store } = setup();
-    expect(await screen.findByRole('alert')).toHaveTextContent(/share link could not be opened/);
-    expect(store.plans).toHaveLength(0);
-    expect(location.hash).toBe('');
+  it('offers to try again when the saved plan cannot load', async () => {
+    const storage = new MemoryStorage();
+    writePlan(storage, savedPlan());
+    let online = false;
+    const store = new PlanStore({
+      storage,
+      today: TODAY,
+      loadProfile: (type) =>
+        online ? Promise.resolve(getProfile(type)) : Promise.reject(new Error('offline')),
+    });
+    render(App, { props: { storage, store, genai: fakeGenAi() } });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not load your plan/);
+    online = true;
+    await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByRole('heading', { level: 1, name: /wedding in Lucknow/ });
   });
 
-  it('ignores in-page anchors such as the skip link', async () => {
-    const { store } = setup();
-    await fireEvent.click(screen.getByRole('link', { name: 'Skip to content' }));
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-    await screen.findByRole('radio', { name: 'Traditional' });
-    expect(screen.queryByRole('alert')).toBeNull();
-    expect(store.plans).toHaveLength(0);
+  it('starts a new plan when the saved plan cannot load', async () => {
+    const storage = new MemoryStorage();
+    writePlan(storage, savedPlan());
+    const store = new PlanStore({
+      storage,
+      today: TODAY,
+      loadProfile: () => Promise.reject(new Error('offline')),
+    });
+    render(App, { props: { storage, store, genai: fakeGenAi() } });
+    await screen.findByRole('alert');
+    await fireEvent.click(screen.getByRole('button', { name: 'Start a new plan' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Plan your celebration' }),
+    ).toBeInTheDocument();
+    expect(store.current).toBeNull();
+    expect(storage.getItem(STORAGE_KEY)).toBeNull();
   });
 
-  it('reads a share link pasted into the same tab', async () => {
-    setup();
-    history.replaceState(null, '', `/#plan=${encodeShare(sampleInput('kids-birthday'))}`);
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-    await screen.findByRole('heading', { level: 1, name: /birthday party in Pune/ });
+  it('follows a plan another tab saved and ignores other keys', async () => {
+    const { store, storage } = setup();
+    const reload = vi.spyOn(store, 'reload');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'other' }));
+    expect(reload).not.toHaveBeenCalled();
+    writePlan(storage, savedPlan());
+    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
+    await screen.findByRole('heading', { level: 1, name: /wedding in Lucknow/ });
+    window.dispatchEvent(new StorageEvent('storage', { key: null }));
+    expect(reload).toHaveBeenCalledTimes(2);
   });
 
   it('writes pending changes when the page is hidden', async () => {
@@ -127,24 +189,9 @@ describe('App', () => {
     expect(store.today).toBe(indiaDay(Date.UTC(2031, 0, 1, 6, 0)));
   });
 
-  it('reloads plans another tab saved, and ignores other keys', async () => {
-    const { store, storage } = setup();
-    const reload = vi.spyOn(store, 'reload');
-    window.dispatchEvent(new StorageEvent('storage', { key: 'jashn.theme' }));
-    expect(reload).not.toHaveBeenCalled();
-    const other = makeStore(storage);
-    await other.create(sampleInput('kids-birthday'));
-    other.flush();
-    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
-    expect(reload).toHaveBeenCalledOnce();
-    expect(store.plans).toHaveLength(1);
-    window.dispatchEvent(new StorageEvent('storage', { key: null }));
-    expect(reload).toHaveBeenCalledTimes(2);
-  });
-
-  it('warns when the browser will not keep plans', async () => {
+  it('warns when the browser will not keep the plan', async () => {
     const store = makeStore(null);
     render(App, { props: { storage: null, store, genai: fakeGenAi() } });
-    expect(await screen.findByText(/not saving plans/)).toBeInTheDocument();
+    expect(await screen.findByText(/not saving your plan/)).toBeInTheDocument();
   });
 });

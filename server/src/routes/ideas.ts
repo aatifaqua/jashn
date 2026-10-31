@@ -6,23 +6,9 @@ import { IDEAS_SYSTEM, ideasContent } from '../ai/prompts.ts';
 import { IDEAS_RESPONSE_SCHEMA, ideasRequestSchema, ideasSchema } from '../ai/schemas.ts';
 import { cacheKey, type ResponseCache } from '../cache.ts';
 import type { AppEnv } from '../env.ts';
-import { assertClean, readEvent, sendSourced, sourced } from './common.ts';
+import { assertClean, readEvent, sendSourced, sourced, type RouteDeps } from './common.ts';
 
-/** What the ideas route needs. */
-export interface IdeasDeps {
-  readonly gemini: GeminiClient | null;
-  readonly today: () => number;
-  readonly cache: ResponseCache<Sourced<Ideas>>;
-}
-
-/** Re-validates generated ideas with zod and the guards; throws when they fail either. */
-export function checkIdeas(raw: unknown, plan: Plan): Ideas {
-  const ideas = ideasSchema.parse(raw);
-  assertClean(guardIdeas(ideas, plan.input.constraints));
-  return ideas;
-}
-
-/** Asks Gemini for schema-constrained ideas, then checks them with checkIdeas. */
+/** Asks Gemini for ideas, then re-checks them with zod and the guards; throws on failure. */
 export async function liveIdeas(gemini: GeminiClient, plan: Plan): Promise<Ideas> {
   const generation = await gemini.generate({
     endpoint: 'ideas',
@@ -30,14 +16,17 @@ export async function liveIdeas(gemini: GeminiClient, plan: Plan): Promise<Ideas
     contents: ideasContent(plan),
     responseJsonSchema: IDEAS_RESPONSE_SCHEMA,
   });
-  return checkIdeas(JSON.parse(generation.text), plan);
+  const ideas = ideasSchema.parse(JSON.parse(generation.text));
+  assertClean(guardIdeas(ideas, plan.input.constraints));
+  return ideas;
 }
 
 /** Handler for POST /api/ideas. */
-export function ideasHandler(deps: IdeasDeps): Handler<AppEnv> {
+export function ideasHandler(
+  deps: RouteDeps & { readonly cache: ResponseCache<Sourced<Ideas>> },
+): Handler<AppEnv> {
   return async (c) => {
-    const today = deps.today();
-    const request = await readEvent(c, ideasRequestSchema, today);
+    const request = await readEvent(c, ideasRequestSchema, deps.today());
     if (!request.ok) return request.response;
     const { plan } = request;
     const key = cacheKey({ endpoint: 'ideas', input: plan.input });
@@ -46,7 +35,7 @@ export function ideasHandler(deps: IdeasDeps): Handler<AppEnv> {
         c,
         deps.gemini,
         (gemini) => liveIdeas(gemini, plan),
-        () => ideasOffline(plan.input),
+        () => ideasOffline(plan.input, plan.budget),
       ),
     );
     return sendSourced(c, result);

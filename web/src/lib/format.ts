@@ -1,22 +1,8 @@
 /**
- * Display formatting for the web app with Indian conventions. Every Intl formatter is built
- * once at module scope, because constructing one costs far more than calling it and lists
- * format hundreds of values per render.
+ * Web-only display formatting; the core formats rupees, counts and dates. Intl formatters are
+ * built once at module scope, because constructing one costs far more than calling it.
  */
 import { MS_PER_DAY, countWord, toCivil } from '@jashn/core';
-
-/**
- * The core's formatters under the web app's names, so the page and the core word figures and
- * dates identically: rupees "₹16,00,000", count "2,50,000", dayLabel "20 Feb 2027", longDay
- * "Saturday, 20 February 2027", isoDay for `<time datetime>`.
- */
-export {
-  formatCount as count,
-  formatDay as dayLabel,
-  formatLongDay as longDay,
-  formatRupees as rupees,
-  toIso as isoDay,
-} from '@jashn/core';
 
 const PERCENT = new Intl.NumberFormat('en-IN', { style: 'percent', maximumFractionDigits: 0 });
 /** Day numbers are UTC midnights, so formatting in UTC never shifts a date by time zone. */

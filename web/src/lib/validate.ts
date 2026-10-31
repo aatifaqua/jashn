@@ -22,7 +22,7 @@ import {
 /** Saved and generated ids: lowercase words joined by hyphens, as the core produces them. */
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
-/** A plain object (not null, not an array). */
+/** A plain object: not null, not an array. */
 export function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

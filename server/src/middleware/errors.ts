@@ -1,34 +1,23 @@
 /**
- * Error responses. Every body is generic JSON with a stable code, a plain message and the
- * request id; nothing from the request and no stack trace is ever echoed back.
+ * Error responses: generic JSON with a stable code, a plain message and the request id. Nothing
+ * from the request and no stack trace is ever echoed back.
  */
 import type { Context, ErrorHandler, MiddlewareHandler, NotFoundHandler } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { AppEnv } from '../env.ts';
 
-/** Request bodies above this many bytes are refused before they are read. */
+/** Larger request bodies are refused before they are read. */
 export const BODY_LIMIT_BYTES = 16 * 1024;
 
-/** A problem with one field of a request, in the same shape as the core's field errors. */
+/** One field's problem, in the same shape as the core's field errors. */
 export interface FieldIssue {
   readonly field: string;
   readonly code: string;
   readonly message: string;
 }
 
-/** The JSON body of every error response. */
-export interface ErrorBody {
-  readonly error: string;
-  readonly message: string;
-  readonly requestId: string;
-  readonly fields?: readonly FieldIssue[];
-}
-
-/**
- * Gives each request a fresh server-generated id, returned in X-Request-Id and in error bodies.
- * A client-supplied id is ignored, so an id a user quotes always names a real server request.
- */
+/** A client-supplied id is ignored, so an id a user quotes always names a real server request. */
 export function serverRequestId(): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
     const id = crypto.randomUUID();
@@ -38,26 +27,20 @@ export function serverRequestId(): MiddlewareHandler<AppEnv> {
   };
 }
 
-/** Sends an error body with the request id; `fields` only for validation failures. */
+/** An error body with the request id; `fields` only for validation failures. */
 export function problem(
   c: Context<AppEnv>,
   status: ContentfulStatusCode,
   error: string,
   message: string,
 ): Response {
-  const body: ErrorBody = { error, message, requestId: c.var.requestId };
-  return c.json(body, status);
+  return c.json({ error, message, requestId: c.var.requestId }, status);
 }
 
-/** 400 with every field problem, so the form can show them inline and in its summary. */
+/** 400 with every field problem, so the form can show them inline. */
 export function invalidRequest(c: Context<AppEnv>, fields: readonly FieldIssue[]): Response {
-  const body: ErrorBody = {
-    error: 'invalid-request',
-    message: 'Some fields need attention.',
-    requestId: c.var.requestId,
-    fields,
-  };
-  return c.json(body, 400);
+  const message = 'Some fields need attention.';
+  return c.json({ error: 'invalid-request', message, requestId: c.var.requestId, fields }, 400);
 }
 
 /** 415 unless the request declares a JSON body; the API accepts nothing else. */
@@ -71,7 +54,7 @@ export function jsonOnly(): MiddlewareHandler<AppEnv> {
   };
 }
 
-/** 413 for bodies over the limit, checked from Content-Length or while reading, never after. */
+/** Refuses oversized bodies from Content-Length or while reading, never after. */
 export function sizeLimit(): MiddlewareHandler<AppEnv> {
   return bodyLimit({
     maxSize: BODY_LIMIT_BYTES,
@@ -80,19 +63,15 @@ export function sizeLimit(): MiddlewareHandler<AppEnv> {
   });
 }
 
-/** 404 for unknown routes. */
+/** 404 for unknown routes, in the same error shape as every other failure. */
 export const notFound: NotFoundHandler<AppEnv> = (c) =>
   problem(c, 404, 'not-found', 'There is nothing here.');
 
-/** Caps on what an unexpected error contributes to its log line. */
+// Caps on what an unexpected error contributes to its log line.
 const MESSAGE_MAX = 200;
 const STACK_MAX = 2000;
 
-/**
- * 500 for anything unexpected. No details leave the server: the body is generic, while the
- * error's name, message and stack go to the request's log line under the same request id, so
- * an id a user quotes can be traced.
- */
+/** Generic 500 body; the details go only to the log line under the same request id. */
 export const internalError: ErrorHandler<AppEnv> = (error, c) => {
   c.set('failure', {
     name: error.name,

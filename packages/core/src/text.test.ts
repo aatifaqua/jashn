@@ -3,7 +3,6 @@ import { fromIso } from './days.ts';
 import {
   formatCount,
   formatDay,
-  formatIsoDate,
   formatLongDay,
   formatRupees,
   formatShortIso,
@@ -32,7 +31,6 @@ describe('sentence helpers', () => {
 
   it('formats long and short dates from day numbers and ISO dates alike', () => {
     expect(formatLongDay(day)).toBe('Saturday, 20 February 2027');
-    expect(formatIsoDate('2027-02-20')).toBe('Saturday, 20 February 2027');
     expect(formatShortIso('2027-02-20')).toBe('20 Feb');
   });
 

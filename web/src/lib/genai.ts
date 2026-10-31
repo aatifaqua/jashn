@@ -22,7 +22,7 @@ import { isSource, readDraft, readIdeas, readReply } from './validate.ts';
 
 /** Turns of history sent with an assistant message (design section 7), as the API accepts. */
 export const HISTORY_TURNS = ASSIST_LIMITS.history;
-/** Longest assistant message, the same limit the API and the offline parser apply. */
+/** Longest assistant message, the same limit the API and the offline assistant apply. */
 export const MESSAGE_MAX = ASSIST_LIMITS.message;
 /**
  * Generous enough for the server's own model chain deadline plus a slow mobile network, short
@@ -30,8 +30,7 @@ export const MESSAGE_MAX = ASSIST_LIMITS.message;
  */
 const TIMEOUT_MS = 25_000;
 
-/** Live calls the API; demo serves sample content and fallbacks without any network. */
-export type GenAiMode = 'live' | 'demo';
+type GenAiMode = 'live' | 'demo';
 
 /** The three generative features, each always resolving (never rejecting). */
 export interface GenAi {
@@ -46,7 +45,7 @@ export interface GenAi {
 }
 
 /** Options for createGenAi; fetch and the demo data are injectable for tests. */
-export interface GenAiOptions {
+interface GenAiOptions {
   readonly apiBase: string;
   readonly fetch?: typeof fetch;
   readonly timeoutMs?: number;
@@ -118,7 +117,7 @@ function liveClient(post: Post): GenAi {
 }
 
 function offlineIdeas(plan: Plan): Sourced<Ideas> {
-  return { ...ideasOffline(plan.input), source: 'fallback' };
+  return { ...ideasOffline(plan.input, plan.budget), source: 'fallback' };
 }
 
 function offlineReply(plan: Plan, message: string): Sourced<AssistReply> {

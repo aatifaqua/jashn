@@ -13,7 +13,6 @@ const KIND_RANK: Readonly<Record<Payment['kind'], number>> = Object.freeze({
   balance: 1,
 });
 
-/** Questions and reasons that fired rules add to one vendor. */
 interface Extra {
   readonly questions: string[];
   readonly reasons: Reason[];
@@ -44,7 +43,6 @@ function removedVendors(stage: StageInput): Set<string> {
   return removed;
 }
 
-/** Base questions first, then rule questions, without repeats. */
 function mergeQuestions(base: readonly string[], added: readonly string[]): string[] {
   const questions: string[] = [];
   for (const list of [base, added]) {
@@ -73,11 +71,8 @@ function depositReason(template: VendorTemplate, categoryLabel: string): Reason 
 }
 
 /**
- * The vendors this event needs: profile vendors whose conditions match the input (style,
- * functions, constraints, setting), minus any a fired rule removes. The book-by date is the due
- * day of the vendor's timeline task, or today when that task is not on the timeline or is already
- * done (the vendor is booked). Tasks are
- * indexed once in a Map so the pass over vendors does no nested scans.
+ * Matching profile vendors minus any a rule removes. Book-by is the vendor's task due day, or
+ * today when that task is missing or done.
  */
 export function buildVendors(stage: StageInput, tasks: readonly Task[]): VendorItem[] {
   const removed = removedVendors(stage);
@@ -123,21 +118,14 @@ function vendorItem(template: VendorTemplate, parts: ItemParts): VendorItem {
   };
 }
 
-/**
- * Splits an amount evenly between `count` vendors, in whole hundreds; leftover hundreds (and any
- * odd rupees) go to the first vendors so the parts add up to the amount exactly.
- */
+/** Even split in whole hundreds; leftovers go to the first vendors so parts sum exactly. */
 function splitLine(total: number, count: number, index: number): number {
   const units = Math.floor(total / ROUNDING_UNIT);
   const share = Math.floor(units / count) + (index < units % count ? 1 : 0);
   return share * ROUNDING_UNIT + (index === 0 ? total - units * ROUNDING_UNIT : 0);
 }
 
-/**
- * What each vendor of one budget line is owed: a vendor with a line share gets that share of
- * the line; the others split what is left evenly. When every vendor has a share, the rest of
- * the line is left for purchases (outfits, favours) that no vendor bills.
- */
+/** Each vendor's part of one line: its line share, or an even split of what is left. */
 function lineParts(total: number, group: readonly VendorItem[]): [VendorItem, number][] {
   const own = (v: VendorItem): number | undefined =>
     v.lineShare === undefined ? undefined : roundRupees(total * v.lineShare);
@@ -153,8 +141,7 @@ function pushPayments(
   amount: number,
   eventDay: number,
 ): void {
-  // A vendor the user has already booked is taken to hold its deposit: it is not listed again,
-  // and only the balance after it is left to pay.
+  // A booked vendor already holds its deposit, so only the balance is listed.
   const deposit = Math.min(amount, roundRupees(amount * vendor.depositShare));
   if (deposit > 0 && !vendor.booked) {
     payments.push({ vendorId: vendor.id, kind: 'deposit', due: vendor.bookBy, amount: deposit });
@@ -166,11 +153,8 @@ function pushPayments(
 }
 
 /**
- * Payment schedule: the deposit on the book-by date and the balance seven days before the event
- * (or on the book-by date when booking is later than that); a booked vendor has paid its
- * deposit and owes only the balance after it. Amounts come from the vendor's part of its budget
- * line (lineParts); a vendor with no funded line has no payments. Vendors are grouped by line
- * in one pass and lines are looked up in a Map. Sorted by due day, deposits first.
+ * Deposits on the book-by date, balances a week before the event (or at booking if later),
+ * sorted by due day with deposits first. A vendor with no funded line has no payments.
  */
 export function buildPayments(
   vendors: readonly VendorItem[],

@@ -1,7 +1,6 @@
 /**
- * The assistant's single tool, update_event, whose parameters mirror the core's PlanPatch.
- * Its arguments are untrusted model output: the route passes them to validatePatch, the same
- * validation the form uses, and the user still confirms the change before it applies.
+ * The assistant's update_event tool, mirroring PlanPatch. Its arguments are untrusted: the
+ * route runs them through validatePatch and the user confirms before anything applies.
  */
 import type { FunctionDeclaration, Tool } from '@google/genai';
 import {
@@ -22,10 +21,7 @@ export const UPDATE_EVENT = 'update_event';
 
 const unique = (lists: readonly (readonly string[])[]): string[] => [...new Set(lists.flat())];
 
-/**
- * One schema per patchable field. `satisfies` makes the compiler reject a missing or extra
- * field, so the declaration cannot drift from PlanPatch.
- */
+// `satisfies` rejects a missing or extra field, so this cannot drift from PlanPatch.
 const PATCH_SHAPE = {
   date: z.string().describe('New event date as YYYY-MM-DD.'),
   startTime: z.string().describe('New start time as 24-hour HH:MM.'),

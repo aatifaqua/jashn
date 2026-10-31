@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import {
+    SAMPLE_IDS,
     buildPlan,
     sampleEvent,
+    sampleLabel,
     validateInput,
     type EventType,
     type FieldError,
@@ -15,9 +17,7 @@
   import ErrorSummary from '../components/ErrorSummary.svelte';
   import LiveSummary from '../components/LiveSummary.svelte';
   import MoneyFields from '../components/MoneyFields.svelte';
-  import MyPlans from '../components/MyPlans.svelte';
   import PlaceFields from '../components/PlaceFields.svelte';
-  import SampleChips from '../components/SampleChips.svelte';
   import { debounce } from '../lib/debounce.ts';
   import {
     blankForm,
@@ -31,7 +31,7 @@
   import type { PlanStore } from '../lib/plans.svelte.ts';
   import { planDay } from '../lib/storage.ts';
 
-  /** The start screen and the edit form: samples, saved plans and the three-step form. */
+  /** The start screen and the edit form: samples and the three-step form. */
   interface Props {
     store: PlanStore;
     /** True when editing the open plan's details instead of starting a new plan. */
@@ -123,9 +123,7 @@
     }
     errors = [];
     busy = true;
-    const ok = editing
-      ? await store.edit(result.value)
-      : (await store.create(result.value)) !== null;
+    const ok = editing ? await store.edit(result.value) : await store.create(result.value);
     busy = false;
     if (ok) ondone();
   }
@@ -134,14 +132,10 @@
     busy = true;
     const created = await store.create(sampleEvent(id, store.today));
     busy = false;
-    if (created !== null) ondone();
+    if (created) ondone();
   }
 
-  async function openPlan(id: string): Promise<void> {
-    if (await store.open(id)) ondone();
-  }
-
-  /** Repeats what failed: opening, creating or saving a plan, else loading the form's type. */
+  /** Repeats what failed: creating or saving a plan, else loading the form's type. */
   async function tryAgain(): Promise<void> {
     const retried = await store.retry();
     if (retried === null) await useType(form.type);
@@ -162,18 +156,18 @@
   </div>
 
   {#if !editing}
-    <SampleChips onpick={(id: SampleId) => void pickSample(id)} disabled={busy} />
-    <MyPlans
-      plans={store.plans}
-      today={store.today}
-      onopen={(id: string) => void openPlan(id)}
-      ondelete={(id: string) => {
-        store.remove(id);
-      }}
-      onclear={() => {
-        store.clearAll();
-      }}
-    />
+    <section class="samples" aria-labelledby="samples-title">
+      <h2 id="samples-title">Try a sample</h2>
+      <ul class="chip-list">
+        {#each SAMPLE_IDS as id (id)}
+          <li>
+            <button type="button" class="chip" disabled={busy} onclick={() => void pickSample(id)}>
+              {sampleLabel(id)}
+            </button>
+          </li>
+        {/each}
+      </ul>
+    </section>
   {/if}
 
   {#if store.error !== null}

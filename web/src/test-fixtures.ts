@@ -26,8 +26,7 @@ export function sampleInput(id: SampleId = 'lucknow-wedding'): EventInput {
   return sampleEvent(id, TODAY);
 }
 
-/** The profile for an input's type. */
-export function profileFor(input: EventInput): Profile {
+function profileFor(input: EventInput): Profile {
   return getProfile(input.type);
 }
 
@@ -44,7 +43,6 @@ export function savedPlan(overrides: Partial<SavedPlan> = {}): SavedPlan {
     checks: [],
     vendors: {},
     ideas: null,
-    updated: 1000,
     ...overrides,
   };
 }
@@ -75,14 +73,12 @@ export class MemoryStorage implements Storage {
   }
 }
 
-/** A store on an in-memory Storage with a fixed clock and sequential ids. */
+/** A store on an in-memory Storage with sequential ids. */
 export function makeStore(storage: Storage | null = new MemoryStorage()): PlanStore {
   let id = 0;
-  let clock = 1_000;
   return new PlanStore({
     storage,
     today: TODAY,
-    now: () => (clock += 1),
     newId: () => `plan-${String((id += 1))}`,
     writeDelayMs: 0,
   });
